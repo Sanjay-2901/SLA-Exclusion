@@ -5,11 +5,14 @@ import {
   ALERT_DOWN_MESSAGE,
   BLOCK_GP_SLA_SUMMARY_PERCENT,
   BLOCK_SLA_FINAL_REPORT_COLUMNS,
+  BORDER_STYLE,
   BlockAlertData,
   BlockNMSData,
   BlockSLASummaryMinutesHeaders,
+  BlockSLASummaryPercent,
   BlockSLASummaryPercentHeaders,
   BlockTTData,
+  ManipulatedNMSData,
   RFOCategorizedTimeInMinutes,
   RFO_CATEGORIZATION,
   SEVERITY_CRITICAL,
@@ -29,6 +32,7 @@ export class AppComponent {
   blockTTData: any = [];
   blockAlertData: any = [];
   manipulatedNMSData: any = [];
+  blockSLASummaryPercent!: BlockSLASummaryPercent;
   worksheet!: ExcelJS.Worksheet;
 
   // Getting the input file (excel workbook containing the required sheets)
@@ -161,7 +165,7 @@ export class AppComponent {
   }
 
   calculateTimeInMinutes(timePeriod: string): number {
-    let totalTimeinMinutes = timePeriod.split(' ');
+    let totalTimeinMinutes = timePeriod.trim().split(' ');
     if (timePeriod.includes('days')) {
       return +(
         parseInt(totalTimeinMinutes[0]) * 24 +
@@ -183,9 +187,9 @@ export class AppComponent {
     let filteredAlertData = this.blockAlertData.filter(
       (alert: BlockAlertData) => {
         return (
-          alert.ip_address == ip &&
-          alert.severity == SEVERITY_CRITICAL &&
-          alert.message == ALERT_DOWN_MESSAGE
+          alert.ip_address.trim() == ip &&
+          alert.severity.trim() == SEVERITY_CRITICAL &&
+          alert.message.trim() == ALERT_DOWN_MESSAGE
         );
       }
     );
@@ -211,19 +215,19 @@ export class AppComponent {
     const filteredAlertData = this.blockAlertData.filter(
       (alert: BlockAlertData) => {
         return (
-          alert.ip_address == ip &&
-          alert.severity == SEVERITY_CRITICAL &&
-          alert.message == ALERT_DOWN_MESSAGE
+          alert.ip_address.trim() == ip &&
+          alert.severity.trim() == SEVERITY_CRITICAL &&
+          alert.message.trim() == ALERT_DOWN_MESSAGE
         );
       }
     );
 
     filteredTTData.forEach((ttData: BlockTTData) => {
-      if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
+      if (ttData.rfo.trim() == RFO_CATEGORIZATION.POWER_ISSUE) {
         powerDownArray.push(ttData);
       } else if (
-        ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
-        ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+        ttData.rfo.trim() == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
+        ttData.rfo.trim() == RFO_CATEGORIZATION.SWAN_ISSUE
       ) {
         dcnDownArray.push(ttData);
       }
@@ -304,20 +308,55 @@ export class AppComponent {
           totalTimeExclusiveOfSLAExclusionInPercent,
         alert_downtime_in_minutes: alertDownTimeInMinutes,
         alert_downtime_in_percent: alertDownTimeInPercent,
-        power_downtime_in_minutes: rfoCategorizedData.total_power_downtime_minutes,
+        power_downtime_in_minutes:
+          rfoCategorizedData.total_power_downtime_minutes,
         dcn_downtime_in_minutes: rfoCategorizedData.total_dcn_downtime_minutes,
         power_downtime_in_percent: powerDownTimeInpercent,
-        dcn_downtime_in_percent: dcnDownTimeInPercent
+        dcn_downtime_in_percent: dcnDownTimeInPercent,
       };
       manipulatedBlockNMSData.push(newNMSData);
     });
     this.manipulatedNMSData = manipulatedBlockNMSData;
+    this.calcluateBlockSLASummaryinPercent();
     this.generateFinalBlockReport();
-    this.categorizeRFO('10.128.0.33');
+  }
+
+  calcluateBlockSLASummaryinPercent() {
+    let upPercent = 0;
+    let powerDownPercent = 0;
+    let dcnDownPercent = 0;
+    let plannedMaintenance = 0;
+    let dcnAndPowerDownPercent = 0;
+
+    this.manipulatedNMSData.forEach((nmsData: ManipulatedNMSData) => {
+      upPercent += nmsData.up_percent;
+      powerDownPercent += nmsData.power_downtime_in_percent;
+      dcnDownPercent += nmsData.dcn_downtime_in_percent;
+      dcnAndPowerDownPercent +=
+        nmsData.power_downtime_in_percent + nmsData.dcn_downtime_in_percent;
+    });
+
+    this.blockSLASummaryPercent = {
+      report_type: 'BLOCK-SLA',
+      time_span: '',
+      no_of_blocks: 79,
+      up_percent: upPercent / 79,
+      no_of_up_blocks: '',
+      power_down_percent: powerDownPercent / 79,
+      fibre_down_percent: 0.0,
+      equipment_down_percent: 0.0,
+      hrt_down_percent: 0.0,
+      dcn_down_percent: dcnDownPercent / 79,
+      planned_maintenance_percent: 0.0,
+      down_percent_exclusive_of_sla: 100 - (upPercent / 79),
+      no_of_down_blocks: '',
+      total_sla_exclusion_percent: dcnAndPowerDownPercent / 79,
+      total_up_percent: 0,
+    };
   }
 
   getBlockNames(department: string) {
-    let splittedValue = department.split('-');
+    let splittedValue = department.trim().split('-');
     return splittedValue[splittedValue.length - 1];
   }
 
@@ -341,15 +380,31 @@ export class AppComponent {
     let cellA3 = worksheet.getCell('A3');
     cellA3.value = 'Block - SLA Summary (%)';
     cellA3.style = TABLE_HEADING;
-    worksheet.addRow(BlockSLASummaryPercentHeaders);
+    let blockSLASummaryPercentHeaders = worksheet.addRow(
+      BlockSLASummaryPercentHeaders
+    );
+    blockSLASummaryPercentHeaders.border = BORDER_STYLE;
+    blockSLASummaryPercentHeaders.font = { bold: true };
+    blockSLASummaryPercentHeaders.alignment = {
+      horizontal: 'center',
+      wrapText: true,
+    };
+    let blockSLASummaryPercentArray = Object.values(
+      this.blockSLASummaryPercent
+    );
+    let blockSLASummaryPercentValues = worksheet.addRow(
+      blockSLASummaryPercentArray
+    );
+    blockSLASummaryPercentValues.alignment = { horizontal: 'left' };
+    blockSLASummaryPercentValues.border = BORDER_STYLE;
 
-    worksheet.addRow('');
+    // worksheet.addRow('');
 
-    worksheet.mergeCells('A7:B7');
-    let cellA7 = worksheet.getCell('A7');
-    cellA7.value = 'Block - SLA Summary (min)';
-    cellA7.style = TABLE_HEADING;
-    worksheet.addRow(BlockSLASummaryMinutesHeaders);
+    // worksheet.mergeCells('A7:B7');
+    // let cellA7 = worksheet.getCell('A7');
+    // cellA7.value = 'Block - SLA Summary (min)';
+    // cellA7.style = TABLE_HEADING;
+    // worksheet.addRow(BlockSLASummaryMinutesHeaders);
 
     worksheet.addRow('');
 
@@ -357,7 +412,16 @@ export class AppComponent {
     let cellA11 = worksheet.getCell('A11');
     cellA11.value = 'Block - GP  SLA Summary (%)';
     cellA11.style = TABLE_HEADING;
-    worksheet.addRow(BLOCK_GP_SLA_SUMMARY_PERCENT);
+    const blockSummaryPercentRow = worksheet.addRow(
+      BLOCK_GP_SLA_SUMMARY_PERCENT
+    );
+    blockSummaryPercentRow.font = { bold: true };
+    blockSummaryPercentRow.alignment = { wrapText: true, horizontal: 'center' };
+    blockSummaryPercentRow.eachCell((cell) => {
+      if (cell.value) {
+        cell.border = BORDER_STYLE;
+      }
+    });
 
     this.manipulatedNMSData.forEach((row: any) => {
       let reportType: string = 'Block - SLA';
@@ -372,19 +436,36 @@ export class AppComponent {
       let noOfGPinBlock: string = '';
       let upPercent: number = row.up_percent;
       let noOfUpGPCount: string = '';
-      let powerDown: string = upPercent == 100 ? '0' : row.power_downtime_in_percent;
-      let fiberDown: string = upPercent == 100 ? '0' : '';
-      let equipmentDown: string = upPercent == 100 ? '0' : '';
-      let hrtDownPercent: string = upPercent == 100 ? '0' : '';
-      let dcnDownPercent: string = upPercent == 100 ? '0' : row.dcn_downtime_in_percent;
-      let plannedMaintanance: string = upPercent == 100 ? '0' : '';
-      let downPercentSLAExclusions: string = upPercent == 100 ? '0' : '';
+      let powerDown: string =
+        upPercent == 100
+          ? '0'
+          : `${row.power_downtime_in_percent}, min: ${row.power_downtime_in_minutes}`;
+      let fiberDown: string = upPercent == 100 ? '0' : '0';
+      let equipmentDown: string = upPercent == 100 ? '0' : '0';
+      let hrtDownPercent: string = upPercent == 100 ? '0' : '0';
+      let dcnDownPercent: string =
+        upPercent == 100
+          ? '0'
+          : `${row.dcn_downtime_in_percent}, min: ${row.dcn_downtime_in_minutes}`;
+      let plannedMaintanance: string = upPercent == 100 ? '0' : '0';
+      let downPercentSLAExclusions: string =
+        upPercent == 100 ? '0' : row.down_percent;
       let noOfDownGPCount: string = '';
-      let totalExclusionPercent: string = upPercent == 100 ? '0' : '';
-      let pollingTimePercent: string = upPercent == 100 ? '0' : '';
-      let totalUpPercentSLAExclusion: string = upPercent == 100 ? '100' : '';
+      let totalExclusionPercent: number =
+        upPercent == 100
+          ? 0
+          : row.power_downtime_in_percent + row.dcn_downtime_in_percent;
+      // : `${
+      //     row.power_downtime_in_percent + row.dcn_downtime_in_percent
+      //   }, min: ${
+      //     row.power_downtime_in_minutes + row.dcn_downtime_in_minutes
+      //   }`;
+      let pollingTimePercent: number =
+        upPercent == 100 ? 0 : row.down_percent - +totalExclusionPercent;
 
-      worksheet.addRow([
+      let totalUpPercentSLAExclusion: number = 100;
+
+      const blockSummaryPercentRowValues = worksheet.addRow([
         reportType,
         timeSpan,
         ipAddress,
@@ -409,6 +490,11 @@ export class AppComponent {
         pollingTimePercent,
         totalUpPercentSLAExclusion,
       ]);
+
+      blockSummaryPercentRowValues.eachCell((cell) => {
+        cell.border = BORDER_STYLE;
+        cell.alignment = { horizontal: 'left' };
+      });
     });
 
     workbook.xlsx.writeBuffer().then((buffer) => {
@@ -427,3 +513,4 @@ export class AppComponent {
     link.click();
   }
 }
+

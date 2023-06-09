@@ -115,6 +115,19 @@ export interface BlockNMSData {
   total_downtime_in_minutes?: number;
 }
 
+export interface ManipulatedNMSData extends BlockNMSData {
+  total_uptime_in_minutes: number;
+  total_downtime_in_minutes: number;
+  total_time_exclusive_of_sla_exclusions_in_min: number;
+  total_time_exclusive_of_sla_exclusions_in_percent: number;
+  alert_downtime_in_minutes: number;
+  alert_downtime_in_percent: number;
+  power_downtime_in_minutes: number;
+  dcn_downtime_in_minutes: number;
+  power_downtime_in_percent: number;
+  dcn_downtime_in_percent: number;
+}
+
 export interface BlockTTData {
   ageing: string;
   assigned_time: string;
@@ -173,17 +186,46 @@ export interface BlockAlertData {
   total_duration_in_minutes: number;
 }
 
+export interface BlockSLASummaryPercent {
+  report_type: string;
+  time_span: string;
+  no_of_blocks: number;
+  up_percent: number;
+  no_of_up_blocks: number | string;
+  power_down_percent: number;
+  fibre_down_percent: number;
+  equipment_down_percent: number;
+  hrt_down_percent: number;
+  dcn_down_percent: number;
+  planned_maintenance_percent: number;
+  down_percent_exclusive_of_sla: number;
+  no_of_down_blocks: number | string;
+  total_sla_exclusion_percent: number;
+  total_up_percent: number;
+}
+
 export const SEVERITY_CRITICAL = 'Critical';
-export const ALERT_DOWN_MESSAGE = 'Status has entered into critical state with value [Down (  ) ]';
+export const ALERT_DOWN_MESSAGE =
+  'Status has entered into critical state with value [Down (  ) ]';
 
 export enum RFO_CATEGORIZATION {
   POWER_ISSUE = 'Power Issue',
   JIO_LINK_ISSUE = 'Jio Link Issue',
-  SWAN_ISSUE = 'SWAN Issue'
+  SWAN_ISSUE = 'SWAN Issue',
 }
 
 export interface RFOCategorizedTimeInMinutes {
   total_dcn_downtime_minutes: number;
   total_power_downtime_minutes: number;
-
 }
+
+export const borderStyle = {
+  style: 'thin',
+} as ExcelJS.Border;
+
+export const BORDER_STYLE = {
+  top: borderStyle,
+  bottom: borderStyle,
+  left: borderStyle,
+  right: borderStyle,
+} as ExcelJS.Borders;
