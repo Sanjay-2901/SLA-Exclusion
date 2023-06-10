@@ -383,8 +383,11 @@ export class AppComponent {
     let blockSLASummaryPercentHeaders = worksheet.addRow(
       BlockSLASummaryPercentHeaders
     );
-    blockSLASummaryPercentHeaders.border = BORDER_STYLE;
-    blockSLASummaryPercentHeaders.font = { bold: true };
+
+    blockSLASummaryPercentHeaders.eachCell((cell) => {
+      cell.border = BORDER_STYLE;
+      cell.font = {bold:true}
+    })
     blockSLASummaryPercentHeaders.alignment = {
       horizontal: 'center',
       wrapText: true,
@@ -395,16 +398,20 @@ export class AppComponent {
     let blockSLASummaryPercentValues = worksheet.addRow(
       blockSLASummaryPercentArray
     );
-    blockSLASummaryPercentValues.alignment = { horizontal: 'left' };
-    blockSLASummaryPercentValues.border = BORDER_STYLE;
 
-    // worksheet.addRow('');
+    blockSLASummaryPercentValues.eachCell((cell) => {
+      cell.alignment = { horizontal: 'left' };
+      cell.border = BORDER_STYLE
+    })
+   
 
-    // worksheet.mergeCells('A7:B7');
-    // let cellA7 = worksheet.getCell('A7');
-    // cellA7.value = 'Block - SLA Summary (min)';
-    // cellA7.style = TABLE_HEADING;
-    // worksheet.addRow(BlockSLASummaryMinutesHeaders);
+    worksheet.addRow('');
+
+    worksheet.mergeCells('A7:B7');
+    let cellA7 = worksheet.getCell('A7');
+    cellA7.value = 'Block - SLA Summary (min)';
+    cellA7.style = TABLE_HEADING;
+    worksheet.addRow(BlockSLASummaryMinutesHeaders);
 
     worksheet.addRow('');
 
