@@ -16,9 +16,11 @@ import {
   RFOCategorizedTimeInMinutes,
   RFO_CATEGORIZATION,
   SEVERITY_CRITICAL,
+  SEVERITY_WARNING,
   SHEET_HEADING,
   TABLE_HEADING,
 } from './constants/constants';
+import * as lodash from 'lodash';
 
 export type AOA = [][];
 
@@ -50,6 +52,7 @@ export class AppComponent {
           this.readWorksheet(this.worksheet);
         });
         this.manipulateBlockNMSData();
+        this.categorizeRFO('10.128.0.32');
       });
     };
 
@@ -75,7 +78,7 @@ export class AppComponent {
       if (workSheetName === 'Block-SLA-Report') {
         let obj: BlockNMSData = {
           monitor: data[0],
-          ip_address: data[1],
+          ip_address: data[1].trim(),
           departments: data[2],
           type: data[3],
           up_percent: data[4],
@@ -97,7 +100,7 @@ export class AppComponent {
           entity_subtype_name: data[3],
           incident_name: data[4],
           equipment_host: data[5],
-          ip: data[6],
+          ip: data[6].trim(),
           severity: data[7],
           status: data[8],
           priority_of_repair: data[9],
@@ -113,7 +116,7 @@ export class AppComponent {
           gp: data[19],
           slab_reach: data[20],
           resolution_method: data[21],
-          rfo: data[22],
+          rfo: data[22].trim(),
           incident_start_on: moment(data[23]).format(),
           incident_created_on: data[24],
           ageing: data[25],
@@ -138,14 +141,14 @@ export class AppComponent {
         let obj: BlockAlertData = {
           alert: data[0],
           source: data[1],
-          ip_address: data[2],
+          ip_address: data[2].trim(),
           departments: data[3],
           type: data[4],
-          severity: data[5],
-          message: data[6],
+          severity: data[5].trim(),
+          message: data[6].trim(),
           alarm_start_time: moment(data[7]).format(),
-          duration: data[8],
-          alarm_clear_time: data[9],
+          duration: data[8].trim(),
+          alarm_clear_time: moment(data[9]).format(),
           total_duration_in_minutes: this.calculateTimeInMinutes(data[8]),
         };
         result.push(obj);
@@ -201,68 +204,98 @@ export class AppComponent {
     return alertDownTimeInMinutes;
   }
 
-  // TT report
+  // Alert report and TT report
   categorizeRFO(ip: string) {
-    let powerDownArray: BlockTTData[] = [];
-    let dcnDownArray: BlockTTData[] = [];
-    let totalPowerDownMinutes = 0;
-    let totalDCNDownMinutes = 0;
+    let totalPowerDownTimeInMinutes = 0;
+    let totalDCNDownTimeInMinutes = 0;
+
+    let powerDownArray: BlockAlertData[] = [];
+    let DCNDownArray: BlockAlertData[] = [];
+    let criticalAlertAndTTDataTimeMismatch: BlockAlertData[] = [];
+
+    const filteredCriticalAlertData = this.blockAlertData.filter(
+      (alertData: BlockAlertData) => {
+        return (
+          alertData.ip_address.trim() == ip &&
+          alertData.severity.trim() == SEVERITY_CRITICAL &&
+          alertData.message.trim() == ALERT_DOWN_MESSAGE
+        );
+      }
+    );
+
+    const filteredWarningAlertData = this.blockAlertData.filter(
+      (alertData: BlockAlertData) => {
+        return (
+          alertData.ip_address.trim() == ip &&
+          alertData.severity.trim() == SEVERITY_WARNING &&
+          alertData.message.trim().includes('reboot')
+        );
+      }
+    );
 
     const filteredTTData = this.blockTTData.filter((ttData: BlockTTData) => {
       return ttData.ip == ip;
     });
 
-    const filteredAlertData = this.blockAlertData.filter(
-      (alert: BlockAlertData) => {
-        return (
-          alert.ip_address.trim() == ip &&
-          alert.severity.trim() == SEVERITY_CRITICAL &&
-          alert.message.trim() == ALERT_DOWN_MESSAGE
-        );
-      }
-    );
+    filteredCriticalAlertData.forEach((alertCriticalData: BlockAlertData) => {
+      filteredTTData.forEach((ttData: BlockTTData) => {
+        if (
+          moment(alertCriticalData.alarm_start_time).isSame(
+            ttData.incident_start_on,
+            'minute'
+          )
+        ) {
+          if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
+            powerDownArray.push(alertCriticalData);
+          } else if (
+            ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
+            ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+          ) {
+            DCNDownArray.push(alertCriticalData);
+          }
+        }
+      });
 
-    filteredTTData.forEach((ttData: BlockTTData) => {
-      if (ttData.rfo.trim() == RFO_CATEGORIZATION.POWER_ISSUE) {
-        powerDownArray.push(ttData);
-      } else if (
-        ttData.rfo.trim() == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
-        ttData.rfo.trim() == RFO_CATEGORIZATION.SWAN_ISSUE
+      if (
+        !lodash.some(powerDownArray, alertCriticalData) &&
+        !lodash.some(DCNDownArray, alertCriticalData)
       ) {
-        dcnDownArray.push(ttData);
+        criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
       }
     });
 
-    powerDownArray.forEach((powerDownData: BlockTTData) => {
-      filteredAlertData.forEach((alertdata: BlockAlertData) => {
-        if (
-          moment(powerDownData.incident_start_on).isSame(
-            alertdata.alarm_start_time,
-            'minute'
-          )
-        ) {
-          totalPowerDownMinutes += alertdata.total_duration_in_minutes;
+    if (criticalAlertAndTTDataTimeMismatch) {
+      criticalAlertAndTTDataTimeMismatch.forEach(
+        (alertCriticalData: BlockAlertData) => {
+          filteredWarningAlertData.forEach(
+            (alertWarningData: BlockAlertData) => {
+              if (
+                moment(alertCriticalData.alarm_clear_time).isSame(
+                  alertWarningData.alarm_start_time,
+                  'minute'
+                )
+              ) {
+                powerDownArray.push(alertCriticalData);
+              }
+            }
+          );
         }
-      });
+      );
+    }
+
+    powerDownArray.forEach((powerDownAlert: BlockAlertData) => {
+      totalPowerDownTimeInMinutes += powerDownAlert.total_duration_in_minutes;
     });
 
-    dcnDownArray.forEach((dcnDownData: BlockTTData) => {
-      filteredAlertData.forEach((alertdata: BlockAlertData) => {
-        if (
-          moment(dcnDownData.incident_start_on).isSame(
-            alertdata.alarm_start_time,
-            'minute'
-          )
-        ) {
-          totalDCNDownMinutes += alertdata.total_duration_in_minutes;
-        }
-      });
+    DCNDownArray.forEach((dcnDownAlert: BlockAlertData) => {
+      totalDCNDownTimeInMinutes += dcnDownAlert.total_duration_in_minutes;
     });
 
     const rfoCategorizedTimeInMinutes: RFOCategorizedTimeInMinutes = {
-      total_dcn_downtime_minutes: +totalDCNDownMinutes.toFixed(2),
-      total_power_downtime_minutes: +totalPowerDownMinutes.toFixed(2),
+      total_dcn_downtime_minutes: +totalDCNDownTimeInMinutes.toFixed(2),
+      total_power_downtime_minutes: +totalPowerDownTimeInMinutes.toFixed(2),
     };
+
     return rfoCategorizedTimeInMinutes;
   }
 
@@ -348,7 +381,7 @@ export class AppComponent {
       hrt_down_percent: 0.0,
       dcn_down_percent: dcnDownPercent / 79,
       planned_maintenance_percent: 0.0,
-      down_percent_exclusive_of_sla: 100 - (upPercent / 79),
+      down_percent_exclusive_of_sla: 100 - upPercent / 79,
       no_of_down_blocks: '',
       total_sla_exclusion_percent: dcnAndPowerDownPercent / 79,
       total_up_percent: 0,
@@ -386,8 +419,8 @@ export class AppComponent {
 
     blockSLASummaryPercentHeaders.eachCell((cell) => {
       cell.border = BORDER_STYLE;
-      cell.font = {bold:true}
-    })
+      cell.font = { bold: true };
+    });
     blockSLASummaryPercentHeaders.alignment = {
       horizontal: 'center',
       wrapText: true,
@@ -401,9 +434,8 @@ export class AppComponent {
 
     blockSLASummaryPercentValues.eachCell((cell) => {
       cell.alignment = { horizontal: 'left' };
-      cell.border = BORDER_STYLE
-    })
-   
+      cell.border = BORDER_STYLE;
+    });
 
     worksheet.addRow('');
 
@@ -520,4 +552,3 @@ export class AppComponent {
     link.click();
   }
 }
-

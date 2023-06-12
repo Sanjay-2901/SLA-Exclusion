@@ -173,7 +173,7 @@ export interface BlockTTData {
 }
 
 export interface BlockAlertData {
-  alarm_clear_time: Date;
+  alarm_clear_time: string;
   alarm_start_time: string;
   alert: string;
   departments: string;
@@ -205,6 +205,7 @@ export interface BlockSLASummaryPercent {
 }
 
 export const SEVERITY_CRITICAL = 'Critical';
+export const SEVERITY_WARNING = 'Warning';
 export const ALERT_DOWN_MESSAGE =
   'Status has entered into critical state with value [Down (  ) ]';
 
