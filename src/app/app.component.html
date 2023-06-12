@@ -1,16 +1,11 @@
-<h1>Upload Excel Workbook</h1>
-<input
-  type="file"
-  (change)="onFileChange($event)"
-  multiple="false"
-  accept=".xlsx, .xls"
-  style="margin-bottom: 30px"
-/><br />
-<!-- <tr *ngFor="let row of data">
-  <td *ngFor="let val of row">
-    <input type="text" [value]="val" />
-  </td>
-</tr> -->
-<table class="sjs-table">
-  <tbody></tbody>
-</table>
+<div class="container">
+  <h1 class="text-success text-center">SLA Exclusion Report Automation</h1>
+  <div class="row">
+    <div class="col-6">
+      <app-block-component></app-block-component>
+    </div>
+    <div class="col-6">
+      <app-shq-component></app-shq-component>
+    </div>
+  </div>
+</div>
