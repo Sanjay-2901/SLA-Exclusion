@@ -279,6 +279,10 @@ export class AppComponent {
               }
             }
           );
+
+          if (!lodash.some(powerDownArray, alertCriticalData)) {
+            DCNDownArray.push(alertCriticalData);
+          }
         }
       );
     }
