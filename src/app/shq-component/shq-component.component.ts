@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import * as ExcelJS from 'exceljs';
-import { AOA } from '../block-component/block-component.component';
 import {
   ManipulatedShqNmsData,
   ShqAlertData,
@@ -10,6 +9,7 @@ import {
 } from './shq-component.model';
 import * as moment from 'moment';
 import { ShqService } from './shq-service.service';
+import { AOA } from '../block-component/block-component.model';
 
 @Component({
   selector: 'app-shq-component',
@@ -221,7 +221,11 @@ export class ShqComponentComponent implements OnInit {
   generateFinalBlockReport() {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('SHQ-Final-Report');
-    this.ShqService.FrameShqFinalSlaReportWorkbook(worksheet);
+    this.ShqService.FrameShqFinalSlaReportWorkbook(
+      worksheet,
+      this.shqSlaSummary,
+      this.manipulatedNMSData
+    );
     workbook.xlsx.writeBuffer().then((buffer) => {
       this.ShqService.downloadFinalReport(buffer, 'Sample SHQ Final Report');
     });

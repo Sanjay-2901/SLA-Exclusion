@@ -11,7 +11,7 @@ export interface BlockNMSData {
   total_up_time: string;
   type: string;
   up_percent: number;
-  up_time: string;
+  up_time: number;
   total_uptime_in_minutes?: number;
   total_downtime_in_minutes?: number;
 }
@@ -102,10 +102,25 @@ export interface BlockSLASummaryPercent {
   down_percent_exclusive_of_sla: number;
   no_of_down_blocks: number | string;
   total_sla_exclusion_percent: number;
+  total_sla_exclusion_minutes: number;
   total_up_percent: number;
+  up_minutes: number;
+  power_down_minutes: number;
+  dcn_down_minutes: number;
+  fibre_down_minutes: number;
+  equipment_down_minutes: number;
+  hrt_down_minutes: number;
+  planned_maintenance_minutes: number;
+  total_up_minutes: number;
+  total_down_percent: number;
+  total_down_minutes: number;
+  total_up_percent_exclusion: number;
+  total_up_minutes_exclusion: number;
 }
 
 export interface RFOCategorizedTimeInMinutes {
   total_dcn_downtime_minutes: number;
   total_power_downtime_minutes: number;
 }
+
+export type AOA = [][];
