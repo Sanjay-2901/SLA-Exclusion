@@ -502,7 +502,6 @@ export class BlockComponentComponent {
       cell.style = TABLE_HEADERS;
     });
 
-
     worksheet.mergeCells('A5:A6');
     worksheet.mergeCells('B5:B6');
     worksheet.mergeCells('C5:G6');
@@ -787,22 +786,22 @@ export class BlockComponentComponent {
       let noOfGPinBlock: number = blockDeviceDetail.no_of_gp_in_block;
       let upPercent: number = row.up_percent;
       let upMinute: number = row.total_uptime_in_minutes;
-      let downPercent: string = upPercent == 100 ? '0' : row.down_percent;
+      let downPercent: number = upPercent == 100 ? 0 : row.down_percent;
       let downMinute: number = row.total_downtime_in_minutes;
-      let powerDownPercent: string =
-        upPercent == 100 ? '0' : row.power_downtime_in_percent;
+      let powerDownPercent: number =
+        upPercent == 100 ? 0 : row.power_downtime_in_percent;
       let powerDownMinutes = row.power_downtime_in_minutes;
-      let fiberDownPercent: string = upPercent == 100 ? '0' : '0';
-      let fiberDownMinutes: string = upPercent == 100 ? '0' : '0';
-      let equipmentDownPercent: string = upPercent == 100 ? '0' : '0';
-      let equipmentDownMinutes: string = upPercent == 100 ? '0' : '0';
-      let hrtDownPercent: string = upPercent == 100 ? '0' : '0';
-      let hrtDownMinutes: string = upPercent == 100 ? '0' : '0';
-      let dcnDownPercent: string =
-        upPercent == 100 ? '0' : row.dcn_downtime_in_percent;
-      let dcnDownMinutes = row.dcn_downtime_in_minutes;
-      let plannedMaintanancePercent: string = upPercent == 100 ? '0' : '0';
-      let plannedMaintananceMinutes: string = upPercent == 100 ? '0' : '0';
+      let fiberDownPercent: number = upPercent == 100 ? 0 : 0;
+      let fiberDownMinutes: number = upPercent == 100 ? 0 : 0;
+      let equipmentDownPercent: number = upPercent == 100 ? 0 : 0;
+      let equipmentDownMinutes: number = upPercent == 100 ? 0 : 0;
+      let hrtDownPercent: number = upPercent == 100 ? 0 : 0;
+      let hrtDownMinutes: number = upPercent == 100 ? 0 : 0;
+      let dcnDownPercent: number =
+        upPercent == 100 ? 0 : row.dcn_downtime_in_percent;
+      let dcnDownMinutes: number = row.dcn_downtime_in_minutes;
+      let plannedMaintanancePercent: number = upPercent == 100 ? 0 : 0;
+      let plannedMaintananceMinutes: number = upPercent == 100 ? 0 : 0;
       let totalExclusionPercent: number =
         upPercent == 100
           ? 0
@@ -830,28 +829,28 @@ export class BlockComponentComponent {
         blockName,
         blockLGDCode,
         noOfGPinBlock,
-        upPercent,
-        upMinute,
-        downPercent,
-        downMinute,
-        powerDownPercent,
-        powerDownMinutes,
-        fiberDownPercent,
-        fiberDownMinutes,
-        equipmentDownPercent,
-        equipmentDownMinutes,
-        hrtDownPercent,
-        hrtDownMinutes,
-        dcnDownPercent,
-        dcnDownMinutes,
-        plannedMaintanancePercent,
-        plannedMaintananceMinutes,
-        totalExclusionPercent,
-        totalExclusionMinutes,
-        pollingTimePercent,
-        pollingTimeMinutes,
-        totalUpPercentSLAExclusion,
-        totalUpMinutesSLAExclusion,
+        upPercent.toFixed(2),
+        upMinute.toFixed(2),
+        downPercent.toFixed(2),
+        downMinute.toFixed(2),
+        powerDownPercent.toFixed(2),
+        powerDownMinutes.toFixed(2),
+        fiberDownPercent.toFixed(2),
+        fiberDownMinutes.toFixed(2),
+        equipmentDownPercent.toFixed(2),
+        equipmentDownMinutes.toFixed(2),
+        hrtDownPercent.toFixed(2),
+        hrtDownMinutes.toFixed(2),
+        dcnDownPercent.toFixed(2),
+        dcnDownMinutes.toFixed(2),
+        plannedMaintanancePercent.toFixed(2),
+        plannedMaintananceMinutes.toFixed(2),
+        totalExclusionPercent.toFixed(2),
+        totalExclusionMinutes.toFixed(2),
+        pollingTimePercent.toFixed(2),
+        pollingTimeMinutes.toFixed(2),
+        totalUpPercentSLAExclusion.toFixed(2),
+        totalUpMinutesSLAExclusion.toFixed(2),
       ]);
 
       blockSummaryPercentRowValues.eachCell((cell) => {
