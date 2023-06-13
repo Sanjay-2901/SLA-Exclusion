@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import * as ExcelJS from 'exceljs';
-import { AOA } from '../block-component/block-component.component';
 import {
   ManipulatedShqNmsData,
   ShqAlertData,
@@ -9,6 +8,7 @@ import {
 } from './shq-component.model';
 import * as moment from 'moment';
 import { ShqService } from './shq-service.service';
+import { AOA } from '../block-component/block-component.model';
 
 @Component({
   selector: 'app-shq-component',
