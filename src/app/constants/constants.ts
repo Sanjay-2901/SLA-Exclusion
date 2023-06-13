@@ -97,6 +97,90 @@ export const BLOCK_SLA_FINAL_REPORT_COLUMNS = [
   { width: 40 },
 ];
 
+export const SHQ_SLQ_FINAL_REPORT_COLUMNS = [
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
+];
+
 export const SEVERITY_CRITICAL = 'Critical';
 export const SEVERITY_WARNING = 'Warning';
 export const ALERT_DOWN_MESSAGE =
@@ -118,3 +202,22 @@ export const BORDER_STYLE = {
   left: borderStyle,
   right: borderStyle,
 } as ExcelJS.Borders;
+
+export const VMWAREDEVICE = 'VMware ESX/ESXi';
+
+export const SHQ_SUMMARY_HEADERS = [
+  'Report Type',
+  'TAG',
+  'Time Span',
+  'No of SHQ Device',
+  'UP',
+  'Total Down ( Exclusive of SLA Exclusion)',
+  'Power Down',
+  'Fibre Down',
+  'Equipment Down',
+  'HRT Down',
+  'DCN Down',
+  'Planned Maintenance',
+  'Total SLA Exclusion',
+  'Total UP ( UP + Total Exclusion)',
+];

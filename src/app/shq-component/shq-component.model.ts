@@ -7,7 +7,6 @@ export interface ShqNMSData {
   down_percent: number;
   down_time: string;
   created_date: Date;
-
   ip_address: string;
   total_uptime_in_minutes?: number;
   total_downtime_in_minutes?: number;
@@ -87,4 +86,31 @@ export interface ShqTTData {
   exclusion_type: string;
   pendency: string;
   vendor_name: string;
+}
+
+export interface ShqSlaSummary {
+  report_type: string;
+  tag: string;
+  time_span: string;
+  no_of_shq_devices: number;
+  up_percent: number;
+  up_minutes: number;
+  total_down_exclusive_of_sla_exclusion_percent: number;
+  total_down_exclusive_of_sla_exclusion_minute: number;
+  power_down_percent: number;
+  power_dowm_minute: number;
+  fibre_down_percent: number;
+  fiber_down_minute: number;
+  equipment_down_percent: number;
+  equipment_down_minute: number;
+  hrt_down_percent: number;
+  hrt_down_minute: number;
+  dcn_down_percent: number;
+  dcn_down_minute: number;
+  planned_maintenance_percent: number;
+  planned_maintenance_minute: number;
+  total_sla_exclusion_percent: number;
+  total_sla_exclusion_minute: number;
+  total_up_percent: number;
+  total_up_minute: number;
 }

@@ -5,6 +5,7 @@ import {
   ManipulatedShqNmsData,
   ShqAlertData,
   ShqNMSData,
+  ShqSlaSummary,
   ShqTTData,
 } from './shq-component.model';
 import * as moment from 'moment';
@@ -16,11 +17,12 @@ import { ShqService } from './shq-service.service';
   styleUrls: ['./shq-component.component.scss'],
 })
 export class ShqComponentComponent implements OnInit {
-  shqNMSData: any = [];
-  shqTTData: any = [];
-  shqAlertData: any = [];
-  manipulatedNMSData: any = [];
+  shqNMSData: ShqNMSData[] = [];
+  shqTTData: ShqTTData[] = [];
+  shqAlertData: ShqAlertData[] = [];
+  manipulatedNMSData: ManipulatedShqNmsData[] = [];
   worksheet!: ExcelJS.Worksheet;
+  shqSlaSummary!: ShqSlaSummary;
 
   constructor(private ShqService: ShqService) {}
 
@@ -36,7 +38,6 @@ export class ShqComponentComponent implements OnInit {
 
       workbook.xlsx.load(buffer).then(() => {
         workbook.worksheets.forEach((_, index) => {
-          console.log('worksheet', index);
           this.worksheet = workbook.getWorksheet(index + 1);
           this.readWorksheet(this.worksheet);
         });
@@ -144,7 +145,7 @@ export class ShqComponentComponent implements OnInit {
     });
 
     if (workSheetName === 'SHQ-SLA-Report') {
-      this.shqNMSData = result;
+      this.shqNMSData = this.ShqService.shqNMSDatawithoutVmwareDevices(result);
     } else if (workSheetName === 'SHQ-Alert Report') {
       this.shqAlertData = result;
     } else if (workSheetName === 'SHQ-NOC TT Report') {
@@ -211,6 +212,18 @@ export class ShqComponentComponent implements OnInit {
     });
 
     this.manipulatedNMSData = manipulatedShqNmsData;
-    console.log('manipulatedNMSData', this.manipulatedNMSData);
+    this.shqSlaSummary = this.ShqService.calculateShqSlaSummary(
+      this.manipulatedNMSData
+    );
+    this.generateFinalBlockReport();
+  }
+
+  generateFinalBlockReport() {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('SHQ-Final-Report');
+    this.ShqService.FrameShqFinalSlaReportWorkbook(worksheet);
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      this.ShqService.downloadFinalReport(buffer, 'Sample SHQ Final Report');
+    });
   }
 }
