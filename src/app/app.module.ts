@@ -7,19 +7,10 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { BlockComponentComponent } from './block-component/block-component.component';
 import { ShqComponentComponent } from './shq-component/shq-component.component';
 
-
 @NgModule({
-  declarations: [
-    AppComponent,
-    BlockComponentComponent,
-    ShqComponentComponent
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    NgSelectModule
-  ],
+  declarations: [AppComponent, BlockComponentComponent, ShqComponentComponent],
+  imports: [BrowserModule, AppRoutingModule, NgSelectModule],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}
