@@ -3,6 +3,7 @@ import * as ExcelJS from 'exceljs';
 import * as moment from 'moment';
 import * as lodash from 'lodash';
 import {
+  AOA,
   BlockAlertData,
   BlockNMSData,
   BlockSLASummaryPercent,
@@ -28,8 +29,6 @@ import {
   BLOCK_DEVICE_DETAILS,
   BlockDeviceDetail,
 } from '../constants/constants';
-
-export type AOA = [][];
 
 @Component({
   selector: 'app-block-component',
@@ -503,7 +502,6 @@ export class BlockComponentComponent {
       cell.style = TABLE_HEADERS;
     });
 
-    //
 
     worksheet.mergeCells('A5:A6');
     worksheet.mergeCells('B5:B6');

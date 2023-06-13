@@ -122,3 +122,6 @@ export interface RFOCategorizedTimeInMinutes {
   total_dcn_downtime_minutes: number;
   total_power_downtime_minutes: number;
 }
+
+export type AOA = [][];
+
