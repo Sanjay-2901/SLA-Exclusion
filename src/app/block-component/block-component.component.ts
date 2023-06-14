@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import * as moment from 'moment';
 import * as lodash from 'lodash';
@@ -28,7 +28,12 @@ import {
   VALUES,
   BLOCK_DEVICE_DETAILS,
   BlockDeviceDetail,
+  BLOCK_SLA_REPORT_HEADERS,
+  TT_REPORT_HEADERS,
+  BLOCK_ALERT_REPORT_HEADERS,
+  BLOCK_INPUT_FILE_NAMES,
 } from '../constants/constants';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-block-component',
@@ -42,10 +47,15 @@ export class BlockComponentComponent {
   manipulatedNMSData: any = [];
   blockSLASummaryPercent!: BlockSLASummaryPercent;
   worksheet!: ExcelJS.Worksheet;
+  file!: any;
+  isSheetNamesValid: boolean = true;
+  @ViewChild('blockInput') blockInput: any;
+
+  constructor(private toastrService: ToastrService) {}
 
   // Getting the input file (excel workbook containing the required sheets)
   onFileChange(event: any): void {
-    const file = event.target.files[0];
+    this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
     const reader = new FileReader();
 
@@ -55,28 +65,77 @@ export class BlockComponentComponent {
       workbook.xlsx.load(buffer).then(() => {
         workbook.worksheets.forEach((_, index) => {
           this.worksheet = workbook.getWorksheet(index + 1);
-          this.readWorksheet(this.worksheet);
+          this.validateWorksheets(this.worksheet);
         });
-        this.manipulateBlockNMSData();
+        if (
+          this.blockNMSData.length > 0 &&
+          this.blockTTData.length > 0 &&
+          this.blockAlertData.length > 0
+        ) {
+          this.manipulateBlockNMSData();
+        }
       });
     };
 
-    reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(this.file);
+  }
+
+  resetInputFile(): void {
+    this.file = null;
+    const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+    fileInput.value = '';
+    this.blockAlertData = [];
+    this.blockNMSData = [];
+    this.blockTTData = [];
+  }
+
+  validateWorksheets(worksheet: ExcelJS.Worksheet) {
+    let workSheetName = worksheet.name;
+    if (!BLOCK_INPUT_FILE_NAMES.includes(workSheetName)) {
+      this.toastrService.error(
+        'Sheet name is incorrect. Please provide valid sheet names'
+      );
+      this.resetInputFile();
+    } else {
+      let data: AOA = [];
+      this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
+        const rowData: any = [];
+        row.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell) => {
+          rowData.push(cell.value);
+        });
+        data.push(rowData);
+      });
+
+      const headers = JSON.stringify(data[0]);
+
+      if (workSheetName === 'Block-SLA-Report') {
+        if (headers !== JSON.stringify(BLOCK_SLA_REPORT_HEADERS)) {
+          this.toastrService.error('Block SLA report format is incorrect');
+          this.resetInputFile();
+        } else {
+          this.readWorksheet(worksheet, data);
+        }
+      } else if (workSheetName === 'Block-NOC TT Report') {
+        if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
+          this.toastrService.error('TT report format is incorrect');
+          this.resetInputFile();
+        } else {
+          this.readWorksheet(worksheet, data);
+        }
+      } else if (workSheetName === 'Block-Alert Report') {
+        if (headers !== JSON.stringify(BLOCK_ALERT_REPORT_HEADERS)) {
+          this.toastrService.error('Block alert report format is incorrect');
+          this.resetInputFile();
+        } else {
+          this.readWorksheet(worksheet, data);
+        }
+      }
+    }
   }
 
   // Reading the worksheets individually and storing the data as Array of Objects
-  readWorksheet(worksheet: ExcelJS.Worksheet): void {
+  readWorksheet(worksheet: ExcelJS.Worksheet, data: any): void {
     let workSheetName = worksheet.name;
-    let data: AOA = [];
-    this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
-      const rowData: any = [];
-      row.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell) => {
-        rowData.push(cell.value);
-      });
-      data.push(rowData);
-    });
-
-    const headers = data[0];
     let result: any = [];
     data.shift();
     data.forEach((data: any, index: number) => {
@@ -135,11 +194,17 @@ export class BlockComponentComponent {
           resolved_date_time: data[33],
           resolved_by: data[34],
           total_resolution_time: data[35],
-          resolution_type_in_min: data[36],
+          resolution_time_in_min: data[36],
           sla_ageing: data[37],
           reporting_sla: data[38],
           reopen_date: data[39],
           category: data[40],
+          change_id: data[41],
+          exclusion_name: data[42],
+          exclusion_remark: data[43],
+          exclusion_type: data[44],
+          pendency: data[45],
+          vendor_name: data[46],
         };
         result.push(obj);
       } else if (workSheetName === 'Block-Alert Report') {
@@ -873,5 +938,6 @@ export class BlockComponentComponent {
     link.href = window.URL.createObjectURL(data);
     link.download = fileName + '.xlsx';
     link.click();
+    this.resetInputFile();
   }
 }

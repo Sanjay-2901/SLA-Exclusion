@@ -63,7 +63,7 @@ export interface BlockTTData {
   reopen_date: string;
   reporting_sla: string;
   resolution_method: string;
-  resolution_type_in_min: string;
+  resolution_time_in_min: string;
   resolved_by: string;
   resolved_date_time: Date;
   slab_reach: string;
@@ -71,6 +71,12 @@ export interface BlockTTData {
   severity: string;
   status: string;
   total_resolution_time: string;
+  change_id: string;
+  exclusion_name: string;
+  exclusion_remark: string;
+  exclusion_type: string;
+  pendency: string;
+  vendor_name: string;
 }
 
 export interface BlockAlertData {
