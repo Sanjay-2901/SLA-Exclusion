@@ -38,7 +38,7 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-block-component',
   templateUrl: './block-component.component.html',
-  styleUrls: ['./block-component.component.scss'],
+  styleUrls: ['./block-component.component.scss', '../../styles.scss'],
 })
 export class BlockComponentComponent {
   blockNMSData: any = [];
@@ -49,11 +49,13 @@ export class BlockComponentComponent {
   worksheet!: ExcelJS.Worksheet;
   file!: any;
   isSheetNamesValid: boolean = true;
+  isLoading: boolean = false;
 
   constructor(private toastrService: ToastrService) {}
 
   // Getting the input file (excel workbook containing the required sheets)
   onFileChange(event: any): void {
+    this.isLoading = true;
     this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
     const reader = new FileReader();
@@ -84,7 +86,9 @@ export class BlockComponentComponent {
     const fileInput = document.getElementById(
       'blockFileInput'
     ) as HTMLInputElement;
-    fileInput.value = '';
+    if (fileInput) {
+      fileInput.value = '';
+    }
     this.blockAlertData = [];
     this.blockNMSData = [];
     this.blockTTData = [];
@@ -96,6 +100,7 @@ export class BlockComponentComponent {
       this.toastrService.error(
         'Block - Invalid sheet name of the input file. Kindly provide the valid sheet names.'
       );
+      this.isLoading = false;
       this.resetInputFile();
     } else {
       let data: AOA = [];
@@ -114,6 +119,7 @@ export class BlockComponentComponent {
           this.toastrService.error(
             'Block - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
+          this.isLoading = false;
           this.resetInputFile();
         } else {
           this.readWorksheet(worksheet, data);
@@ -123,6 +129,7 @@ export class BlockComponentComponent {
           this.toastrService.error(
             'Block - Invalid template of the  TT report.  Kindly provide the valid column names.'
           );
+          this.isLoading = false;
           this.resetInputFile();
         } else {
           this.readWorksheet(worksheet, data);
@@ -132,6 +139,7 @@ export class BlockComponentComponent {
           this.toastrService.error(
             'Block - Invalid template of the  Alert report.  Kindly provide the valid column names.'
           );
+          this.isLoading = false;
           this.resetInputFile();
         } else {
           this.readWorksheet(worksheet, data);
@@ -974,6 +982,7 @@ export class BlockComponentComponent {
     link.download =
       fileName + ' ' + moment().format('DD/MM/YYYY, hh:mm') + '.xlsx';
     link.click();
+    this.isLoading = false;
     this.resetInputFile();
   }
 }
