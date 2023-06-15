@@ -10,6 +10,13 @@ import {
 import * as moment from 'moment';
 import { ShqService } from './shq-service.service';
 import { AOA } from '../block-component/block-component.model';
+import {
+  SHQ_ALERT_REPORT_HEADERS,
+  SHQ_INPUT_FILE_NAMES,
+  SHQ_SLA_REPORT_HEADERS,
+  TT_REPORT_HEADERS,
+} from '../constants/constants';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-shq-component',
@@ -22,14 +29,18 @@ export class ShqComponentComponent implements OnInit {
   shqAlertData: ShqAlertData[] = [];
   manipulatedNMSData: ManipulatedShqNmsData[] = [];
   worksheet!: ExcelJS.Worksheet;
+  file!: any;
   shqSlaSummary!: ShqSlaSummary;
 
-  constructor(private ShqService: ShqService) {}
+  constructor(
+    private ShqService: ShqService,
+    private toastrService: ToastrService
+  ) {}
 
   ngOnInit(): void {}
 
   onFileChange(event: any) {
-    const file = event.target.files[0];
+    this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
     const reader = new FileReader();
 
@@ -39,29 +50,87 @@ export class ShqComponentComponent implements OnInit {
       workbook.xlsx.load(buffer).then(() => {
         workbook.worksheets.forEach((_, index) => {
           this.worksheet = workbook.getWorksheet(index + 1);
-          this.readWorksheet(this.worksheet);
+          this.validateWorksheets(this.worksheet);
         });
-        this.manipulateShqNmsData();
+        if (
+          this.shqNMSData.length > 0 &&
+          this.shqAlertData.length > 0 &&
+          this.shqTTData.length > 0
+        ) {
+          this.manipulateShqNmsData();
+        }
       });
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(this.file);
   }
 
-  readWorksheet(worksheet: ExcelJS.Worksheet): void {
-    let workSheetName = worksheet.name;
-    let data: AOA = [];
-    this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
-      const rowData: any = [];
-      row.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell) => {
-        rowData.push(cell.value);
-      });
-      data.push(rowData);
-    });
+  resetInputFile(): void {
+    this.file = null;
+    const fileInput = document.getElementById(
+      'shqFileInput'
+    ) as HTMLInputElement;
+    fileInput.value = '';
+    this.shqAlertData = [];
+    this.shqNMSData = [];
+    this.shqTTData = [];
+  }
 
+  validateWorksheets(worksheet: ExcelJS.Worksheet) {
+    let workSheetName = worksheet.name;
+    if (!SHQ_INPUT_FILE_NAMES.includes(workSheetName)) {
+      this.toastrService.error(
+        'SHQ - Invalid sheet name of the input file. Kindly provide the valid sheet names.'
+      );
+      this.resetInputFile();
+    } else {
+      let data: AOA = [];
+      this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
+        const rowData: any = [];
+        row.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell) => {
+          rowData.push(cell.value);
+        });
+        data.push(rowData);
+      });
+
+      const headers = JSON.stringify(data[0]);
+
+      if (workSheetName === 'shq_sla_report') {
+        if (headers !== JSON.stringify(SHQ_SLA_REPORT_HEADERS)) {
+          this.toastrService.error(
+            'SHQ - Invalid template of the SLA report. Kindly provide the valid column names.'
+          );
+          this.resetInputFile();
+        } else {
+          this.readWorksheet(worksheet, data);
+        }
+      } else if (workSheetName === 'shq_noc_tt_report') {
+        if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
+          this.toastrService.error(
+            'SHQ - Invalid template of the  TT report.  Kindly provide the valid column names.'
+          );
+          this.resetInputFile();
+        } else {
+          this.readWorksheet(worksheet, data);
+        }
+      } else if (workSheetName === 'shq_alert_report') {
+        if (headers !== JSON.stringify(SHQ_ALERT_REPORT_HEADERS)) {
+          this.toastrService.error(
+            'SHQ - Invalid template of the  Alert report.  Kindly provide the valid column names.'
+          );
+          this.resetInputFile();
+        } else {
+          this.readWorksheet(worksheet, data);
+        }
+      }
+    }
+  }
+
+  readWorksheet(worksheet: ExcelJS.Worksheet, data: any): void {
+    let workSheetName = worksheet.name;
     let result: any = [];
     data.shift();
     data.forEach((data: any, index: number) => {
-      if (workSheetName === 'SHQ-SLA-Report') {
+      if (workSheetName === 'shq_sla_report') {
         let obj: ShqNMSData = {
           monitor: data[0].trim(),
           departments: data[1],
@@ -74,7 +143,7 @@ export class ShqComponentComponent implements OnInit {
           created_date: data[7],
         };
         result.push(obj);
-      } else if (workSheetName === 'SHQ-Alert Report') {
+      } else if (workSheetName === 'shq_alert_report') {
         let obj: ShqAlertData = {
           alert: data[0],
           source: data[1].trim(),
@@ -90,7 +159,7 @@ export class ShqComponentComponent implements OnInit {
           ),
         };
         result.push(obj);
-      } else if (workSheetName === 'SHQ-NOC TT Report') {
+      } else if (workSheetName === 'shq_noc_tt_report') {
         let obj: ShqTTData = {
           incident_id: data[0],
           parent_incident_id: data[1],
@@ -144,11 +213,11 @@ export class ShqComponentComponent implements OnInit {
       }
     });
 
-    if (workSheetName === 'SHQ-SLA-Report') {
+    if (workSheetName === 'shq_sla_report') {
       this.shqNMSData = this.ShqService.shqNMSDatawithoutVmwareDevices(result);
-    } else if (workSheetName === 'SHQ-Alert Report') {
+    } else if (workSheetName === 'shq_alert_report') {
       this.shqAlertData = result;
-    } else if (workSheetName === 'SHQ-NOC TT Report') {
+    } else if (workSheetName === 'shq_noc_tt_report') {
       this.shqTTData = result;
     }
   }
@@ -220,14 +289,15 @@ export class ShqComponentComponent implements OnInit {
 
   generateFinalBlockReport() {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('SHQ-Final-Report');
+    const worksheet = workbook.addWorksheet('SHQ-SLA-Exclusion-Report');
     this.ShqService.FrameShqFinalSlaReportWorkbook(
       worksheet,
       this.shqSlaSummary,
       this.manipulatedNMSData
     );
     workbook.xlsx.writeBuffer().then((buffer) => {
-      this.ShqService.downloadFinalReport(buffer, 'Sample SHQ Final Report');
+      this.ShqService.downloadFinalReport(buffer, 'SHQ-SLA-Exclusion-Report');
+      this.resetInputFile();
     });
   }
 }

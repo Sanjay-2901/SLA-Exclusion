@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import * as moment from 'moment';
 import * as lodash from 'lodash';
@@ -49,7 +49,6 @@ export class BlockComponentComponent {
   worksheet!: ExcelJS.Worksheet;
   file!: any;
   isSheetNamesValid: boolean = true;
-  @ViewChild('blockInput') blockInput: any;
 
   constructor(private toastrService: ToastrService) {}
 
@@ -82,7 +81,9 @@ export class BlockComponentComponent {
 
   resetInputFile(): void {
     this.file = null;
-    const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+    const fileInput = document.getElementById(
+      'blockFileInput'
+    ) as HTMLInputElement;
     fileInput.value = '';
     this.blockAlertData = [];
     this.blockNMSData = [];
@@ -93,7 +94,7 @@ export class BlockComponentComponent {
     let workSheetName = worksheet.name;
     if (!BLOCK_INPUT_FILE_NAMES.includes(workSheetName)) {
       this.toastrService.error(
-        'Sheet name is incorrect. Please provide valid sheet names'
+        'Block - Invalid sheet name of the input file. Kindly provide the valid sheet names.'
       );
       this.resetInputFile();
     } else {
@@ -108,23 +109,29 @@ export class BlockComponentComponent {
 
       const headers = JSON.stringify(data[0]);
 
-      if (workSheetName === 'Block-SLA-Report') {
+      if (workSheetName === 'block_sla_report') {
         if (headers !== JSON.stringify(BLOCK_SLA_REPORT_HEADERS)) {
-          this.toastrService.error('Block SLA report format is incorrect');
+          this.toastrService.error(
+            'Block - Invalid template of the SLA report. Kindly provide the valid column names.'
+          );
           this.resetInputFile();
         } else {
           this.readWorksheet(worksheet, data);
         }
-      } else if (workSheetName === 'Block-NOC TT Report') {
+      } else if (workSheetName === 'block_noc_tt_report') {
         if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
-          this.toastrService.error('TT report format is incorrect');
+          this.toastrService.error(
+            'Block - Invalid template of the  TT report.  Kindly provide the valid column names.'
+          );
           this.resetInputFile();
         } else {
           this.readWorksheet(worksheet, data);
         }
-      } else if (workSheetName === 'Block-Alert Report') {
+      } else if (workSheetName === 'block_alert_report') {
         if (headers !== JSON.stringify(BLOCK_ALERT_REPORT_HEADERS)) {
-          this.toastrService.error('Block alert report format is incorrect');
+          this.toastrService.error(
+            'Block - Invalid template of the  Alert report.  Kindly provide the valid column names.'
+          );
           this.resetInputFile();
         } else {
           this.readWorksheet(worksheet, data);
@@ -139,7 +146,7 @@ export class BlockComponentComponent {
     let result: any = [];
     data.shift();
     data.forEach((data: any, index: number) => {
-      if (workSheetName === 'Block-SLA-Report') {
+      if (workSheetName === 'block_sla_report') {
         let obj: BlockNMSData = {
           monitor: data[0],
           ip_address: data[1].trim(),
@@ -156,7 +163,7 @@ export class BlockComponentComponent {
           created_date: data[12],
         };
         result.push(obj);
-      } else if (workSheetName === 'Block-NOC TT Report') {
+      } else if (workSheetName === 'block_noc_tt_report') {
         let obj: BlockTTData = {
           incident_id: data[0],
           parent_incident_id: data[1],
@@ -207,7 +214,7 @@ export class BlockComponentComponent {
           vendor_name: data[46],
         };
         result.push(obj);
-      } else if (workSheetName === 'Block-Alert Report') {
+      } else if (workSheetName === 'block_alert_report') {
         let obj: BlockAlertData = {
           alert: data[0],
           source: data[1],
@@ -225,15 +232,12 @@ export class BlockComponentComponent {
       }
     });
 
-    if (workSheetName === 'Block-SLA-Report') {
+    if (workSheetName === 'block_sla_report') {
       this.blockNMSData = result;
-      // console.log('Block NMS Report', this.blockNMSData);
-    } else if (workSheetName === 'Block-NOC TT Report') {
+    } else if (workSheetName === 'block_noc_tt_report') {
       this.blockTTData = result;
-      // console.log('Block TT Report', this.blockTTData);
-    } else if (workSheetName === 'Block-Alert Report') {
+    } else if (workSheetName === 'block_alert_report') {
       this.blockAlertData = result;
-      // console.log('Block Alert Report', this.blockAlertData);
     }
   }
 
@@ -510,7 +514,7 @@ export class BlockComponentComponent {
   // Generating the final report as excel-workbook using the calculated data.
   generateFinalBlockReport(): void {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Block-Final-Report');
+    const worksheet = workbook.addWorksheet('Block-SLA-Exclusion-Report');
     worksheet.columns = BLOCK_SLA_FINAL_REPORT_COLUMNS;
     // worksheet.views = [{ state: 'frozen', xSplit: 10, ySplit: 0 }];
 
@@ -925,7 +929,7 @@ export class BlockComponentComponent {
     });
 
     workbook.xlsx.writeBuffer().then((buffer) => {
-      this.downloadFinalReport(buffer, 'sample');
+      this.downloadFinalReport(buffer, 'Block-SLA-Exclusion-Report');
     });
   }
 
@@ -936,7 +940,8 @@ export class BlockComponentComponent {
     });
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(data);
-    link.download = fileName + '.xlsx';
+    link.download =
+      fileName + ' ' + moment().format('DD/MM/YYYY, hh:mm') + '.xlsx';
     link.click();
     this.resetInputFile();
   }

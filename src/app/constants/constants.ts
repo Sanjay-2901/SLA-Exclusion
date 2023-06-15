@@ -100,6 +100,17 @@ export const BLOCK_SLA_REPORT_HEADERS = [
   'Created Date',
 ];
 
+export const SHQ_SLA_REPORT_HEADERS = [
+  'Monitor',
+  'Departments',
+  'Type',
+  'Up (%)',
+  'Up Time',
+  'Down (%)',
+  'Down Time',
+  'Created Date',
+];
+
 export const TT_REPORT_HEADERS = [
   'IncidentID',
   'ParentIncidentID',
@@ -163,10 +174,27 @@ export const BLOCK_ALERT_REPORT_HEADERS = [
   'Alarm Clear Time',
 ];
 
+export const SHQ_ALERT_REPORT_HEADERS = [
+  'Alert',
+  'Source',
+  'Type',
+  'Severity',
+  'Message',
+  'Last Poll Time',
+  'Duration',
+  'Duration Time',
+];
+
 export const BLOCK_INPUT_FILE_NAMES = [
-  'Block-SLA-Report',
-  'Block-NOC TT Report',
-  'Block-Alert Report',
+  'block_sla_report',
+  'block_noc_tt_report',
+  'block_alert_report',
+];
+
+export const SHQ_INPUT_FILE_NAMES = [
+  'shq_sla_report',
+  'shq_noc_tt_report',
+  'shq_alert_report',
 ];
 
 export const BLOCK_SLA_FINAL_REPORT_COLUMNS = [
