@@ -21,7 +21,7 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-shq-component',
   templateUrl: './shq-component.component.html',
-  styleUrls: ['./shq-component.component.scss'],
+  styleUrls: ['./shq-component.component.scss', '../../styles.scss'],
 })
 export class ShqComponentComponent implements OnInit {
   shqNMSData: ShqNMSData[] = [];
@@ -31,6 +31,7 @@ export class ShqComponentComponent implements OnInit {
   worksheet!: ExcelJS.Worksheet;
   file!: any;
   shqSlaSummary!: ShqSlaSummary;
+  isLoading: boolean = false;
 
   constructor(
     private ShqService: ShqService,
@@ -40,6 +41,7 @@ export class ShqComponentComponent implements OnInit {
   ngOnInit(): void {}
 
   onFileChange(event: any) {
+    this.isLoading = true;
     this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
     const reader = new FileReader();
@@ -69,7 +71,9 @@ export class ShqComponentComponent implements OnInit {
     const fileInput = document.getElementById(
       'shqFileInput'
     ) as HTMLInputElement;
-    fileInput.value = '';
+    if (fileInput) {
+      fileInput.value = '';
+    }
     this.shqAlertData = [];
     this.shqNMSData = [];
     this.shqTTData = [];
@@ -81,6 +85,7 @@ export class ShqComponentComponent implements OnInit {
       this.toastrService.error(
         'SHQ - Invalid sheet name of the input file. Kindly provide the valid sheet names.'
       );
+      this.isLoading = false;
       this.resetInputFile();
     } else {
       let data: AOA = [];
@@ -99,6 +104,7 @@ export class ShqComponentComponent implements OnInit {
           this.toastrService.error(
             'SHQ - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
+          this.isLoading = false;
           this.resetInputFile();
         } else {
           this.readWorksheet(worksheet, data);
@@ -108,6 +114,7 @@ export class ShqComponentComponent implements OnInit {
           this.toastrService.error(
             'SHQ - Invalid template of the  TT report.  Kindly provide the valid column names.'
           );
+          this.isLoading = false;
           this.resetInputFile();
         } else {
           this.readWorksheet(worksheet, data);
@@ -117,6 +124,7 @@ export class ShqComponentComponent implements OnInit {
           this.toastrService.error(
             'SHQ - Invalid template of the  Alert report.  Kindly provide the valid column names.'
           );
+          this.isLoading = false;
           this.resetInputFile();
         } else {
           this.readWorksheet(worksheet, data);
@@ -132,7 +140,7 @@ export class ShqComponentComponent implements OnInit {
     data.forEach((data: any, index: number) => {
       if (workSheetName === 'shq_sla_report') {
         let obj: ShqNMSData = {
-          monitor: data[0].trim(),
+          monitor: data[0] ? data[0].trim() : data[0],
           departments: data[1],
           ip_address: data[0].match(/\((.*?)\)/)[1].trim(),
           type: data[2],
@@ -146,13 +154,13 @@ export class ShqComponentComponent implements OnInit {
       } else if (workSheetName === 'shq_alert_report') {
         let obj: ShqAlertData = {
           alert: data[0],
-          source: data[1].trim(),
+          source: data[1] ? data[1].trim() : data[1],
           type: data[2],
           ip_address: data[1].match(/\((.*?)\)/)[1].trim(),
-          severity: data[3].trim(),
-          message: data[4].trim(),
+          severity: data[3] ? data[3].trim() : data[3],
+          message: data[4] ? data[4].trim() : data[4],
           last_poll_time: moment(data[5]).format(),
-          duration: data[6].trim(),
+          duration: data[6] ? data[6].trim() : data[6],
           duration_time: moment(data[7]).format(),
           total_duration_in_minutes: this.ShqService.CalucateTimeInMinutes(
             data[6]
@@ -297,6 +305,7 @@ export class ShqComponentComponent implements OnInit {
     );
     workbook.xlsx.writeBuffer().then((buffer) => {
       this.ShqService.downloadFinalReport(buffer, 'SHQ-SLA-Exclusion-Report');
+      this.isLoading = false;
       this.resetInputFile();
     });
   }

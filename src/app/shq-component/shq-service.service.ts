@@ -182,8 +182,12 @@ export class ShqService {
     return rfoCategorizedTimeInMinutes;
   }
 
-  calculateCumulativeValue(value: number): number {
+  calculateCumulativePercentage(value: number): number {
     return parseInt((value / 22).toFixed(2));
+  }
+
+  calculateCumulativeMinutes(value: number): number {
+    return parseInt(value.toFixed(2));
   }
 
   calculateShqSlaSummary(
@@ -237,34 +241,36 @@ export class ShqService {
       tag: 'SHQ Core Device',
       time_span: '',
       no_of_shq_devices: 22,
-      up_percent: this.calculateCumulativeValue(upPercent),
-      up_minutes: this.calculateCumulativeValue(upMinutes),
+      up_percent: this.calculateCumulativePercentage(upPercent),
+      up_minutes: this.calculateCumulativeMinutes(upMinutes),
       total_down_exclusive_of_sla_exclusion_percent:
-        100 - this.calculateCumulativeValue(upPercent),
+        100 - this.calculateCumulativePercentage(upPercent),
       total_down_exclusive_of_sla_exclusion_minute:
-        this.calculateCumulativeValue(totalDownExclusiveOfSlaExclusionInMinute),
-      power_down_percent: this.calculateCumulativeValue(powerDownPercent),
-      power_dowm_minute: this.calculateCumulativeValue(powerDownMinutes),
+        this.calculateCumulativeMinutes(
+          totalDownExclusiveOfSlaExclusionInMinute
+        ),
+      power_down_percent: this.calculateCumulativePercentage(powerDownPercent),
+      power_dowm_minute: this.calculateCumulativeMinutes(powerDownMinutes),
       fibre_down_percent: 0,
       fiber_down_minute: 0,
       equipment_down_percent: 0,
       equipment_down_minute: 0,
       hrt_down_percent: 0,
       hrt_down_minute: 0,
-      dcn_down_percent: this.calculateCumulativeValue(dcnDownPercent),
-      dcn_down_minute: this.calculateCumulativeValue(dcnDownMinutes),
+      dcn_down_percent: this.calculateCumulativePercentage(dcnDownPercent),
+      dcn_down_minute: this.calculateCumulativeMinutes(dcnDownMinutes),
       planned_maintenance_percent: 0,
       planned_maintenance_minute: 0,
-      total_sla_exclusion_percent: this.calculateCumulativeValue(
+      total_sla_exclusion_percent: this.calculateCumulativePercentage(
         dcnAndPowerDownPercent
       ),
-      total_sla_exclusion_minute: this.calculateCumulativeValue(
+      total_sla_exclusion_minute: this.calculateCumulativeMinutes(
         dcnAndPowerDownMinutes
       ),
-      total_up_percent: this.calculateCumulativeValue(
+      total_up_percent: this.calculateCumulativePercentage(
         upPercent + pollingTimePercent + totalSlaExclusionPercent
       ),
-      total_up_minute: this.calculateCumulativeValue(
+      total_up_minute: this.calculateCumulativeMinutes(
         upMinutes + pollingTimeMinutes + totalSlaExclusionMinute
       ),
     };
