@@ -149,7 +149,7 @@ export class BlockComponentComponent {
       if (workSheetName === 'block_sla_report') {
         let obj: BlockNMSData = {
           monitor: data[0],
-          ip_address: data[1].trim(),
+          ip_address: data[1] ? data[1].trim() : data[1],
           departments: data[2],
           type: data[3],
           up_percent: data[4],
@@ -171,7 +171,7 @@ export class BlockComponentComponent {
           entity_subtype_name: data[3],
           incident_name: data[4],
           equipment_host: data[5],
-          ip: data[6].trim(),
+          ip: data[6] ? data[6].trim() : data[6],
           severity: data[7],
           status: data[8],
           priority_of_repair: data[9],
@@ -187,7 +187,7 @@ export class BlockComponentComponent {
           gp: data[19],
           slab_reach: data[20],
           resolution_method: data[21],
-          rfo: data[22].trim(),
+          rfo: data[22] ? data[22].trim() : data[22],
           incident_start_on: moment(data[23]).format(),
           incident_created_on: data[24],
           ageing: data[25],
@@ -218,15 +218,17 @@ export class BlockComponentComponent {
         let obj: BlockAlertData = {
           alert: data[0],
           source: data[1],
-          ip_address: data[2].trim(),
+          ip_address: data[2] ? data[2].trim() : data[2],
           departments: data[3],
           type: data[4],
-          severity: data[5].trim(),
-          message: data[6].trim(),
+          severity: data[5] ? data[5].trim() : data[5],
+          message: data[6] ? data[6].trim() : data[6],
           alarm_start_time: moment(data[7]).format(),
-          duration: data[8].trim(),
+          duration: data[8] ? data[8].trim() : data[8],
           alarm_clear_time: moment(data[9]).format(),
-          total_duration_in_minutes: this.calculateTimeInMinutes(data[8]),
+          total_duration_in_minutes: data[8]
+            ? this.calculateTimeInMinutes(data[8])
+            : 0,
         };
         result.push(obj);
       }
@@ -264,9 +266,9 @@ export class BlockComponentComponent {
     let filteredAlertData = this.blockAlertData.filter(
       (alert: BlockAlertData) => {
         return (
-          alert.ip_address.trim() == ip &&
-          alert.severity.trim() == SEVERITY_CRITICAL &&
-          alert.message.trim() == ALERT_DOWN_MESSAGE
+          alert.ip_address == ip &&
+          alert.severity == SEVERITY_CRITICAL &&
+          alert.message == ALERT_DOWN_MESSAGE
         );
       }
     );
@@ -290,9 +292,9 @@ export class BlockComponentComponent {
     const filteredCriticalAlertData = this.blockAlertData.filter(
       (alertData: BlockAlertData) => {
         return (
-          alertData.ip_address.trim() == ip &&
-          alertData.severity.trim() == SEVERITY_CRITICAL &&
-          alertData.message.trim() == ALERT_DOWN_MESSAGE
+          alertData.ip_address == ip &&
+          alertData.severity == SEVERITY_CRITICAL &&
+          alertData.message == ALERT_DOWN_MESSAGE
         );
       }
     );
@@ -300,9 +302,9 @@ export class BlockComponentComponent {
     const filteredWarningAlertData = this.blockAlertData.filter(
       (alertData: BlockAlertData) => {
         return (
-          alertData.ip_address.trim() == ip &&
-          alertData.severity.trim() == SEVERITY_WARNING &&
-          alertData.message.trim().includes('reboot')
+          alertData.ip_address == ip &&
+          alertData.severity == SEVERITY_WARNING &&
+          alertData.message.includes('reboot')
         );
       }
     );
@@ -378,13 +380,16 @@ export class BlockComponentComponent {
   }
 
   manipulateBlockNMSData(): void {
-    let manipulatedBlockNMSData: any = [];
+    let manipulatedBlockNMSData: ManipulatedNMSData[] = [];
     this.blockNMSData.forEach((nmsData: BlockNMSData) => {
       let totalUpTimeInMinutes = this.calculateTimeInMinutes(
         nmsData.total_up_time
       );
       let totalDownTimeInMinutes = this.calculateTimeInMinutes(
         nmsData.down_time
+      );
+      let plannedMaintenanceInMinutes = this.calculateTimeInMinutes(
+        nmsData.maintenance_time
       );
       let totalTimeExclusiveOfSLAExclusionInMinutes =
         totalUpTimeInMinutes + totalDownTimeInMinutes;
@@ -422,8 +427,10 @@ export class BlockComponentComponent {
         power_downtime_in_minutes:
           rfoCategorizedData.total_power_downtime_minutes,
         dcn_downtime_in_minutes: rfoCategorizedData.total_dcn_downtime_minutes,
+        planned_maintenance_in_minutes: plannedMaintenanceInMinutes,
         power_downtime_in_percent: powerDownTimeInpercent,
         dcn_downtime_in_percent: dcnDownTimeInPercent,
+        planned_maintenance_in_percent: nmsData.maintenance_percent,
       };
       manipulatedBlockNMSData.push(newNMSData);
     });
@@ -439,10 +446,10 @@ export class BlockComponentComponent {
     let powerDownMinutes = 0;
     let dcnDownPercent = 0;
     let dcnDownMinutes = 0;
-    let plannedMaintenance = 0;
-    let dcnAndPowerDownPercent = 0;
-    let dcnAndPowerDownMinutes = 0;
-    let totalDownPercent = 0;
+    let plannedMaintenancePercent = 0;
+    let plannedMaintenanceMinutes = 0;
+    let cumulativeRfoDownInPercent = 0;
+    let cumulativeRfoDownInMinutes = 0;
     let totalDownMinutes = 0;
     let totalExclusionPercent = 0;
     let totalExclusionMinutes = 0;
@@ -455,16 +462,31 @@ export class BlockComponentComponent {
       powerDownMinutes += nmsData.power_downtime_in_minutes;
       dcnDownPercent += nmsData.dcn_downtime_in_percent;
       dcnDownMinutes += nmsData.dcn_downtime_in_minutes;
-      dcnAndPowerDownPercent +=
-        nmsData.power_downtime_in_percent + nmsData.dcn_downtime_in_percent;
+      plannedMaintenancePercent += nmsData.maintenance_percent;
+      plannedMaintenanceMinutes += nmsData.planned_maintenance_in_minutes;
+
+      cumulativeRfoDownInPercent +=
+        nmsData.power_downtime_in_percent +
+        nmsData.dcn_downtime_in_percent +
+        nmsData.maintenance_percent;
+
       upMinutes += nmsData.total_uptime_in_minutes;
-      dcnAndPowerDownMinutes +=
-        nmsData.power_downtime_in_minutes + nmsData.dcn_downtime_in_minutes;
+
+      cumulativeRfoDownInMinutes +=
+        nmsData.power_downtime_in_minutes +
+        nmsData.dcn_downtime_in_minutes +
+        nmsData.planned_maintenance_in_minutes;
+
       totalDownMinutes += nmsData.total_downtime_in_minutes;
+
       totalExclusionPercent +=
-        nmsData.power_downtime_in_percent + nmsData.dcn_downtime_in_percent;
+        nmsData.power_downtime_in_percent +
+        nmsData.dcn_downtime_in_percent +
+        nmsData.planned_maintenance_in_percent;
       totalExclusionMinutes +=
-        nmsData.power_downtime_in_minutes + nmsData.dcn_downtime_in_minutes;
+        nmsData.power_downtime_in_minutes +
+        nmsData.dcn_downtime_in_minutes +
+        nmsData.planned_maintenance_in_minutes;
       pollingTimePercent +=
         nmsData.down_percent -
         (nmsData.power_downtime_in_percent + nmsData.dcn_downtime_in_percent);
@@ -478,10 +500,10 @@ export class BlockComponentComponent {
       time_span: '',
       no_of_blocks: 79,
       up_percent: +(upPercent / 79).toFixed(2),
-      up_minutes: +(upMinutes / 79).toFixed(2),
+      up_minutes: +upMinutes.toFixed(2),
       no_of_up_blocks: '',
       power_down_percent: +(powerDownPercent / 79).toFixed(2),
-      power_down_minutes: +(powerDownMinutes / 79).toFixed(2),
+      power_down_minutes: +powerDownMinutes.toFixed(2),
       fibre_down_percent: 0.0,
       fibre_down_minutes: 0.0,
       equipment_down_percent: 0.0,
@@ -489,24 +511,27 @@ export class BlockComponentComponent {
       hrt_down_percent: 0.0,
       hrt_down_minutes: 0.0,
       dcn_down_percent: +(dcnDownPercent / 79).toFixed(2),
-      dcn_down_minutes: +(dcnDownMinutes / 79).toFixed(2),
-      planned_maintenance_percent: 0.0,
-      planned_maintenance_minutes: 0.0,
+      dcn_down_minutes: +dcnDownMinutes.toFixed(2),
+      planned_maintenance_percent: +(plannedMaintenancePercent / 79).toFixed(2),
+      planned_maintenance_minutes: plannedMaintenanceMinutes,
       down_percent_exclusive_of_sla: 100 - upPercent / 79,
       no_of_down_blocks: '',
-      total_sla_exclusion_percent: +(dcnAndPowerDownPercent / 79).toFixed(2),
-      total_sla_exclusion_minutes: +(dcnAndPowerDownMinutes / 79).toFixed(2),
+      total_sla_exclusion_percent: +(cumulativeRfoDownInPercent / 79).toFixed(
+        2
+      ),
+      total_sla_exclusion_minutes: +cumulativeRfoDownInMinutes.toFixed(2),
       total_up_percent: 0,
       total_up_minutes: 0,
-      total_down_minutes: +(totalDownMinutes / 79).toFixed(2),
+      total_down_minutes: +totalDownMinutes.toFixed(2),
       total_down_percent: 100 - +(upPercent / 79).toFixed(2),
       total_up_percent_exclusion: +(
         (upPercent + pollingTimePercent + totalExclusionPercent) /
         79
       ).toFixed(2),
       total_up_minutes_exclusion: +(
-        (upMinutes + pollingTimeMinutes + totalExclusionMinutes) /
-        79
+        upMinutes +
+        pollingTimeMinutes +
+        totalExclusionMinutes
       ).toFixed(2),
     };
   }
@@ -869,14 +894,20 @@ export class BlockComponentComponent {
       let dcnDownPercent: number =
         upPercent == 100 ? 0 : row.dcn_downtime_in_percent;
       let dcnDownMinutes: number = row.dcn_downtime_in_minutes;
-      let plannedMaintanancePercent: number = upPercent == 100 ? 0 : 0;
-      let plannedMaintananceMinutes: number = upPercent == 100 ? 0 : 0;
+      let plannedMaintanancePercent: number =
+        upPercent == 100 ? 0 : row.planned_maintenance_in_percent;
+      let plannedMaintananceMinutes: number =
+        upPercent == 100 ? 0 : row.planned_maintenance_in_minutes;
       let totalExclusionPercent: number =
         upPercent == 100
           ? 0
-          : row.power_downtime_in_percent + row.dcn_downtime_in_percent;
+          : row.power_downtime_in_percent +
+            row.dcn_downtime_in_percent +
+            row.planned_maintenance_in_percent;
       let totalExclusionMinutes: number =
-        row.power_downtime_in_minutes + row.dcn_downtime_in_minutes;
+        row.power_downtime_in_minutes +
+        row.dcn_downtime_in_minutes +
+        row.planned_maintenance_in_minutes;
       let pollingTimePercent: number =
         upPercent == 100 ? 0 : row.down_percent - +totalExclusionPercent;
       let pollingTimeMinutes: number =

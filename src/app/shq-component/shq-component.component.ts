@@ -132,7 +132,7 @@ export class ShqComponentComponent implements OnInit {
     data.forEach((data: any, index: number) => {
       if (workSheetName === 'shq_sla_report') {
         let obj: ShqNMSData = {
-          monitor: data[0].trim(),
+          monitor: data[0] ? data[0].trim() : data[0],
           departments: data[1],
           ip_address: data[0].match(/\((.*?)\)/)[1].trim(),
           type: data[2],
@@ -146,13 +146,13 @@ export class ShqComponentComponent implements OnInit {
       } else if (workSheetName === 'shq_alert_report') {
         let obj: ShqAlertData = {
           alert: data[0],
-          source: data[1].trim(),
+          source: data[1] ? data[1].trim() : data[1],
           type: data[2],
           ip_address: data[1].match(/\((.*?)\)/)[1].trim(),
-          severity: data[3].trim(),
-          message: data[4].trim(),
+          severity: data[3] ? data[3].trim() : data[3],
+          message: data[4] ? data[4].trim() : data[4],
           last_poll_time: moment(data[5]).format(),
-          duration: data[6].trim(),
+          duration: data[6] ? data[6].trim() : data[6],
           duration_time: moment(data[7]).format(),
           total_duration_in_minutes: this.ShqService.CalucateTimeInMinutes(
             data[6]
