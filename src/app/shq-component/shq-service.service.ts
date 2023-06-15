@@ -705,7 +705,8 @@ export class ShqService {
     });
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(data);
-    link.download = fileName + '.xlsx';
+    link.download =
+      fileName + ' ' + moment().format('DD/MM/YYYY, hh:mm') + '.xlsx';
     link.click();
   }
 }
