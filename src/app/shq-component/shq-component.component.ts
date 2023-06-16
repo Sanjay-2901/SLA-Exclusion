@@ -32,6 +32,7 @@ export class ShqComponentComponent implements OnInit {
   file!: any;
   shqSlaSummary!: ShqSlaSummary;
   isLoading: boolean = false;
+  isEveryRowInSlaColumnValid: boolean = false;
 
   constructor(
     private ShqService: ShqService,
@@ -107,7 +108,9 @@ export class ShqComponentComponent implements OnInit {
           this.isLoading = false;
           this.resetInputFile();
         } else {
-          this.readWorksheet(worksheet, data);
+          console.log('else works');
+          // this.readWorksheet(worksheet, data);
+          this.validateEachRowsInSlaReport(data, workSheetName);
         }
       } else if (workSheetName === 'shq_noc_tt_report') {
         if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
@@ -117,7 +120,7 @@ export class ShqComponentComponent implements OnInit {
           this.isLoading = false;
           this.resetInputFile();
         } else {
-          this.readWorksheet(worksheet, data);
+          this.readWorksheet(workSheetName, data);
         }
       } else if (workSheetName === 'shq_alert_report') {
         if (headers !== JSON.stringify(SHQ_ALERT_REPORT_HEADERS)) {
@@ -127,14 +130,69 @@ export class ShqComponentComponent implements OnInit {
           this.isLoading = false;
           this.resetInputFile();
         } else {
-          this.readWorksheet(worksheet, data);
+          this.readWorksheet(workSheetName, data);
         }
       }
     }
   }
 
-  readWorksheet(worksheet: ExcelJS.Worksheet, data: any): void {
-    let workSheetName = worksheet.name;
+  validateEachRowsInSlaReport(data: AOA, workSheetName: string) {
+    data.shift();
+    data.forEach((row: any, index) => {
+      if (row[0] === null) {
+        console.log('monitor having null value..........');
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `SHQ - ${
+            SHQ_SLA_REPORT_HEADERS[0]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[3] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `SHQ - ${
+            SHQ_SLA_REPORT_HEADERS[3]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[4] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `SHQ - ${
+            SHQ_SLA_REPORT_HEADERS[4]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[5] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `SHQ - ${
+            SHQ_SLA_REPORT_HEADERS[5]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[6] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `SHQ - ${
+            SHQ_SLA_REPORT_HEADERS[6]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      }
+    });
+
+    if (this.isEveryRowInSlaColumnValid === true) {
+      this.readWorksheet(workSheetName, data);
+    } else {
+      this.resetInputFile();
+      this.isEveryRowInSlaColumnValid = true;
+      this.isLoading = false;
+    }
+  }
+
+  readWorksheet(workSheetName: string, data: any): void {
     let result: any = [];
     data.shift();
     data.forEach((data: any, index: number) => {
