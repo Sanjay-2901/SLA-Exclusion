@@ -1,8 +1,19 @@
-<input
-  id="blockFileInput"
-  type="file"
-  (change)="onFileChange($event)"
-  multiple="false"
-  accept=".xlsx, .xls"
-  class="p-4"
-/>
+<div>
+  <input
+    id="blockFileInput"
+    type="file"
+    (change)="onFileChange($event)"
+    multiple="false"
+    accept=".xlsx, .xls"
+    class="p-4"
+    [disabled]="isLoading"
+    *ngIf="!isLoading"
+  />
+
+  <div *ngIf="isLoading" class="align-self-center mt-5">
+    <div class="d-flex">
+      <div class="loader"></div>
+      <p class="ms-2">Loading...</p>
+    </div>
+  </div>
+</div>

@@ -27,6 +27,8 @@ export interface ManipulatedNMSData extends BlockNMSData {
   dcn_downtime_in_minutes: number;
   power_downtime_in_percent: number;
   dcn_downtime_in_percent: number;
+  planned_maintenance_in_minutes: number;
+  planned_maintenance_in_percent: number;
 }
 
 export interface BlockTTData {
