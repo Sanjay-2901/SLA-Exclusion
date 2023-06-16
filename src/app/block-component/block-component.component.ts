@@ -34,6 +34,7 @@ import {
   BLOCK_INPUT_FILE_NAMES,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
+import { BlockService } from './block.service';
 
 @Component({
   selector: 'app-block-component',
@@ -49,8 +50,12 @@ export class BlockComponentComponent {
   worksheet!: ExcelJS.Worksheet;
   file!: any;
   isSheetNamesValid: boolean = true;
+  isEveryRowInSlaColumnValid: boolean = true;
 
-  constructor(private toastrService: ToastrService) {}
+  constructor(
+    private toastrService: ToastrService,
+    private blockService: BlockService
+  ) {}
 
   // Getting the input file (excel workbook containing the required sheets)
   onFileChange(event: any): void {
@@ -116,7 +121,7 @@ export class BlockComponentComponent {
           );
           this.resetInputFile();
         } else {
-          this.readWorksheet(worksheet, data);
+          this.validateEachRows(data, worksheet);
         }
       } else if (workSheetName === 'block_noc_tt_report') {
         if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
@@ -137,6 +142,76 @@ export class BlockComponentComponent {
           this.readWorksheet(worksheet, data);
         }
       }
+    }
+  }
+
+  validateEachRows(data: AOA, workSheet: ExcelJS.Worksheet) {
+    data.shift();
+    data.forEach((row: any, index) => {
+      if (row[1] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[1]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[4] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[4]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[5] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[5]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[6] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[6]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[7] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[7]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[8] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[8]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[9] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[5]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      }
+    });
+
+    if (this.isEveryRowInSlaColumnValid === true) {
+      this.readWorksheet(workSheet, data);
+    } else {
+      this.resetInputFile();
+      this.isEveryRowInSlaColumnValid = true;
     }
   }
 
@@ -880,7 +955,9 @@ export class BlockComponentComponent {
       let pollingTimePercent: number =
         upPercent == 100 ? 0 : row.down_percent - +totalExclusionPercent;
       let pollingTimeMinutes: number =
-        row.total_downtime_in_minutes - totalExclusionMinutes;
+        upPercent == 100
+          ? 0
+          : row.total_downtime_in_minutes - totalExclusionMinutes;
 
       let totalUpPercentSLAExclusion: number =
         upPercent + totalExclusionPercent + pollingTimePercent;
