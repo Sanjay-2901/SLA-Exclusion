@@ -108,8 +108,6 @@ export class ShqComponentComponent implements OnInit {
           this.isLoading = false;
           this.resetInputFile();
         } else {
-          console.log('else works');
-          // this.readWorksheet(worksheet, data);
           this.validateEachRowsInSlaReport(data, workSheetName);
         }
       } else if (workSheetName === 'shq_noc_tt_report') {
@@ -140,7 +138,6 @@ export class ShqComponentComponent implements OnInit {
     data.shift();
     data.forEach((row: any, index) => {
       if (row[0] === null) {
-        console.log('monitor having null value..........');
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
           `SHQ - ${
