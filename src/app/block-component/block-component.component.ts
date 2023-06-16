@@ -159,7 +159,7 @@ export class BlockComponentComponent {
       if (row[1] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
-          `Block- ${
+          `Block - ${
             BLOCK_SLA_REPORT_HEADERS[1]
           } is not available in SLA report in row number :
             ${index + 2}`
@@ -167,7 +167,7 @@ export class BlockComponentComponent {
       } else if (row[4] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
-          `Block- ${
+          `Block - ${
             BLOCK_SLA_REPORT_HEADERS[4]
           } is not available in SLA report in row number :
             ${index + 2}`
@@ -175,7 +175,7 @@ export class BlockComponentComponent {
       } else if (row[5] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
-          `Block- ${
+          `Block - ${
             BLOCK_SLA_REPORT_HEADERS[5]
           } is not available in SLA report in row number :
             ${index + 2}`
@@ -183,7 +183,7 @@ export class BlockComponentComponent {
       } else if (row[6] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
-          `Block- ${
+          `Block - ${
             BLOCK_SLA_REPORT_HEADERS[6]
           } is not available in SLA report in row number :
             ${index + 2}`
@@ -191,7 +191,7 @@ export class BlockComponentComponent {
       } else if (row[7] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
-          `Block- ${
+          `Block - ${
             BLOCK_SLA_REPORT_HEADERS[7]
           } is not available in SLA report in row number :
             ${index + 2}`
@@ -199,7 +199,7 @@ export class BlockComponentComponent {
       } else if (row[8] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
-          `Block- ${
+          `Block - ${
             BLOCK_SLA_REPORT_HEADERS[8]
           } is not available in SLA report in row number :
             ${index + 2}`
@@ -207,7 +207,7 @@ export class BlockComponentComponent {
       } else if (row[9] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
-          `Block- ${
+          `Block - ${
             BLOCK_SLA_REPORT_HEADERS[5]
           } is not available in SLA report in row number :
             ${index + 2}`
