@@ -34,6 +34,7 @@ import {
   BLOCK_INPUT_FILE_NAMES,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
+import { BlockService } from './block.service';
 
 @Component({
   selector: 'app-block-component',
@@ -41,17 +42,21 @@ import { ToastrService } from 'ngx-toastr';
   styleUrls: ['./block-component.component.scss', '../../styles.scss'],
 })
 export class BlockComponentComponent {
-  blockNMSData: any = [];
-  blockTTData: any = [];
-  blockAlertData: any = [];
-  manipulatedNMSData: any = [];
+  blockNMSData: BlockNMSData[] = [];
+  blockTTData: BlockTTData[] = [];
+  blockAlertData: BlockAlertData[] = [];
+  manipulatedNMSData: ManipulatedNMSData[] = [];
   blockSLASummaryPercent!: BlockSLASummaryPercent;
   worksheet!: ExcelJS.Worksheet;
   file!: any;
   isSheetNamesValid: boolean = true;
+  isEveryRowInSlaColumnValid: boolean = true;
   isLoading: boolean = false;
 
-  constructor(private toastrService: ToastrService) {}
+  constructor(
+    private toastrService: ToastrService,
+    private blockService: BlockService
+  ) {}
 
   // Getting the input file (excel workbook containing the required sheets)
   onFileChange(event: any): void {
@@ -122,7 +127,7 @@ export class BlockComponentComponent {
           this.isLoading = false;
           this.resetInputFile();
         } else {
-          this.readWorksheet(worksheet, data);
+          this.validateEachRows(data, workSheetName);
         }
       } else if (workSheetName === 'block_noc_tt_report') {
         if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
@@ -132,7 +137,7 @@ export class BlockComponentComponent {
           this.isLoading = false;
           this.resetInputFile();
         } else {
-          this.readWorksheet(worksheet, data);
+          this.storeDataAsObject(workSheetName, data);
         }
       } else if (workSheetName === 'block_alert_report') {
         if (headers !== JSON.stringify(BLOCK_ALERT_REPORT_HEADERS)) {
@@ -142,15 +147,85 @@ export class BlockComponentComponent {
           this.isLoading = false;
           this.resetInputFile();
         } else {
-          this.readWorksheet(worksheet, data);
+          this.storeDataAsObject(workSheetName, data);
         }
       }
     }
   }
 
+  validateEachRows(data: AOA, workSheetName: string) {
+    data.shift();
+    data.forEach((row: any, index) => {
+      if (row[1] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[1]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[4] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[4]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[5] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[5]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[6] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[6]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[7] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[7]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[8] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[8]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      } else if (row[9] === null) {
+        this.isEveryRowInSlaColumnValid = false;
+        this.toastrService.error(
+          `Block- ${
+            BLOCK_SLA_REPORT_HEADERS[5]
+          } is not available in SLA report in row number :
+            ${index + 2}`
+        );
+      }
+    });
+
+    if (this.isEveryRowInSlaColumnValid === true) {
+      this.storeDataAsObject(workSheetName, data);
+    } else {
+      this.resetInputFile();
+      this.isEveryRowInSlaColumnValid = true;
+      this.isLoading = false;
+    }
+  }
+
   // Reading the worksheets individually and storing the data as Array of Objects
-  readWorksheet(worksheet: ExcelJS.Worksheet, data: any): void {
-    let workSheetName = worksheet.name;
+  storeDataAsObject(workSheetName: string, data: any): void {
     let result: any = [];
     data.shift();
     data.forEach((data: any, index: number) => {
@@ -472,21 +547,16 @@ export class BlockComponentComponent {
       dcnDownMinutes += nmsData.dcn_downtime_in_minutes;
       plannedMaintenancePercent += nmsData.maintenance_percent;
       plannedMaintenanceMinutes += nmsData.planned_maintenance_in_minutes;
-
       cumulativeRfoDownInPercent +=
         nmsData.power_downtime_in_percent +
         nmsData.dcn_downtime_in_percent +
         nmsData.maintenance_percent;
-
       upMinutes += nmsData.total_uptime_in_minutes;
-
       cumulativeRfoDownInMinutes +=
         nmsData.power_downtime_in_minutes +
         nmsData.dcn_downtime_in_minutes +
         nmsData.planned_maintenance_in_minutes;
-
       totalDownMinutes += nmsData.total_downtime_in_minutes;
-
       totalExclusionPercent +=
         nmsData.power_downtime_in_percent +
         nmsData.dcn_downtime_in_percent +
@@ -919,7 +989,9 @@ export class BlockComponentComponent {
       let pollingTimePercent: number =
         upPercent == 100 ? 0 : row.down_percent - +totalExclusionPercent;
       let pollingTimeMinutes: number =
-        row.total_downtime_in_minutes - totalExclusionMinutes;
+        upPercent == 100
+          ? 0
+          : row.total_downtime_in_minutes - totalExclusionMinutes;
 
       let totalUpPercentSLAExclusion: number =
         upPercent + totalExclusionPercent + pollingTimePercent;
