@@ -34,7 +34,6 @@ import {
   BlockSLASummarytHeaders,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
-import { BlockService } from './block.service';
 
 @Component({
   selector: 'app-block-component',
@@ -53,10 +52,7 @@ export class BlockComponentComponent {
   isEveryRowInSlaColumnValid: boolean = true;
   isLoading: boolean = false;
 
-  constructor(
-    private toastrService: ToastrService,
-    private blockService: BlockService
-  ) {}
+  constructor(private toastrService: ToastrService) {}
 
   // Getting the input file (excel workbook containing the required sheets)
   onFileChange(event: any): void {
@@ -69,10 +65,17 @@ export class BlockComponentComponent {
       const buffer = e.target.result;
 
       workbook.xlsx.load(buffer).then(() => {
-        workbook.worksheets.forEach((_, index) => {
-          this.worksheet = workbook.getWorksheet(index + 1);
-          this.validateWorksheets(this.worksheet);
-        });
+        for (let index = 1; index <= workbook.worksheets.length; index++) {
+          this.worksheet = workbook.getWorksheet(index);
+          try {
+            this.validateWorksheets(this.worksheet);
+          } catch (error: any) {
+            this.isLoading = false;
+            this.resetInputFile();
+            this.toastrService.error(error.message);
+            break;
+          }
+        }
         if (
           this.blockNMSData.length > 0 &&
           this.blockTTData.length > 0 &&
@@ -102,11 +105,9 @@ export class BlockComponentComponent {
   validateWorksheets(worksheet: ExcelJS.Worksheet) {
     let workSheetName = worksheet.name;
     if (!BLOCK_INPUT_FILE_NAMES.includes(workSheetName)) {
-      this.toastrService.error(
+      throw new Error(
         'Block - Invalid sheet name of the input file. Kindly provide the valid sheet names.'
       );
-      this.isLoading = false;
-      this.resetInputFile();
     } else {
       let data: AOA = [];
       this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
@@ -121,31 +122,25 @@ export class BlockComponentComponent {
 
       if (workSheetName === 'block_sla_report') {
         if (headers !== JSON.stringify(BLOCK_SLA_REPORT_HEADERS)) {
-          this.toastrService.error(
+          throw new Error(
             'Block - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
-          this.isLoading = false;
-          this.resetInputFile();
         } else {
           this.validateEachRows(data, workSheetName);
         }
       } else if (workSheetName === 'block_noc_tt_report') {
         if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
-          this.toastrService.error(
-            'Block - Invalid template of the  TT report.  Kindly provide the valid column names.'
+          throw new Error(
+            'Block - Invalid template of the TT report. Kindly provide the valid column names.'
           );
-          this.isLoading = false;
-          this.resetInputFile();
         } else {
           this.storeDataAsObject(workSheetName, data);
         }
       } else if (workSheetName === 'block_alert_report') {
         if (headers !== JSON.stringify(BLOCK_ALERT_REPORT_HEADERS)) {
-          this.toastrService.error(
-            'Block - Invalid template of the  Alert report.  Kindly provide the valid column names.'
+          throw new Error(
+            'Block - Invalid template of the  Alert report. Kindly provide the valid column names.'
           );
-          this.isLoading = false;
-          this.resetInputFile();
         } else {
           this.storeDataAsObject(workSheetName, data);
         }
@@ -155,65 +150,73 @@ export class BlockComponentComponent {
 
   validateEachRows(data: AOA, workSheetName: string) {
     data.shift();
-    data.forEach((row: any, index) => {
+    for (let index = 0; index < data.length; index++) {
+      let row: any = data[index];
       if (row[1] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
           `Block - ${
             BLOCK_SLA_REPORT_HEADERS[1]
-          } is not available in SLA report in row number :
-            ${index + 2}`
+          } is not available in SLA report in row number:
+          ${index + 2}`
         );
+        break;
       } else if (row[4] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
           `Block - ${
             BLOCK_SLA_REPORT_HEADERS[4]
-          } is not available in SLA report in row number :
+          } is not available in SLA report in row number:
             ${index + 2}`
         );
+        break;
       } else if (row[5] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
           `Block - ${
             BLOCK_SLA_REPORT_HEADERS[5]
-          } is not available in SLA report in row number :
+          } is not available in SLA report in row number:
             ${index + 2}`
         );
+        break;
       } else if (row[6] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
           `Block - ${
             BLOCK_SLA_REPORT_HEADERS[6]
-          } is not available in SLA report in row number :
+          } is not available in SLA report in row number:
             ${index + 2}`
         );
+        break;
       } else if (row[7] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
           `Block - ${
             BLOCK_SLA_REPORT_HEADERS[7]
-          } is not available in SLA report in row number :
+          } is not available in SLA report in row number:
             ${index + 2}`
         );
+        break;
       } else if (row[8] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
           `Block - ${
             BLOCK_SLA_REPORT_HEADERS[8]
-          } is not available in SLA report in row number :
+          } is not available in SLA report in row number:
             ${index + 2}`
         );
+        break;
       } else if (row[9] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
           `Block - ${
             BLOCK_SLA_REPORT_HEADERS[5]
-          } is not available in SLA report in row number :
+          } is not available in SLA report in row number:
             ${index + 2}`
         );
+        break;
       }
-    });
+    }
 
     if (this.isEveryRowInSlaColumnValid === true) {
       this.storeDataAsObject(workSheetName, data);
