@@ -23,6 +23,8 @@ export interface ManipulatedShqNmsData extends ShqNMSData {
   dcn_downtime_in_minutes: number;
   power_downtime_in_percent: number;
   dcn_downtime_in_percent: number;
+  unknown_downtime_in_minutes: number;
+  unknown_downtime_in_percent: number;
 }
 
 export interface ShqAlertData {
@@ -109,6 +111,8 @@ export interface ShqSlaSummary {
   dcn_down_minute: number;
   planned_maintenance_percent: number;
   planned_maintenance_minute: number;
+  unknown_downtime_in_percent: number;
+  unknown_downtime_in_minutes: number;
   total_sla_exclusion_percent: number;
   total_sla_exclusion_minute: number;
   total_up_percent: number;
