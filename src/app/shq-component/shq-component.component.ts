@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import {
   ManipulatedShqNmsData,
@@ -23,7 +23,7 @@ import { ToastrService } from 'ngx-toastr';
   templateUrl: './shq-component.component.html',
   styleUrls: ['./shq-component.component.scss', '../../styles.scss'],
 })
-export class ShqComponentComponent implements OnInit {
+export class ShqComponentComponent {
   shqNMSData: ShqNMSData[] = [];
   shqTTData: ShqTTData[] = [];
   shqAlertData: ShqAlertData[] = [];
@@ -32,14 +32,12 @@ export class ShqComponentComponent implements OnInit {
   file!: any;
   shqSlaSummary!: ShqSlaSummary;
   isLoading: boolean = false;
-  isEveryRowInSlaColumnValid: boolean = false;
+  isEveryRowInSlaColumnValid: boolean = true;
 
   constructor(
     private ShqService: ShqService,
     private toastrService: ToastrService
   ) {}
-
-  ngOnInit(): void {}
 
   onFileChange(event: any) {
     this.isLoading = true;
@@ -51,10 +49,17 @@ export class ShqComponentComponent implements OnInit {
       const buffer = e.target.result;
 
       workbook.xlsx.load(buffer).then(() => {
-        workbook.worksheets.forEach((_, index) => {
-          this.worksheet = workbook.getWorksheet(index + 1);
-          this.validateWorksheets(this.worksheet);
-        });
+        for (let index = 1; index <= workbook.worksheets.length; index++) {
+          this.worksheet = workbook.getWorksheet(index);
+          try {
+            this.validateWorksheets(this.worksheet);
+          } catch (error: any) {
+            this.isLoading = false;
+            this.resetInputFile();
+            this.toastrService.error(error.message);
+            break;
+          }
+        }
         if (
           this.shqNMSData.length > 0 &&
           this.shqAlertData.length > 0 &&
@@ -83,11 +88,9 @@ export class ShqComponentComponent implements OnInit {
   validateWorksheets(worksheet: ExcelJS.Worksheet) {
     let workSheetName = worksheet.name;
     if (!SHQ_INPUT_FILE_NAMES.includes(workSheetName)) {
-      this.toastrService.error(
+      throw new Error(
         'SHQ - Invalid sheet name of the input file. Kindly provide the valid sheet names.'
       );
-      this.isLoading = false;
-      this.resetInputFile();
     } else {
       let data: AOA = [];
       this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
@@ -102,33 +105,27 @@ export class ShqComponentComponent implements OnInit {
 
       if (workSheetName === 'shq_sla_report') {
         if (headers !== JSON.stringify(SHQ_SLA_REPORT_HEADERS)) {
-          this.toastrService.error(
+          throw new Error(
             'SHQ - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
-          this.isLoading = false;
-          this.resetInputFile();
         } else {
           this.validateEachRowsInSlaReport(data, workSheetName);
         }
       } else if (workSheetName === 'shq_noc_tt_report') {
         if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
-          this.toastrService.error(
-            'SHQ - Invalid template of the  TT report.  Kindly provide the valid column names.'
+          throw new Error(
+            'SHQ - Invalid template of the TT report. Kindly provide the valid column names.'
           );
-          this.isLoading = false;
-          this.resetInputFile();
         } else {
-          this.readWorksheet(workSheetName, data);
+          this.storeDataAsObject(workSheetName, data);
         }
       } else if (workSheetName === 'shq_alert_report') {
         if (headers !== JSON.stringify(SHQ_ALERT_REPORT_HEADERS)) {
-          this.toastrService.error(
-            'SHQ - Invalid template of the  Alert report.  Kindly provide the valid column names.'
+          throw new Error(
+            'SHQ - Invalid template of the Alert report. Kindly provide the valid column names.'
           );
-          this.isLoading = false;
-          this.resetInputFile();
         } else {
-          this.readWorksheet(workSheetName, data);
+          this.storeDataAsObject(workSheetName, data);
         }
       }
     }
@@ -136,7 +133,8 @@ export class ShqComponentComponent implements OnInit {
 
   validateEachRowsInSlaReport(data: AOA, workSheetName: string) {
     data.shift();
-    data.forEach((row: any, index) => {
+    for (let index = 0; index < data.length; index++) {
+      let row: any = data[index];
       if (row[0] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
@@ -145,6 +143,7 @@ export class ShqComponentComponent implements OnInit {
           } is not available in SLA report in row number :
             ${index + 2}`
         );
+        break;
       } else if (row[3] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
@@ -153,6 +152,7 @@ export class ShqComponentComponent implements OnInit {
           } is not available in SLA report in row number :
             ${index + 2}`
         );
+        break;
       } else if (row[4] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
@@ -161,6 +161,7 @@ export class ShqComponentComponent implements OnInit {
           } is not available in SLA report in row number :
             ${index + 2}`
         );
+        break;
       } else if (row[5] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
@@ -169,6 +170,7 @@ export class ShqComponentComponent implements OnInit {
           } is not available in SLA report in row number :
             ${index + 2}`
         );
+        break;
       } else if (row[6] === null) {
         this.isEveryRowInSlaColumnValid = false;
         this.toastrService.error(
@@ -177,11 +179,12 @@ export class ShqComponentComponent implements OnInit {
           } is not available in SLA report in row number :
             ${index + 2}`
         );
+        break;
       }
-    });
+    }
 
     if (this.isEveryRowInSlaColumnValid === true) {
-      this.readWorksheet(workSheetName, data);
+      this.storeDataAsObject(workSheetName, data);
     } else {
       this.resetInputFile();
       this.isEveryRowInSlaColumnValid = true;
@@ -189,7 +192,7 @@ export class ShqComponentComponent implements OnInit {
     }
   }
 
-  readWorksheet(workSheetName: string, data: any): void {
+  storeDataAsObject(workSheetName: string, data: any): void {
     let result: any = [];
     data.shift();
     data.forEach((data: any, index: number) => {
