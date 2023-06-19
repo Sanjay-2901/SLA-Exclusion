@@ -89,6 +89,7 @@ export class ShqService {
   ) {
     let totalPowerDownTimeInMinutes = 0;
     let totalDCNDownTimeInMinutes = 0;
+    let isAlertReportEmpty: boolean = false;
 
     let powerDownArray: ShqAlertData[] = [];
     let DCNDownArray: ShqAlertData[] = [];
@@ -118,32 +119,36 @@ export class ShqService {
       return ttData.ip == ipAddress;
     });
 
-    filteredCriticalAlertData.forEach((alertCriticalData: ShqAlertData) => {
-      filteredTTData.forEach((ttData: ShqTTData) => {
-        if (
-          moment(alertCriticalData.last_poll_time).isSame(
-            ttData.incident_start_on,
-            'minute'
-          )
-        ) {
-          if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
-            powerDownArray.push(alertCriticalData);
-          } else if (
-            ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
-            ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+    if (filteredCriticalAlertData.length) {
+      filteredCriticalAlertData.forEach((alertCriticalData: ShqAlertData) => {
+        filteredTTData.forEach((ttData: ShqTTData) => {
+          if (
+            moment(alertCriticalData.last_poll_time).isSame(
+              ttData.incident_start_on,
+              'minute'
+            )
           ) {
-            DCNDownArray.push(alertCriticalData);
+            if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
+              powerDownArray.push(alertCriticalData);
+            } else if (
+              ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
+              ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+            ) {
+              DCNDownArray.push(alertCriticalData);
+            }
           }
+        });
+
+        if (
+          !lodash.some(powerDownArray, alertCriticalData) &&
+          !lodash.some(DCNDownArray, alertCriticalData)
+        ) {
+          criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
         }
       });
-
-      if (
-        !lodash.some(powerDownArray, alertCriticalData) &&
-        !lodash.some(DCNDownArray, alertCriticalData)
-      ) {
-        criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
-      }
-    });
+    } else {
+      isAlertReportEmpty = true;
+    }
 
     if (criticalAlertAndTTDataTimeMismatch) {
       criticalAlertAndTTDataTimeMismatch.forEach(
@@ -177,6 +182,7 @@ export class ShqService {
     const rfoCategorizedTimeInMinutes: RFOCategorizedTimeInMinutes = {
       total_dcn_downtime_minutes: +totalDCNDownTimeInMinutes.toFixed(2),
       total_power_downtime_minutes: +totalPowerDownTimeInMinutes.toFixed(2),
+      alert_report_empty: isAlertReportEmpty,
     };
 
     return rfoCategorizedTimeInMinutes;
@@ -201,9 +207,10 @@ export class ShqService {
     let powerDownMinutes = 0;
     let dcnDownPercent = 0;
     let dcnDownMinutes = 0;
-    let plannedMaintenance = 0;
-    let dcnAndPowerDownPercent = 0;
-    let dcnAndPowerDownMinutes = 0;
+    let unKnownDownMinutes = 0;
+    let unKnownDownPercent = 0;
+    let cumulativeRfoDownInPercent = 0;
+    let cumulativeRfoDownInMinutes = 0;
     let totalSlaExclusionPercent = 0;
     let totalSlaExclusionMinute = 0;
     let pollingTimePercent = 0;
@@ -220,20 +227,34 @@ export class ShqService {
       powerDownMinutes += nmsData.power_downtime_in_minutes;
       dcnDownPercent += nmsData.dcn_downtime_in_percent;
       dcnDownMinutes += nmsData.dcn_downtime_in_minutes;
-      dcnAndPowerDownPercent +=
-        nmsData.power_downtime_in_percent + nmsData.dcn_downtime_in_percent;
-      dcnAndPowerDownMinutes +=
-        nmsData.power_downtime_in_minutes + nmsData.dcn_downtime_in_minutes;
+      unKnownDownMinutes += nmsData.unknown_downtime_in_minutes;
+      unKnownDownPercent += nmsData.unknown_downtime_in_percent;
+      cumulativeRfoDownInPercent +=
+        nmsData.power_downtime_in_percent +
+        nmsData.dcn_downtime_in_percent +
+        nmsData.unknown_downtime_in_percent;
+      cumulativeRfoDownInMinutes +=
+        nmsData.power_downtime_in_minutes +
+        nmsData.dcn_downtime_in_minutes +
+        nmsData.unknown_downtime_in_minutes;
       totalSlaExclusionPercent +=
-        nmsData.power_downtime_in_percent + nmsData.dcn_downtime_in_percent;
+        nmsData.power_downtime_in_percent +
+        nmsData.dcn_downtime_in_percent +
+        nmsData.unknown_downtime_in_percent;
       totalSlaExclusionMinute +=
-        nmsData.power_downtime_in_minutes + nmsData.dcn_downtime_in_minutes;
+        nmsData.power_downtime_in_minutes +
+        nmsData.dcn_downtime_in_minutes +
+        nmsData.unknown_downtime_in_minutes;
       pollingTimePercent +=
         nmsData.down_percent -
-        (nmsData.power_downtime_in_percent + nmsData.dcn_downtime_in_percent);
+        (nmsData.power_downtime_in_percent +
+          nmsData.dcn_downtime_in_percent +
+          nmsData.unknown_downtime_in_percent);
       pollingTimeMinutes +=
         nmsData.total_downtime_in_minutes -
-        (nmsData.power_downtime_in_minutes + nmsData.dcn_downtime_in_minutes);
+        (nmsData.power_downtime_in_minutes +
+          nmsData.dcn_downtime_in_minutes +
+          nmsData.unknown_downtime_in_minutes);
     });
 
     return {
@@ -261,11 +282,15 @@ export class ShqService {
       dcn_down_minute: this.calculateCumulativeMinutes(dcnDownMinutes),
       planned_maintenance_percent: 0,
       planned_maintenance_minute: 0,
+      unknown_downtime_in_percent:
+        this.calculateCumulativePercentage(unKnownDownPercent),
+      unknown_downtime_in_minutes:
+        this.calculateCumulativeMinutes(unKnownDownMinutes),
       total_sla_exclusion_percent: this.calculateCumulativePercentage(
-        dcnAndPowerDownPercent
+        cumulativeRfoDownInPercent
       ),
       total_sla_exclusion_minute: this.calculateCumulativeMinutes(
-        dcnAndPowerDownMinutes
+        cumulativeRfoDownInMinutes
       ),
       total_up_percent: this.calculateCumulativePercentage(
         upPercent + pollingTimePercent + totalSlaExclusionPercent
@@ -319,6 +344,7 @@ export class ShqService {
     workSheet.mergeCells('T4:U4');
     workSheet.mergeCells('V4:W4');
     workSheet.mergeCells('X4:Y4');
+    workSheet.mergeCells('Z4:AA4');
 
     workSheet.getCell('A4').value = SHQ_SUMMARY_HEADERS[0];
     workSheet.getCell('B4').value = SHQ_SUMMARY_HEADERS[1];
@@ -334,6 +360,7 @@ export class ShqService {
     workSheet.getCell('T4').value = SHQ_SUMMARY_HEADERS[11];
     workSheet.getCell('V4').value = SHQ_SUMMARY_HEADERS[12];
     workSheet.getCell('X4').value = SHQ_SUMMARY_HEADERS[13];
+    workSheet.getCell('Z4').value = SHQ_SUMMARY_HEADERS[14];
 
     let shqSummaryHeaderRow = workSheet.getRow(4);
     shqSummaryHeaderRow.eachCell((cell) => {
@@ -429,6 +456,14 @@ export class ShqService {
     Y5.value = VALUES.MINUTES;
     Y5.style = MINUTE_STYLE;
 
+    let Z5 = workSheet.getCell('Z5');
+    Z5.value = VALUES.PERCENT;
+    Z5.style = PERCENT_STYLE;
+
+    let AA5 = workSheet.getCell('AA5');
+    AA5.value = VALUES.MINUTES;
+    AA5.style = MINUTE_STYLE;
+
     workSheet.getCell('F6').value = shqSlaSummary.up_percent;
     workSheet.getCell('G6').value = shqSlaSummary.up_minutes;
     workSheet.getCell('H6').value =
@@ -447,10 +482,12 @@ export class ShqService {
     workSheet.getCell('S6').value = shqSlaSummary.dcn_down_minute;
     workSheet.getCell('T6').value = shqSlaSummary.planned_maintenance_percent;
     workSheet.getCell('U6').value = shqSlaSummary.planned_maintenance_minute;
-    workSheet.getCell('V6').value = shqSlaSummary.total_sla_exclusion_percent;
-    workSheet.getCell('W6').value = shqSlaSummary.total_sla_exclusion_minute;
-    workSheet.getCell('X6').value = shqSlaSummary.total_up_percent;
-    workSheet.getCell('Y6').value = shqSlaSummary.total_up_minute;
+    workSheet.getCell('V6').value = shqSlaSummary.unknown_downtime_in_percent;
+    workSheet.getCell('W6').value = shqSlaSummary.unknown_downtime_in_minutes;
+    workSheet.getCell('X6').value = shqSlaSummary.total_sla_exclusion_percent;
+    workSheet.getCell('Y6').value = shqSlaSummary.total_sla_exclusion_minute;
+    workSheet.getCell('Z6').value = shqSlaSummary.total_up_minute;
+    workSheet.getCell('AA6').value = shqSlaSummary.total_up_minute;
 
     let row5 = workSheet.getRow(5);
     row5.eachCell((cell) => {
@@ -490,6 +527,7 @@ export class ShqService {
     workSheet.mergeCells('V9:W9');
     workSheet.mergeCells('X9:Y9');
     workSheet.mergeCells('Z9:AA9');
+    workSheet.mergeCells('AB9:AC9');
 
     workSheet.getCell('A9').value = SHQ_DEVICE_LEVEL_HEADERS[0];
     workSheet.getCell('B9').value = SHQ_DEVICE_LEVEL_HEADERS[1];
@@ -507,6 +545,7 @@ export class ShqService {
     workSheet.getCell('V9').value = SHQ_DEVICE_LEVEL_HEADERS[13];
     workSheet.getCell('X9').value = SHQ_DEVICE_LEVEL_HEADERS[14];
     workSheet.getCell('Z9').value = SHQ_DEVICE_LEVEL_HEADERS[15];
+    workSheet.getCell('AB9').value = SHQ_DEVICE_LEVEL_HEADERS[16];
 
     let finalReportHeader = workSheet.getRow(9);
 
@@ -602,6 +641,14 @@ export class ShqService {
     AA10.value = VALUES.MINUTES;
     AA10.style = MINUTE_STYLE;
 
+    let AB10 = workSheet.getCell('AB10');
+    AB10.value = VALUES.PERCENT;
+    AB10.style = PERCENT_STYLE;
+
+    let AC10 = workSheet.getCell('AC10');
+    AC10.value = VALUES.MINUTES;
+    AC10.style = MINUTE_STYLE;
+
     let row10 = workSheet.getRow(10);
     row10.eachCell((cell) => {
       cell.border = BORDER_STYLE;
@@ -641,6 +688,10 @@ export class ShqService {
         upPercent == 100 ? 0 : nmsData.dcn_downtime_in_minutes;
       let plannedMaintanancePercent: number = upPercent == 100 ? 0 : 0;
       let plannedMaintananceMinutes: number = upPercent == 100 ? 0 : 0;
+      let unKnownDownPercent: number =
+        upPercent == 100 ? 0 : nmsData.unknown_downtime_in_percent;
+      let unKnownDownMinutes: number =
+        upPercent == 100 ? 0 : nmsData.unknown_downtime_in_minutes;
       let totalSlaExclusionInPercent: number =
         upPercent == 100
           ? 0
@@ -690,6 +741,8 @@ export class ShqService {
         dcnDownMinutes.toFixed(2),
         plannedMaintanancePercent.toFixed(2),
         plannedMaintananceMinutes.toFixed(2),
+        unKnownDownPercent.toFixed(2),
+        unKnownDownMinutes.toFixed(2),
         totalSlaExclusionInPercent.toFixed(2),
         totalSlaExclusionInMinute.toFixed(2),
         pollingTimeInPercent.toFixed(2),

@@ -6,7 +6,7 @@ import {
   AOA,
   BlockAlertData,
   BlockNMSData,
-  BlockSLASummaryPercent,
+  BlockSLASummary,
   BlockTTData,
   ManipulatedNMSData,
   RFOCategorizedTimeInMinutes,
@@ -19,7 +19,6 @@ import {
   BLOCK_SLA_FINAL_REPORT_COLUMNS,
   SHEET_HEADING,
   TABLE_HEADING,
-  BlockSLASummaryPercentHeaders,
   BORDER_STYLE,
   BlockSLAFinalReportHeaders,
   TABLE_HEADERS,
@@ -32,6 +31,7 @@ import {
   TT_REPORT_HEADERS,
   BLOCK_ALERT_REPORT_HEADERS,
   BLOCK_INPUT_FILE_NAMES,
+  BlockSLASummarytHeaders,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
 import { BlockService } from './block.service';
@@ -46,7 +46,7 @@ export class BlockComponentComponent {
   blockTTData: BlockTTData[] = [];
   blockAlertData: BlockAlertData[] = [];
   manipulatedNMSData: ManipulatedNMSData[] = [];
-  blockSLASummaryPercent!: BlockSLASummaryPercent;
+  blockSLASummary!: BlockSLASummary;
   worksheet!: ExcelJS.Worksheet;
   file!: any;
   isSheetNamesValid: boolean = true;
@@ -367,6 +367,7 @@ export class BlockComponentComponent {
   categorizeRFO(ip: string) {
     let totalPowerDownTimeInMinutes = 0;
     let totalDCNDownTimeInMinutes = 0;
+    let isAlertReportEmpty: boolean = false;
 
     let powerDownArray: BlockAlertData[] = [];
     let DCNDownArray: BlockAlertData[] = [];
@@ -396,32 +397,36 @@ export class BlockComponentComponent {
       return ttData.ip == ip;
     });
 
-    filteredCriticalAlertData.forEach((alertCriticalData: BlockAlertData) => {
-      filteredTTData.forEach((ttData: BlockTTData) => {
-        if (
-          moment(alertCriticalData.alarm_start_time).isSame(
-            ttData.incident_start_on,
-            'minute'
-          )
-        ) {
-          if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
-            powerDownArray.push(alertCriticalData);
-          } else if (
-            ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
-            ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+    if (filteredCriticalAlertData.length) {
+      filteredCriticalAlertData.forEach((alertCriticalData: BlockAlertData) => {
+        filteredTTData.forEach((ttData: BlockTTData) => {
+          if (
+            moment(alertCriticalData.alarm_start_time).isSame(
+              ttData.incident_start_on,
+              'minute'
+            )
           ) {
-            DCNDownArray.push(alertCriticalData);
+            if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
+              powerDownArray.push(alertCriticalData);
+            } else if (
+              ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
+              ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+            ) {
+              DCNDownArray.push(alertCriticalData);
+            }
           }
+        });
+
+        if (
+          !lodash.some(powerDownArray, alertCriticalData) &&
+          !lodash.some(DCNDownArray, alertCriticalData)
+        ) {
+          criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
         }
       });
-
-      if (
-        !lodash.some(powerDownArray, alertCriticalData) &&
-        !lodash.some(DCNDownArray, alertCriticalData)
-      ) {
-        criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
-      }
-    });
+    } else {
+      isAlertReportEmpty = true;
+    }
 
     if (criticalAlertAndTTDataTimeMismatch) {
       criticalAlertAndTTDataTimeMismatch.forEach(
@@ -457,8 +462,8 @@ export class BlockComponentComponent {
     const rfoCategorizedTimeInMinutes: RFOCategorizedTimeInMinutes = {
       total_dcn_downtime_minutes: +totalDCNDownTimeInMinutes.toFixed(2),
       total_power_downtime_minutes: +totalPowerDownTimeInMinutes.toFixed(2),
+      alert_report_empty: isAlertReportEmpty,
     };
-
     return rfoCategorizedTimeInMinutes;
   }
 
@@ -496,8 +501,17 @@ export class BlockComponentComponent {
           totalTimeExclusiveOfSLAExclusionInMinutes) *
         100
       ).toFixed(2);
+      let unknownDownTimeInMinutes =
+        rfoCategorizedData.alert_report_empty === true
+          ? totalDownTimeInMinutes
+          : totalDownTimeInMinutes - alertDownTimeInMinutes;
 
-      let newNMSData = {
+      let unknownDownTimeInPercent = +(
+        (unknownDownTimeInMinutes / totalTimeExclusiveOfSLAExclusionInMinutes) *
+        100
+      ).toFixed(2);
+
+      let newNMSData: ManipulatedNMSData = {
         ...nmsData,
         total_uptime_in_minutes: totalUpTimeInMinutes,
         total_downtime_in_minutes: totalDownTimeInMinutes,
@@ -511,9 +525,11 @@ export class BlockComponentComponent {
           rfoCategorizedData.total_power_downtime_minutes,
         dcn_downtime_in_minutes: rfoCategorizedData.total_dcn_downtime_minutes,
         planned_maintenance_in_minutes: plannedMaintenanceInMinutes,
+        unknown_downtime_in_minutes: unknownDownTimeInMinutes,
         power_downtime_in_percent: powerDownTimeInpercent,
         dcn_downtime_in_percent: dcnDownTimeInPercent,
         planned_maintenance_in_percent: nmsData.maintenance_percent,
+        unknown_downtime_in_percent: unknownDownTimeInPercent,
       };
       manipulatedBlockNMSData.push(newNMSData);
     });
@@ -531,6 +547,8 @@ export class BlockComponentComponent {
     let dcnDownMinutes = 0;
     let plannedMaintenancePercent = 0;
     let plannedMaintenanceMinutes = 0;
+    let unKnownDownMinutes = 0;
+    let unKnownDownPercent = 0;
     let cumulativeRfoDownInPercent = 0;
     let cumulativeRfoDownInMinutes = 0;
     let totalDownMinutes = 0;
@@ -547,33 +565,43 @@ export class BlockComponentComponent {
       dcnDownMinutes += nmsData.dcn_downtime_in_minutes;
       plannedMaintenancePercent += nmsData.maintenance_percent;
       plannedMaintenanceMinutes += nmsData.planned_maintenance_in_minutes;
+      unKnownDownMinutes += nmsData.unknown_downtime_in_minutes;
+      unKnownDownPercent += nmsData.unknown_downtime_in_percent;
       cumulativeRfoDownInPercent +=
         nmsData.power_downtime_in_percent +
         nmsData.dcn_downtime_in_percent +
-        nmsData.maintenance_percent;
+        nmsData.maintenance_percent +
+        nmsData.unknown_downtime_in_percent;
       upMinutes += nmsData.total_uptime_in_minutes;
       cumulativeRfoDownInMinutes +=
         nmsData.power_downtime_in_minutes +
         nmsData.dcn_downtime_in_minutes +
-        nmsData.planned_maintenance_in_minutes;
+        nmsData.planned_maintenance_in_minutes +
+        nmsData.unknown_downtime_in_minutes;
       totalDownMinutes += nmsData.total_downtime_in_minutes;
       totalExclusionPercent +=
         nmsData.power_downtime_in_percent +
         nmsData.dcn_downtime_in_percent +
-        nmsData.planned_maintenance_in_percent;
+        nmsData.planned_maintenance_in_percent +
+        nmsData.unknown_downtime_in_percent;
       totalExclusionMinutes +=
         nmsData.power_downtime_in_minutes +
         nmsData.dcn_downtime_in_minutes +
-        nmsData.planned_maintenance_in_minutes;
+        nmsData.planned_maintenance_in_minutes +
+        nmsData.unknown_downtime_in_minutes;
       pollingTimePercent +=
         nmsData.down_percent -
-        (nmsData.power_downtime_in_percent + nmsData.dcn_downtime_in_percent);
+        (nmsData.power_downtime_in_percent +
+          nmsData.dcn_downtime_in_percent +
+          nmsData.unknown_downtime_in_percent);
       pollingTimeMinutes +=
         nmsData.total_downtime_in_minutes -
-        (nmsData.power_downtime_in_minutes + nmsData.dcn_downtime_in_minutes);
+        (nmsData.power_downtime_in_minutes +
+          nmsData.dcn_downtime_in_minutes +
+          nmsData.unknown_downtime_in_minutes);
     });
 
-    this.blockSLASummaryPercent = {
+    this.blockSLASummary = {
       report_type: 'BLOCK-SLA',
       time_span: '',
       no_of_blocks: 79,
@@ -592,6 +620,8 @@ export class BlockComponentComponent {
       dcn_down_minutes: +dcnDownMinutes.toFixed(2),
       planned_maintenance_percent: +(plannedMaintenancePercent / 79).toFixed(2),
       planned_maintenance_minutes: plannedMaintenanceMinutes,
+      unknown_downtime_in_percent: +(unKnownDownPercent / 79).toFixed(2),
+      unknown_downtime_in_minutes: unKnownDownMinutes,
       down_percent_exclusive_of_sla: 100 - upPercent / 79,
       no_of_down_blocks: '',
       total_sla_exclusion_percent: +(cumulativeRfoDownInPercent / 79).toFixed(
@@ -652,22 +682,24 @@ export class BlockComponentComponent {
     worksheet.mergeCells('Y4:Z4');
     worksheet.mergeCells('AA4:AB4');
     worksheet.mergeCells('AC4:AD4');
+    worksheet.mergeCells('AE4:AF4');
 
-    worksheet.getCell('A4').value = BlockSLASummaryPercentHeaders[0];
-    worksheet.getCell('B4').value = BlockSLASummaryPercentHeaders[1];
-    worksheet.getCell('C4').value = BlockSLASummaryPercentHeaders[2];
-    worksheet.getCell('H4').value = BlockSLASummaryPercentHeaders[3];
-    worksheet.getCell('I4').value = BlockSLASummaryPercentHeaders[4];
-    worksheet.getCell('K4').value = BlockSLASummaryPercentHeaders[5];
-    worksheet.getCell('M4').value = BlockSLASummaryPercentHeaders[6];
-    worksheet.getCell('O4').value = BlockSLASummaryPercentHeaders[7];
-    worksheet.getCell('Q4').value = BlockSLASummaryPercentHeaders[8];
-    worksheet.getCell('S4').value = BlockSLASummaryPercentHeaders[9];
-    worksheet.getCell('U4').value = BlockSLASummaryPercentHeaders[10];
-    worksheet.getCell('W4').value = BlockSLASummaryPercentHeaders[11];
-    worksheet.getCell('Y4').value = BlockSLASummaryPercentHeaders[12];
-    worksheet.getCell('AA4').value = BlockSLASummaryPercentHeaders[13];
-    worksheet.getCell('AC4').value = BlockSLASummaryPercentHeaders[14];
+    worksheet.getCell('A4').value = BlockSLASummarytHeaders[0];
+    worksheet.getCell('B4').value = BlockSLASummarytHeaders[1];
+    worksheet.getCell('C4').value = BlockSLASummarytHeaders[2];
+    worksheet.getCell('H4').value = BlockSLASummarytHeaders[3];
+    worksheet.getCell('I4').value = BlockSLASummarytHeaders[4];
+    worksheet.getCell('K4').value = BlockSLASummarytHeaders[5];
+    worksheet.getCell('M4').value = BlockSLASummarytHeaders[6];
+    worksheet.getCell('O4').value = BlockSLASummarytHeaders[7];
+    worksheet.getCell('Q4').value = BlockSLASummarytHeaders[8];
+    worksheet.getCell('S4').value = BlockSLASummarytHeaders[9];
+    worksheet.getCell('U4').value = BlockSLASummarytHeaders[10];
+    worksheet.getCell('W4').value = BlockSLASummarytHeaders[11];
+    worksheet.getCell('Y4').value = BlockSLASummarytHeaders[12];
+    worksheet.getCell('AA4').value = BlockSLASummarytHeaders[13];
+    worksheet.getCell('AC4').value = BlockSLASummarytHeaders[14];
+    worksheet.getCell('AE4').value = BlockSLASummarytHeaders[15];
 
     let blockSummaryHeadersRow = worksheet.getRow(4);
     blockSummaryHeadersRow.eachCell((cell) => {
@@ -744,45 +776,43 @@ export class BlockComponentComponent {
     let ad5 = worksheet.getCell('AD5');
     ad5.value = VALUES.MINUTES;
     ad5.style = MINUTE_STYLE;
+    let ae5 = worksheet.getCell('AE5');
+    ae5.value = VALUES.PERCENT;
+    ae5.style = PERCENT_STYLE;
+    let af5 = worksheet.getCell('AF5');
+    af5.value = VALUES.MINUTES;
+    af5.style = MINUTE_STYLE;
 
-    worksheet.getCell('K6').value = this.blockSLASummaryPercent.up_percent;
-    worksheet.getCell('L6').value = this.blockSLASummaryPercent.up_minutes;
-    worksheet.getCell('M6').value =
-      this.blockSLASummaryPercent.total_down_percent;
-    worksheet.getCell('N6').value =
-      this.blockSLASummaryPercent.total_down_minutes;
-    worksheet.getCell('O6').value =
-      this.blockSLASummaryPercent.power_down_percent;
-    worksheet.getCell('P6').value =
-      this.blockSLASummaryPercent.power_down_minutes;
-    worksheet.getCell('Q6').value =
-      this.blockSLASummaryPercent.fibre_down_percent;
-    worksheet.getCell('R6').value =
-      this.blockSLASummaryPercent.fibre_down_minutes;
-    worksheet.getCell('S6').value =
-      this.blockSLASummaryPercent.equipment_down_percent;
-    worksheet.getCell('T6').value =
-      this.blockSLASummaryPercent.equipment_down_minutes;
-    worksheet.getCell('U6').value =
-      this.blockSLASummaryPercent.hrt_down_percent;
-    worksheet.getCell('V6').value =
-      this.blockSLASummaryPercent.hrt_down_minutes;
-    worksheet.getCell('W6').value =
-      this.blockSLASummaryPercent.dcn_down_percent;
-    worksheet.getCell('X6').value =
-      this.blockSLASummaryPercent.dcn_down_minutes;
+    worksheet.getCell('K6').value = this.blockSLASummary.up_percent;
+    worksheet.getCell('L6').value = this.blockSLASummary.up_minutes;
+    worksheet.getCell('M6').value = this.blockSLASummary.total_down_percent;
+    worksheet.getCell('N6').value = this.blockSLASummary.total_down_minutes;
+    worksheet.getCell('O6').value = this.blockSLASummary.power_down_percent;
+    worksheet.getCell('P6').value = this.blockSLASummary.power_down_minutes;
+    worksheet.getCell('Q6').value = this.blockSLASummary.fibre_down_percent;
+    worksheet.getCell('R6').value = this.blockSLASummary.fibre_down_minutes;
+    worksheet.getCell('S6').value = this.blockSLASummary.equipment_down_percent;
+    worksheet.getCell('T6').value = this.blockSLASummary.equipment_down_minutes;
+    worksheet.getCell('U6').value = this.blockSLASummary.hrt_down_percent;
+    worksheet.getCell('V6').value = this.blockSLASummary.hrt_down_minutes;
+    worksheet.getCell('W6').value = this.blockSLASummary.dcn_down_percent;
+    worksheet.getCell('X6').value = this.blockSLASummary.dcn_down_minutes;
     worksheet.getCell('Y6').value =
-      this.blockSLASummaryPercent.planned_maintenance_percent;
+      this.blockSLASummary.planned_maintenance_percent;
     worksheet.getCell('Z6').value =
-      this.blockSLASummaryPercent.planned_maintenance_minutes;
+      this.blockSLASummary.planned_maintenance_minutes;
     worksheet.getCell('AA6').value =
-      this.blockSLASummaryPercent.total_sla_exclusion_percent;
+      this.blockSLASummary.unknown_downtime_in_percent;
     worksheet.getCell('AB6').value =
-      this.blockSLASummaryPercent.total_sla_exclusion_minutes;
+      this.blockSLASummary.unknown_downtime_in_minutes;
     worksheet.getCell('AC6').value =
-      this.blockSLASummaryPercent.total_up_percent_exclusion;
+      this.blockSLASummary.total_sla_exclusion_percent;
     worksheet.getCell('AD6').value =
-      this.blockSLASummaryPercent.total_up_minutes_exclusion;
+      this.blockSLASummary.total_sla_exclusion_minutes;
+    worksheet.getCell('AE6').value =
+      this.blockSLASummary.total_up_percent_exclusion;
+    worksheet.getCell('AF6').value =
+      this.blockSLASummary.total_up_minutes_exclusion;
 
     let row5 = worksheet.getRow(5);
     row5.eachCell((cell) => {
@@ -826,6 +856,7 @@ export class BlockComponentComponent {
     worksheet.mergeCells('AA10:AB10');
     worksheet.mergeCells('AC10:AD10');
     worksheet.mergeCells('AE10:AF10');
+    worksheet.mergeCells('AG10:AH10');
 
     worksheet.getCell('A10').value = BlockSLAFinalReportHeaders[0];
     worksheet.getCell('B10').value = BlockSLAFinalReportHeaders[1];
@@ -848,6 +879,7 @@ export class BlockComponentComponent {
     worksheet.getCell('AA10').value = BlockSLAFinalReportHeaders[18];
     worksheet.getCell('AC10').value = BlockSLAFinalReportHeaders[19];
     worksheet.getCell('AE10').value = BlockSLAFinalReportHeaders[20];
+    worksheet.getCell('AG10').value = BlockSLAFinalReportHeaders[21];
 
     let finalReportHeaders = worksheet.getRow(10);
 
@@ -932,6 +964,13 @@ export class BlockComponentComponent {
     af11.value = VALUES.MINUTES;
     af11.style = MINUTE_STYLE;
 
+    let AG11 = worksheet.getCell('AG11');
+    AG11.value = VALUES.PERCENT;
+    AG11.style = PERCENT_STYLE;
+    let AH11 = worksheet.getCell('AH11');
+    AH11.value = VALUES.MINUTES;
+    AH11.style = MINUTE_STYLE;
+
     let row11 = worksheet.getRow(11);
     row11.eachCell((cell) => {
       cell.border = BORDER_STYLE;
@@ -976,6 +1015,10 @@ export class BlockComponentComponent {
         upPercent == 100 ? 0 : row.planned_maintenance_in_percent;
       let plannedMaintananceMinutes: number =
         upPercent == 100 ? 0 : row.planned_maintenance_in_minutes;
+      let unKnownDownPercent: number =
+        upPercent == 100 ? 0 : row.unknown_downtime_in_percent;
+      let unKnownDownMinutes: number =
+        upPercent == 100 ? 0 : row.unknown_downtime_in_minutes;
       let totalExclusionPercent: number =
         upPercent == 100
           ? 0
@@ -1025,6 +1068,8 @@ export class BlockComponentComponent {
         dcnDownMinutes.toFixed(2),
         plannedMaintanancePercent.toFixed(2),
         plannedMaintananceMinutes.toFixed(2),
+        unKnownDownPercent.toFixed(2),
+        unKnownDownMinutes.toFixed(2),
         totalExclusionPercent.toFixed(2),
         totalExclusionMinutes.toFixed(2),
         pollingTimePercent.toFixed(2),

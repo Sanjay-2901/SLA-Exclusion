@@ -197,7 +197,7 @@ export class ShqComponentComponent implements OnInit {
         let obj: ShqNMSData = {
           monitor: data[0] ? data[0].trim() : data[0],
           departments: data[1],
-          ip_address: data[0].match(/\((.*?)\)/)[1].trim(),
+          ip_address: data[0] ? data[0].match(/\((.*?)\)/)[1].trim() : '',
           type: data[2],
           up_percent: data[3],
           up_time: data[4],
@@ -211,7 +211,7 @@ export class ShqComponentComponent implements OnInit {
           alert: data[0],
           source: data[1] ? data[1].trim() : data[1],
           type: data[2],
-          ip_address: data[1].match(/\((.*?)\)/)[1].trim(),
+          ip_address: data[1] ? data[1].match(/\((.*?)\)/)[1].trim() : '',
           severity: data[3] ? data[3].trim() : data[3],
           message: data[4] ? data[4].trim() : data[4],
           last_poll_time: moment(data[5]).format(),
@@ -323,6 +323,15 @@ export class ShqComponentComponent implements OnInit {
           totalTimeSlaExclusionInMinutes) *
         100
       ).toFixed(2);
+      let unknownDownTimeInMinutes =
+        rfoCategorizedData.alert_report_empty === true
+          ? totalDownTimeInMinutes
+          : totalDownTimeInMinutes - alertDownTimeInMinutes;
+
+      let unknownDownTimeInPercent = +(
+        (unknownDownTimeInMinutes / totalTimeSlaExclusionInMinutes) *
+        100
+      ).toFixed(2);
 
       let newNmsData: ManipulatedShqNmsData = {
         ...nmsData,
@@ -337,8 +346,10 @@ export class ShqComponentComponent implements OnInit {
         power_downtime_in_minutes:
           rfoCategorizedData.total_power_downtime_minutes,
         dcn_downtime_in_minutes: rfoCategorizedData.total_dcn_downtime_minutes,
+        unknown_downtime_in_minutes: unknownDownTimeInMinutes,
         power_downtime_in_percent: powerDownTimeInpercent,
         dcn_downtime_in_percent: dcnDownTimeInPercent,
+        unknown_downtime_in_percent: unknownDownTimeInPercent,
       };
       manipulatedShqNmsData.push(newNmsData);
     });
