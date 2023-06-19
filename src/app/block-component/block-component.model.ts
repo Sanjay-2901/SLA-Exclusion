@@ -29,6 +29,8 @@ export interface ManipulatedNMSData extends BlockNMSData {
   dcn_downtime_in_percent: number;
   planned_maintenance_in_minutes: number;
   planned_maintenance_in_percent: number;
+  unknown_downtime_in_minutes: number;
+  unknown_downtime_in_percent: number;
 }
 
 export interface BlockTTData {
@@ -95,7 +97,7 @@ export interface BlockAlertData {
   total_duration_in_minutes: number;
 }
 
-export interface BlockSLASummaryPercent {
+export interface BlockSLASummary {
   report_type: string;
   time_span: string;
   no_of_blocks: number;
@@ -119,6 +121,8 @@ export interface BlockSLASummaryPercent {
   equipment_down_minutes: number;
   hrt_down_minutes: number;
   planned_maintenance_minutes: number;
+  unknown_downtime_in_percent: number;
+  unknown_downtime_in_minutes: number;
   total_up_minutes: number;
   total_down_percent: number;
   total_down_minutes: number;
@@ -127,8 +131,9 @@ export interface BlockSLASummaryPercent {
 }
 
 export interface RFOCategorizedTimeInMinutes {
-  total_dcn_downtime_minutes: number;
   total_power_downtime_minutes: number;
+  total_dcn_downtime_minutes: number;
+  alert_report_empty?: boolean;
 }
 
 export type AOA = [][];

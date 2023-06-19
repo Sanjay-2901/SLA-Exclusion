@@ -42,7 +42,7 @@ export enum VALUES {
   MINUTES = 'Min',
 }
 
-export const BlockSLASummaryPercentHeaders = [
+export const BlockSLASummarytHeaders = [
   'Report type',
   'TAG',
   'Time span',
@@ -56,6 +56,7 @@ export const BlockSLASummaryPercentHeaders = [
   'HRT Down',
   'DCN Down',
   'Planned Maintenance',
+  'UnKnown',
   'Total SLA Exclusion',
   'Total UP (UP + Total Exclusion)',
 ];
@@ -79,6 +80,7 @@ export const BlockSLAFinalReportHeaders = [
   'HRT Down',
   'DCN Down',
   'Planned Maintenance',
+  'UnKnown',
   'Total SLA Exclusion',
   'Polling Time',
   'Total UP ((UP + Total Exclusion)',
@@ -355,6 +357,7 @@ export const SHQ_SUMMARY_HEADERS = [
   'HRT Down',
   'DCN Down',
   'Planned Maintenance',
+  'UnKnown',
   'Total SLA Exclusion',
   'Total UP ( UP + Total Exclusion)',
 ];
@@ -373,6 +376,7 @@ export const SHQ_DEVICE_LEVEL_HEADERS = [
   'HRT Down',
   'DCN Down',
   'Planned Maintenance',
+  'Unknown',
   'Total SLA Exclusion',
   'Polling Time',
   'Total UP (UP+Total Exclusion)',
