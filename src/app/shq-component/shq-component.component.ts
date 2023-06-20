@@ -32,7 +32,6 @@ export class ShqComponentComponent {
   file!: any;
   shqSlaSummary!: ShqSlaSummary;
   isLoading: boolean = false;
-  isEveryRowInSlaColumnValid: boolean = true;
 
   constructor(
     private ShqService: ShqService,
@@ -73,6 +72,7 @@ export class ShqComponentComponent {
   }
 
   resetInputFile(): void {
+    this.isLoading = false;
     this.file = null;
     const fileInput = document.getElementById(
       'shqFileInput'
@@ -109,7 +109,12 @@ export class ShqComponentComponent {
             'SHQ - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
         } else {
-          this.validateEachRowsInSlaReport(data, workSheetName);
+          try {
+            this.validateEachRowsInSlaReport(data, workSheetName);
+          } catch (error: any) {
+            this.toastrService.error(error.message);
+            this.resetInputFile();
+          }
         }
       } else if (workSheetName === 'shq_noc_tt_report') {
         if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
@@ -134,61 +139,35 @@ export class ShqComponentComponent {
   validateEachRowsInSlaReport(data: AOA, workSheetName: string) {
     for (let index = 1; index < data.length; index++) {
       let row: any = data[index];
-      if (row[0] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `SHQ - ${
-            SHQ_SLA_REPORT_HEADERS[0]
-          } is not available in SLA report in row number :
-            ${index + 1}`
-        );
-        break;
-      } else if (row[3] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `SHQ - ${
-            SHQ_SLA_REPORT_HEADERS[3]
-          } is not available in SLA report in row number :
-            ${index + 1}`
-        );
-        break;
-      } else if (row[4] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `SHQ - ${
-            SHQ_SLA_REPORT_HEADERS[4]
-          } is not available in SLA report in row number :
-            ${index + 1}`
-        );
-        break;
-      } else if (row[5] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `SHQ - ${
-            SHQ_SLA_REPORT_HEADERS[5]
-          } is not available in SLA report in row number :
-            ${index + 1}`
-        );
-        break;
-      } else if (row[6] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `SHQ - ${
-            SHQ_SLA_REPORT_HEADERS[6]
-          } is not available in SLA report in row number :
-            ${index + 1}`
-        );
-        break;
+      if (row[0] === null || row[0] === undefined) {
+        throw new Error(`SHQ - ${
+          SHQ_SLA_REPORT_HEADERS[0]
+        } is not available in SLA report in row number :
+          ${index + 1}`);
+      } else if (row[3] === null || row[3] === undefined) {
+        throw new Error(`SHQ - ${
+          SHQ_SLA_REPORT_HEADERS[3]
+        } is not available in SLA report in row number :
+          ${index + 1}`);
+      } else if (row[4] === null || row[4] === undefined) {
+        throw new Error(`SHQ - ${
+          SHQ_SLA_REPORT_HEADERS[4]
+        } is not available in SLA report in row number :
+          ${index + 1}`);
+      } else if (row[5] === null || row[5] === undefined) {
+        throw new Error(`SHQ - ${
+          SHQ_SLA_REPORT_HEADERS[5]
+        } is not available in SLA report in row number :
+          ${index + 1}`);
+      } else if (row[6] === null || row[6] === undefined) {
+        throw new Error(`SHQ - ${
+          SHQ_SLA_REPORT_HEADERS[6]
+        } is not available in SLA report in row number :
+          ${index + 1}`);
       }
     }
 
-    if (this.isEveryRowInSlaColumnValid === true) {
-      this.storeDataAsObject(workSheetName, data);
-    } else {
-      this.resetInputFile();
-      this.isEveryRowInSlaColumnValid = true;
-      this.isLoading = false;
-    }
+    this.storeDataAsObject(workSheetName, data);
   }
 
   storeDataAsObject(workSheetName: string, data: any[]): void {
@@ -312,7 +291,7 @@ export class ShqComponentComponent {
         100
       ).toFixed(2);
       let rfoCategorizedData = this.ShqService.categorizeRFO(
-        nmsData.ip_address,
+        nmsData,
         this.shqAlertData,
         this.shqTTData
       );

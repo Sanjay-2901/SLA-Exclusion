@@ -49,7 +49,6 @@ export class BlockComponentComponent {
   worksheet!: ExcelJS.Worksheet;
   file!: any;
   isSheetNamesValid: boolean = true;
-  isEveryRowInSlaColumnValid: boolean = true;
   isLoading: boolean = false;
 
   constructor(private toastrService: ToastrService) {}
@@ -90,6 +89,7 @@ export class BlockComponentComponent {
   }
 
   resetInputFile(): void {
+    this.isLoading = false;
     this.file = null;
     const fileInput = document.getElementById(
       'blockFileInput'
@@ -126,7 +126,12 @@ export class BlockComponentComponent {
             'Block - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
         } else {
-          this.validateEachRows(data, workSheetName);
+          try {
+            this.validateEachRows(data, workSheetName);
+          } catch (error: any) {
+            this.toastrService.error(error.message);
+            this.resetInputFile();
+          }
         }
       } else if (workSheetName === 'block_noc_tt_report') {
         if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
@@ -151,79 +156,44 @@ export class BlockComponentComponent {
   validateEachRows(data: AOA, workSheetName: string) {
     for (let index = 1; index < data.length; index++) {
       let row: any = data[index];
-      if (row[1] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `Block - ${
-            BLOCK_SLA_REPORT_HEADERS[1]
-          } is not available in SLA report in row number:
-          ${index + 1}`
-        );
-        break;
-      } else if (row[4] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `Block - ${
-            BLOCK_SLA_REPORT_HEADERS[4]
-          } is not available in SLA report in row number:
-            ${index + 1}`
-        );
-        break;
-      } else if (row[5] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `Block - ${
-            BLOCK_SLA_REPORT_HEADERS[5]
-          } is not available in SLA report in row number:
-            ${index + 1}`
-        );
-        break;
-      } else if (row[6] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `Block - ${
-            BLOCK_SLA_REPORT_HEADERS[6]
-          } is not available in SLA report in row number:
-            ${index + 1}`
-        );
-        break;
-      } else if (row[7] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `Block - ${
-            BLOCK_SLA_REPORT_HEADERS[7]
-          } is not available in SLA report in row number:
-            ${index + 1}`
-        );
-        break;
-      } else if (row[8] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `Block - ${
-            BLOCK_SLA_REPORT_HEADERS[8]
-          } is not available in SLA report in row number:
-            ${index + 1}`
-        );
-        break;
-      } else if (row[9] === null) {
-        this.isEveryRowInSlaColumnValid = false;
-        this.toastrService.error(
-          `Block - ${
-            BLOCK_SLA_REPORT_HEADERS[5]
-          } is not available in SLA report in row number:
-            ${index + 1}`
-        );
-        break;
+      if (row[1] === null || row[1] === undefined) {
+        throw new Error(`Block - ${
+          BLOCK_SLA_REPORT_HEADERS[1]
+        } is not available in SLA report in row number:
+        ${index + 1}`);
+      } else if (row[4] === null || row[4] === undefined) {
+        throw new Error(`Block - ${
+          BLOCK_SLA_REPORT_HEADERS[4]
+        } is not available in SLA report in row number:
+          ${index + 1}`);
+      } else if (row[5] === null || row[5] === undefined) {
+        throw new Error(`Block - ${
+          BLOCK_SLA_REPORT_HEADERS[5]
+        } is not available in SLA report in row number:
+          ${index + 1}`);
+      } else if (row[6] === null || row[6] === undefined) {
+        throw new Error(`Block - ${
+          BLOCK_SLA_REPORT_HEADERS[6]
+        } is not available in SLA report in row number:
+          ${index + 1}`);
+      } else if (row[7] === null || row[7] === undefined) {
+        throw new Error(`Block - ${
+          BLOCK_SLA_REPORT_HEADERS[7]
+        } is not available in SLA report in row number:
+          ${index + 1}`);
+      } else if (row[8] === null || row[8] === undefined) {
+        throw new Error(`Block - ${
+          BLOCK_SLA_REPORT_HEADERS[8]
+        } is not available in SLA report in row number:
+          ${index + 1}`);
+      } else if (row[9] === null || row[9] === undefined) {
+        throw new Error(`Block - ${
+          BLOCK_SLA_REPORT_HEADERS[5]
+        } is not available in SLA report in row number:
+          ${index + 1}`);
       }
     }
-
-    if (this.isEveryRowInSlaColumnValid === true) {
-      this.storeDataAsObject(workSheetName, data);
-    } else {
-      this.resetInputFile();
-      this.isEveryRowInSlaColumnValid = true;
-      this.isLoading = false;
-    }
+    this.storeDataAsObject(workSheetName, data);
   }
 
   // Reading the worksheets individually and storing the data as Array of Objects
@@ -330,20 +300,24 @@ export class BlockComponentComponent {
   }
 
   calculateTimeInMinutes(timePeriod: string): number {
-    let totalTimeinMinutes = timePeriod.trim().split(' ');
-    if (timePeriod.includes('days')) {
-      return +(
-        parseInt(totalTimeinMinutes[0]) * 1440 +
-        parseInt(totalTimeinMinutes[2]) * 60 +
-        parseInt(totalTimeinMinutes[4]) +
-        parseInt(totalTimeinMinutes[6]) / 60
-      ).toFixed(2);
+    if (timePeriod) {
+      let totalTimeinMinutes = timePeriod.trim().split(' ');
+      if (timePeriod.includes('days')) {
+        return +(
+          parseInt(totalTimeinMinutes[0]) * 1440 +
+          parseInt(totalTimeinMinutes[2]) * 60 +
+          parseInt(totalTimeinMinutes[4]) +
+          parseInt(totalTimeinMinutes[6]) / 60
+        ).toFixed(2);
+      } else {
+        return +(
+          parseInt(totalTimeinMinutes[0]) * 60 +
+          parseInt(totalTimeinMinutes[2]) +
+          parseInt(totalTimeinMinutes[4]) / 60
+        ).toFixed(2);
+      }
     } else {
-      return +(
-        parseInt(totalTimeinMinutes[0]) * 60 +
-        parseInt(totalTimeinMinutes[2]) +
-        parseInt(totalTimeinMinutes[4]) / 60
-      ).toFixed(2);
+      return 0;
     }
   }
 
@@ -367,107 +341,118 @@ export class BlockComponentComponent {
   }
 
   // Alert report and TT report
-  categorizeRFO(ip: string) {
-    let totalPowerDownTimeInMinutes = 0;
-    let totalDCNDownTimeInMinutes = 0;
-    let isAlertReportEmpty: boolean = false;
+  categorizeRFO(nmsData: BlockNMSData) {
+    if (nmsData.up_percent !== 100) {
+      let totalPowerDownTimeInMinutes = 0;
+      let totalDCNDownTimeInMinutes = 0;
+      let isAlertReportEmpty: boolean = false;
 
-    let powerDownArray: BlockAlertData[] = [];
-    let DCNDownArray: BlockAlertData[] = [];
-    let criticalAlertAndTTDataTimeMismatch: BlockAlertData[] = [];
+      let powerDownArray: BlockAlertData[] = [];
+      let DCNDownArray: BlockAlertData[] = [];
+      let criticalAlertAndTTDataTimeMismatch: BlockAlertData[] = [];
 
-    const filteredCriticalAlertData = this.blockAlertData.filter(
-      (alertData: BlockAlertData) => {
-        return (
-          alertData.ip_address == ip &&
-          alertData.severity == SEVERITY_CRITICAL &&
-          alertData.message == ALERT_DOWN_MESSAGE
-        );
-      }
-    );
-
-    const filteredWarningAlertData = this.blockAlertData.filter(
-      (alertData: BlockAlertData) => {
-        return (
-          alertData.ip_address == ip &&
-          alertData.severity == SEVERITY_WARNING &&
-          alertData.message.includes('reboot')
-        );
-      }
-    );
-
-    const filteredTTData = this.blockTTData.filter((ttData: BlockTTData) => {
-      return ttData.ip == ip;
-    });
-
-    if (filteredCriticalAlertData.length) {
-      filteredCriticalAlertData.forEach((alertCriticalData: BlockAlertData) => {
-        filteredTTData.forEach((ttData: BlockTTData) => {
-          if (
-            moment(alertCriticalData.alarm_start_time).isSame(
-              ttData.incident_start_on,
-              'minute'
-            )
-          ) {
-            if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
-              powerDownArray.push(alertCriticalData);
-            } else if (
-              ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
-              ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
-            ) {
-              DCNDownArray.push(alertCriticalData);
-            }
-          }
-        });
-
-        if (
-          !lodash.some(powerDownArray, alertCriticalData) &&
-          !lodash.some(DCNDownArray, alertCriticalData)
-        ) {
-          criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
+      const filteredCriticalAlertData = this.blockAlertData.filter(
+        (alertData: BlockAlertData) => {
+          return (
+            alertData.ip_address == nmsData.ip_address &&
+            alertData.severity == SEVERITY_CRITICAL &&
+            alertData.message == ALERT_DOWN_MESSAGE
+          );
         }
-      });
-    } else {
-      isAlertReportEmpty = true;
-    }
+      );
 
-    if (criticalAlertAndTTDataTimeMismatch) {
-      criticalAlertAndTTDataTimeMismatch.forEach(
-        (alertCriticalData: BlockAlertData) => {
-          filteredWarningAlertData.forEach(
-            (alertWarningData: BlockAlertData) => {
+      const filteredWarningAlertData = this.blockAlertData.filter(
+        (alertData: BlockAlertData) => {
+          return (
+            alertData.ip_address == nmsData.ip_address &&
+            alertData.severity == SEVERITY_WARNING &&
+            alertData.message.includes('reboot')
+          );
+        }
+      );
+
+      const filteredTTData = this.blockTTData.filter((ttData: BlockTTData) => {
+        return ttData.ip == nmsData.ip_address;
+      });
+
+      if (filteredCriticalAlertData.length) {
+        filteredCriticalAlertData.forEach(
+          (alertCriticalData: BlockAlertData) => {
+            filteredTTData.forEach((ttData: BlockTTData) => {
               if (
-                moment(alertCriticalData.alarm_clear_time).isSame(
-                  alertWarningData.alarm_start_time,
+                moment(alertCriticalData.alarm_start_time).isSame(
+                  ttData.incident_start_on,
                   'minute'
                 )
               ) {
-                powerDownArray.push(alertCriticalData);
+                if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
+                  powerDownArray.push(alertCriticalData);
+                } else if (
+                  ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
+                  ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+                ) {
+                  DCNDownArray.push(alertCriticalData);
+                }
               }
+            });
+
+            if (
+              !lodash.some(powerDownArray, alertCriticalData) &&
+              !lodash.some(DCNDownArray, alertCriticalData)
+            ) {
+              criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
             }
-          );
-
-          if (!lodash.some(powerDownArray, alertCriticalData)) {
-            DCNDownArray.push(alertCriticalData);
           }
-        }
-      );
+        );
+      } else {
+        isAlertReportEmpty = true;
+      }
+
+      if (criticalAlertAndTTDataTimeMismatch) {
+        criticalAlertAndTTDataTimeMismatch.forEach(
+          (alertCriticalData: BlockAlertData) => {
+            filteredWarningAlertData.forEach(
+              (alertWarningData: BlockAlertData) => {
+                if (
+                  moment(alertCriticalData.alarm_clear_time).isSame(
+                    alertWarningData.alarm_start_time,
+                    'minute'
+                  )
+                ) {
+                  powerDownArray.push(alertCriticalData);
+                }
+              }
+            );
+
+            if (!lodash.some(powerDownArray, alertCriticalData)) {
+              DCNDownArray.push(alertCriticalData);
+            }
+          }
+        );
+      }
+
+      powerDownArray.forEach((powerDownAlert: BlockAlertData) => {
+        totalPowerDownTimeInMinutes += powerDownAlert.total_duration_in_minutes;
+      });
+
+      DCNDownArray.forEach((dcnDownAlert: BlockAlertData) => {
+        totalDCNDownTimeInMinutes += dcnDownAlert.total_duration_in_minutes;
+      });
+
+      const rfoCategorizedTimeInMinutes: RFOCategorizedTimeInMinutes = {
+        total_dcn_downtime_minutes: +totalDCNDownTimeInMinutes.toFixed(2),
+        total_power_downtime_minutes: +totalPowerDownTimeInMinutes.toFixed(2),
+        alert_report_empty: isAlertReportEmpty,
+      };
+      return rfoCategorizedTimeInMinutes;
+    } else {
+      const rfoCategorizedTimeInMinutes: RFOCategorizedTimeInMinutes = {
+        total_dcn_downtime_minutes: 0,
+        total_power_downtime_minutes: 0,
+        alert_report_empty: true,
+      };
+      return rfoCategorizedTimeInMinutes;
     }
-
-    powerDownArray.forEach((powerDownAlert: BlockAlertData) => {
-      totalPowerDownTimeInMinutes += powerDownAlert.total_duration_in_minutes;
-    });
-
-    DCNDownArray.forEach((dcnDownAlert: BlockAlertData) => {
-      totalDCNDownTimeInMinutes += dcnDownAlert.total_duration_in_minutes;
-    });
-
-    const rfoCategorizedTimeInMinutes: RFOCategorizedTimeInMinutes = {
-      total_dcn_downtime_minutes: +totalDCNDownTimeInMinutes.toFixed(2),
-      total_power_downtime_minutes: +totalPowerDownTimeInMinutes.toFixed(2),
-      alert_report_empty: isAlertReportEmpty,
-    };
-    return rfoCategorizedTimeInMinutes;
   }
 
   manipulateBlockNMSData(): void {
@@ -493,7 +478,7 @@ export class BlockComponentComponent {
         (alertDownTimeInMinutes / totalTimeExclusiveOfSLAExclusionInMinutes) *
         100
       ).toFixed(2);
-      let rfoCategorizedData = this.categorizeRFO(nmsData.ip_address);
+      let rfoCategorizedData = this.categorizeRFO(nmsData);
       let powerDownTimeInpercent = +(
         (rfoCategorizedData.total_power_downtime_minutes /
           totalTimeExclusiveOfSLAExclusionInMinutes) *
