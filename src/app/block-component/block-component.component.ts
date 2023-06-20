@@ -32,6 +32,7 @@ import {
   BLOCK_ALERT_REPORT_HEADERS,
   BLOCK_INPUT_FILE_NAMES,
   BlockSLASummarytHeaders,
+  IP_ADDRESS_PATTERN,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
 
@@ -127,7 +128,7 @@ export class BlockComponentComponent {
           );
         } else {
           try {
-            this.validateEachRows(data, workSheetName);
+            this.validateEachRowsOfSlaReport(data, workSheetName);
           } catch (error: any) {
             this.toastrService.error(error.message);
             this.resetInputFile();
@@ -147,13 +148,18 @@ export class BlockComponentComponent {
             'Block - Invalid template of the  Alert report. Kindly provide the valid column names.'
           );
         } else {
-          this.storeDataAsObject(workSheetName, data);
+          try {
+            this.validateEachRowsOfAlertReport(data, workSheetName);
+          } catch (error: any) {
+            this.toastrService.error(error.message);
+            this.resetInputFile();
+          }
         }
       }
     }
   }
 
-  validateEachRows(data: AOA, workSheetName: string) {
+  validateEachRowsOfSlaReport(data: AOA, workSheetName: string) {
     for (let index = 1; index < data.length; index++) {
       let row: any = data[index];
       if (row[1] === null || row[1] === undefined) {
@@ -191,8 +197,31 @@ export class BlockComponentComponent {
           BLOCK_SLA_REPORT_HEADERS[5]
         } is not available in SLA report in row number:
           ${index + 1}`);
+      } else {
+        if (!IP_ADDRESS_PATTERN.test(row[1].trim())) {
+          throw new Error(
+            ` Block - ${
+              BLOCK_SLA_REPORT_HEADERS[1]
+            } is not valid in SLA report in row number : ${index + 1}`
+          );
+        }
       }
     }
+    this.storeDataAsObject(workSheetName, data);
+  }
+
+  validateEachRowsOfAlertReport(data: AOA, workSheetName: string) {
+    data.forEach((row: any, index: number) => {
+      if (index >= 1) {
+        if (!IP_ADDRESS_PATTERN.test(row[2])) {
+          throw new Error(
+            ` BLOCK - ${
+              BLOCK_ALERT_REPORT_HEADERS[2]
+            } is invalid in Alert report in row number : ${index + 1}`
+          );
+        }
+      }
+    });
     this.storeDataAsObject(workSheetName, data);
   }
 

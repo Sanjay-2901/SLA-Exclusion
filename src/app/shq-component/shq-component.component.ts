@@ -11,6 +11,7 @@ import * as moment from 'moment';
 import { ShqService } from './shq-service.service';
 import { AOA } from '../block-component/block-component.model';
 import {
+  IP_ADDRESS_PATTERN,
   SHQ_ALERT_REPORT_HEADERS,
   SHQ_INPUT_FILE_NAMES,
   SHQ_SLA_REPORT_HEADERS,
@@ -164,6 +165,14 @@ export class ShqComponentComponent {
           SHQ_SLA_REPORT_HEADERS[6]
         } is not available in SLA report in row number :
           ${index + 1}`);
+      } else {
+        if (!IP_ADDRESS_PATTERN.test(row[0].match(/\((.*?)\)/)[1].trim())) {
+          throw new Error(
+            ` SHQ - ${
+              SHQ_SLA_REPORT_HEADERS[0]
+            } is invalid in SLA report in row number : ${index + 1}`
+          );
+        }
       }
     }
 
