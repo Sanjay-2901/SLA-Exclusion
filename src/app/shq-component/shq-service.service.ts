@@ -45,21 +45,25 @@ export class ShqService {
     });
   }
 
-  CalucateTimeInMinutes(timePeriod: string) {
-    let totalTimeinMinutes = timePeriod.trim().split(' ');
-    if (timePeriod.includes('days')) {
-      return +(
-        parseInt(totalTimeinMinutes[0]) * 1440 +
-        parseInt(totalTimeinMinutes[2]) * 60 +
-        parseInt(totalTimeinMinutes[4]) +
-        parseInt(totalTimeinMinutes[6]) / 60
-      ).toFixed(2);
+  CalucateTimeInMinutes(timePeriod: string): number {
+    if (timePeriod) {
+      let totalTimeinMinutes = timePeriod.trim().split(' ');
+      if (timePeriod.includes('days')) {
+        return +(
+          parseInt(totalTimeinMinutes[0]) * 1440 +
+          parseInt(totalTimeinMinutes[2]) * 60 +
+          parseInt(totalTimeinMinutes[4]) +
+          parseInt(totalTimeinMinutes[6]) / 60
+        ).toFixed(2);
+      } else {
+        return +(
+          parseInt(totalTimeinMinutes[0]) * 60 +
+          parseInt(totalTimeinMinutes[2]) +
+          parseInt(totalTimeinMinutes[4]) / 60
+        ).toFixed(2);
+      }
     } else {
-      return +(
-        parseInt(totalTimeinMinutes[0]) * 60 +
-        parseInt(totalTimeinMinutes[2]) +
-        parseInt(totalTimeinMinutes[4]) / 60
-      ).toFixed(2);
+      return 0;
     }
   }
 
@@ -83,109 +87,120 @@ export class ShqService {
   }
 
   categorizeRFO(
-    ipAddress: string,
+    nmsData: ShqNMSData,
     shqAlertData: ShqAlertData[],
     shqTTData: ShqTTData[]
   ) {
-    let totalPowerDownTimeInMinutes = 0;
-    let totalDCNDownTimeInMinutes = 0;
-    let isAlertReportEmpty: boolean = false;
+    if (nmsData.up_percent !== 100) {
+      let totalPowerDownTimeInMinutes = 0;
+      let totalDCNDownTimeInMinutes = 0;
+      let isAlertReportEmpty: boolean = false;
 
-    let powerDownArray: ShqAlertData[] = [];
-    let DCNDownArray: ShqAlertData[] = [];
-    let criticalAlertAndTTDataTimeMismatch: ShqAlertData[] = [];
+      let powerDownArray: ShqAlertData[] = [];
+      let DCNDownArray: ShqAlertData[] = [];
+      let criticalAlertAndTTDataTimeMismatch: ShqAlertData[] = [];
 
-    const filteredCriticalAlertData = shqAlertData.filter(
-      (alertData: ShqAlertData) => {
-        return (
-          alertData.ip_address.trim() == ipAddress &&
-          alertData.severity.trim() == SEVERITY_CRITICAL &&
-          alertData.message.trim() == ALERT_DOWN_MESSAGE
-        );
-      }
-    );
-
-    const filteredWarningAlertData = shqAlertData.filter(
-      (alertData: ShqAlertData) => {
-        return (
-          alertData.ip_address.trim() == ipAddress &&
-          alertData.severity.trim() == SEVERITY_WARNING &&
-          alertData.message.trim().includes('reboot')
-        );
-      }
-    );
-
-    const filteredTTData = shqTTData.filter((ttData: ShqTTData) => {
-      return ttData.ip == ipAddress;
-    });
-
-    if (filteredCriticalAlertData.length) {
-      filteredCriticalAlertData.forEach((alertCriticalData: ShqAlertData) => {
-        filteredTTData.forEach((ttData: ShqTTData) => {
-          if (
-            moment(alertCriticalData.last_poll_time).isSame(
-              ttData.incident_start_on,
-              'minute'
-            )
-          ) {
-            if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
-              powerDownArray.push(alertCriticalData);
-            } else if (
-              ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
-              ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
-            ) {
-              DCNDownArray.push(alertCriticalData);
-            }
-          }
-        });
-
-        if (
-          !lodash.some(powerDownArray, alertCriticalData) &&
-          !lodash.some(DCNDownArray, alertCriticalData)
-        ) {
-          criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
+      const filteredCriticalAlertData = shqAlertData.filter(
+        (alertData: ShqAlertData) => {
+          return (
+            alertData.ip_address.trim() == nmsData.ip_address &&
+            alertData.severity.trim() == SEVERITY_CRITICAL &&
+            alertData.message.trim() == ALERT_DOWN_MESSAGE
+          );
         }
-      });
-    } else {
-      isAlertReportEmpty = true;
-    }
+      );
 
-    if (criticalAlertAndTTDataTimeMismatch) {
-      criticalAlertAndTTDataTimeMismatch.forEach(
-        (alertCriticalData: ShqAlertData) => {
-          filteredWarningAlertData.forEach((alertWarningData: ShqAlertData) => {
+      const filteredWarningAlertData = shqAlertData.filter(
+        (alertData: ShqAlertData) => {
+          return (
+            alertData.ip_address.trim() == nmsData.ip_address &&
+            alertData.severity.trim() == SEVERITY_WARNING &&
+            alertData.message.trim().includes('reboot')
+          );
+        }
+      );
+
+      const filteredTTData = shqTTData.filter((ttData: ShqTTData) => {
+        return ttData.ip == nmsData.ip_address;
+      });
+
+      if (filteredCriticalAlertData.length) {
+        filteredCriticalAlertData.forEach((alertCriticalData: ShqAlertData) => {
+          filteredTTData.forEach((ttData: ShqTTData) => {
             if (
-              moment(alertCriticalData.duration_time).isSame(
-                alertWarningData.last_poll_time,
+              moment(alertCriticalData.last_poll_time).isSame(
+                ttData.incident_start_on,
                 'minute'
               )
             ) {
-              powerDownArray.push(alertCriticalData);
+              if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
+                powerDownArray.push(alertCriticalData);
+              } else if (
+                ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
+                ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+              ) {
+                DCNDownArray.push(alertCriticalData);
+              }
             }
           });
 
-          if (!lodash.some(powerDownArray, alertCriticalData)) {
-            DCNDownArray.push(alertCriticalData);
+          if (
+            !lodash.some(powerDownArray, alertCriticalData) &&
+            !lodash.some(DCNDownArray, alertCriticalData)
+          ) {
+            criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
           }
-        }
-      );
+        });
+      } else {
+        isAlertReportEmpty = true;
+      }
+
+      if (criticalAlertAndTTDataTimeMismatch) {
+        criticalAlertAndTTDataTimeMismatch.forEach(
+          (alertCriticalData: ShqAlertData) => {
+            filteredWarningAlertData.forEach(
+              (alertWarningData: ShqAlertData) => {
+                if (
+                  moment(alertCriticalData.duration_time).isSame(
+                    alertWarningData.last_poll_time,
+                    'minute'
+                  )
+                ) {
+                  powerDownArray.push(alertCriticalData);
+                }
+              }
+            );
+
+            if (!lodash.some(powerDownArray, alertCriticalData)) {
+              DCNDownArray.push(alertCriticalData);
+            }
+          }
+        );
+      }
+
+      powerDownArray.forEach((powerDownAlert: ShqAlertData) => {
+        totalPowerDownTimeInMinutes += powerDownAlert.total_duration_in_minutes;
+      });
+
+      DCNDownArray.forEach((dcnDownAlert: ShqAlertData) => {
+        totalDCNDownTimeInMinutes += dcnDownAlert.total_duration_in_minutes;
+      });
+
+      const rfoCategorizedTimeInMinutes: RFOCategorizedTimeInMinutes = {
+        total_dcn_downtime_minutes: +totalDCNDownTimeInMinutes.toFixed(2),
+        total_power_downtime_minutes: +totalPowerDownTimeInMinutes.toFixed(2),
+        alert_report_empty: isAlertReportEmpty,
+      };
+
+      return rfoCategorizedTimeInMinutes;
+    } else {
+      const rfoCategorizedTimeInMinutes: RFOCategorizedTimeInMinutes = {
+        total_dcn_downtime_minutes: 0,
+        total_power_downtime_minutes: 0,
+        alert_report_empty: true,
+      };
+      return rfoCategorizedTimeInMinutes;
     }
-
-    powerDownArray.forEach((powerDownAlert: ShqAlertData) => {
-      totalPowerDownTimeInMinutes += powerDownAlert.total_duration_in_minutes;
-    });
-
-    DCNDownArray.forEach((dcnDownAlert: ShqAlertData) => {
-      totalDCNDownTimeInMinutes += dcnDownAlert.total_duration_in_minutes;
-    });
-
-    const rfoCategorizedTimeInMinutes: RFOCategorizedTimeInMinutes = {
-      total_dcn_downtime_minutes: +totalDCNDownTimeInMinutes.toFixed(2),
-      total_power_downtime_minutes: +totalPowerDownTimeInMinutes.toFixed(2),
-      alert_report_empty: isAlertReportEmpty,
-    };
-
-    return rfoCategorizedTimeInMinutes;
   }
 
   calculateCumulativePercentage(value: number): number {
@@ -201,7 +216,6 @@ export class ShqService {
   ): ShqSlaSummary {
     let upPercent = 0;
     let upMinutes = 0;
-    let totalDownExclusiveOfSlaExclusionInPercent = 0;
     let totalDownExclusiveOfSlaExclusionInMinute = 0;
     let powerDownPercent = 0;
     let powerDownMinutes = 0;
@@ -215,8 +229,6 @@ export class ShqService {
     let totalSlaExclusionMinute = 0;
     let pollingTimePercent = 0;
     let pollingTimeMinutes = 0;
-    let totalUpWithExclusionPercent = 0;
-    let totalUpWithExclusionMinute = 0;
 
     manipulatedNMSData.forEach((nmsData: ManipulatedShqNmsData) => {
       upPercent += nmsData.up_percent;
