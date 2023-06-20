@@ -132,8 +132,7 @@ export class ShqComponentComponent {
   }
 
   validateEachRowsInSlaReport(data: AOA, workSheetName: string) {
-    data.shift();
-    for (let index = 0; index < data.length; index++) {
+    for (let index = 1; index < data.length; index++) {
       let row: any = data[index];
       if (row[0] === null) {
         this.isEveryRowInSlaColumnValid = false;
@@ -141,7 +140,7 @@ export class ShqComponentComponent {
           `SHQ - ${
             SHQ_SLA_REPORT_HEADERS[0]
           } is not available in SLA report in row number :
-            ${index + 2}`
+            ${index + 1}`
         );
         break;
       } else if (row[3] === null) {
@@ -150,7 +149,7 @@ export class ShqComponentComponent {
           `SHQ - ${
             SHQ_SLA_REPORT_HEADERS[3]
           } is not available in SLA report in row number :
-            ${index + 2}`
+            ${index + 1}`
         );
         break;
       } else if (row[4] === null) {
@@ -159,7 +158,7 @@ export class ShqComponentComponent {
           `SHQ - ${
             SHQ_SLA_REPORT_HEADERS[4]
           } is not available in SLA report in row number :
-            ${index + 2}`
+            ${index + 1}`
         );
         break;
       } else if (row[5] === null) {
@@ -168,7 +167,7 @@ export class ShqComponentComponent {
           `SHQ - ${
             SHQ_SLA_REPORT_HEADERS[5]
           } is not available in SLA report in row number :
-            ${index + 2}`
+            ${index + 1}`
         );
         break;
       } else if (row[6] === null) {
@@ -177,7 +176,7 @@ export class ShqComponentComponent {
           `SHQ - ${
             SHQ_SLA_REPORT_HEADERS[6]
           } is not available in SLA report in row number :
-            ${index + 2}`
+            ${index + 1}`
         );
         break;
       }
@@ -192,90 +191,91 @@ export class ShqComponentComponent {
     }
   }
 
-  storeDataAsObject(workSheetName: string, data: any): void {
+  storeDataAsObject(workSheetName: string, data: any[]): void {
     let result: any = [];
-    data.shift();
     data.forEach((data: any, index: number) => {
-      if (workSheetName === 'shq_sla_report') {
-        let obj: ShqNMSData = {
-          monitor: data[0] ? data[0].trim() : data[0],
-          departments: data[1],
-          ip_address: data[0] ? data[0].match(/\((.*?)\)/)[1].trim() : '',
-          type: data[2],
-          up_percent: data[3],
-          up_time: data[4],
-          down_percent: data[5],
-          down_time: data[6],
-          created_date: data[7],
-        };
-        result.push(obj);
-      } else if (workSheetName === 'shq_alert_report') {
-        let obj: ShqAlertData = {
-          alert: data[0],
-          source: data[1] ? data[1].trim() : data[1],
-          type: data[2],
-          ip_address: data[1] ? data[1].match(/\((.*?)\)/)[1].trim() : '',
-          severity: data[3] ? data[3].trim() : data[3],
-          message: data[4] ? data[4].trim() : data[4],
-          last_poll_time: moment(data[5]).format(),
-          duration: data[6] ? data[6].trim() : data[6],
-          duration_time: moment(data[7]).format(),
-          total_duration_in_minutes: this.ShqService.CalucateTimeInMinutes(
-            data[6]
-          ),
-        };
-        result.push(obj);
-      } else if (workSheetName === 'shq_noc_tt_report') {
-        let obj: ShqTTData = {
-          incident_id: data[0],
-          parent_incident_id: data[1],
-          enitity_type_name: data[2],
-          entity_subtype_name: data[3],
-          incident_name: data[4],
-          equipment_host: data[5],
-          ip: data[6] ? data[6].trim() : data[6],
-          severity: data[7],
-          status: data[8],
-          priority_of_repair: data[9],
-          effect_on_services: data[10],
-          incident_type: data[11],
-          mode_of_contact: data[12],
-          incident_creation_time: data[13],
-          remark_type: data[14],
-          remarks: data[15],
-          cluster: data[16],
-          city: data[17],
-          block: data[18],
-          gp: data[19],
-          slab_reach: data[20],
-          resolution_method: data[21],
-          rfo: data[22] ? data[22].trim() : data[22],
-          incident_start_on: moment(data[23]).format(),
-          incident_created_on: data[24],
-          ageing: data[25],
-          open_time: data[26],
-          assigned_time: data[27],
-          assigned_to_field: data[28],
-          assigned_to_vendor: data[29],
-          cancelled: data[30],
-          closed: data[31],
-          hold_time: data[32],
-          resolved_date_time: data[33],
-          resolved_by: data[34],
-          total_resolution_time: data[35],
-          resolution_type_in_min: data[36],
-          sla_ageing: data[37],
-          reporting_sla: data[38],
-          reopen_date: data[39],
-          category: data[40],
-          change_id: data[41],
-          exclusion_name: data[42],
-          exclusion_remark: data[43],
-          exclusion_type: data[44],
-          pendency: data[45],
-          vendor_name: data[46],
-        };
-        result.push(obj);
+      if (index >= 1) {
+        if (workSheetName === 'shq_sla_report') {
+          let obj: ShqNMSData = {
+            monitor: data[0] ? data[0].trim() : data[0],
+            departments: data[1],
+            ip_address: data[0] ? data[0].match(/\((.*?)\)/)[1].trim() : '',
+            type: data[2],
+            up_percent: data[3],
+            up_time: data[4],
+            down_percent: data[5],
+            down_time: data[6],
+            created_date: data[7],
+          };
+          result.push(obj);
+        } else if (workSheetName === 'shq_alert_report') {
+          let obj: ShqAlertData = {
+            alert: data[0],
+            source: data[1] ? data[1].trim() : data[1],
+            type: data[2],
+            ip_address: data[1] ? data[1].match(/\((.*?)\)/)[1].trim() : '',
+            severity: data[3] ? data[3].trim() : data[3],
+            message: data[4] ? data[4].trim() : data[4],
+            last_poll_time: moment(data[5]).format(),
+            duration: data[6] ? data[6].trim() : data[6],
+            duration_time: moment(data[7]).format(),
+            total_duration_in_minutes: this.ShqService.CalucateTimeInMinutes(
+              data[6]
+            ),
+          };
+          result.push(obj);
+        } else if (workSheetName === 'shq_noc_tt_report') {
+          let obj: ShqTTData = {
+            incident_id: data[0],
+            parent_incident_id: data[1],
+            enitity_type_name: data[2],
+            entity_subtype_name: data[3],
+            incident_name: data[4],
+            equipment_host: data[5],
+            ip: data[6] ? data[6].trim() : data[6],
+            severity: data[7],
+            status: data[8],
+            priority_of_repair: data[9],
+            effect_on_services: data[10],
+            incident_type: data[11],
+            mode_of_contact: data[12],
+            incident_creation_time: data[13],
+            remark_type: data[14],
+            remarks: data[15],
+            cluster: data[16],
+            city: data[17],
+            block: data[18],
+            gp: data[19],
+            slab_reach: data[20],
+            resolution_method: data[21],
+            rfo: data[22] ? data[22].trim() : data[22],
+            incident_start_on: moment(data[23]).format(),
+            incident_created_on: data[24],
+            ageing: data[25],
+            open_time: data[26],
+            assigned_time: data[27],
+            assigned_to_field: data[28],
+            assigned_to_vendor: data[29],
+            cancelled: data[30],
+            closed: data[31],
+            hold_time: data[32],
+            resolved_date_time: data[33],
+            resolved_by: data[34],
+            total_resolution_time: data[35],
+            resolution_type_in_min: data[36],
+            sla_ageing: data[37],
+            reporting_sla: data[38],
+            reopen_date: data[39],
+            category: data[40],
+            change_id: data[41],
+            exclusion_name: data[42],
+            exclusion_remark: data[43],
+            exclusion_type: data[44],
+            pendency: data[45],
+            vendor_name: data[46],
+          };
+          result.push(obj);
+        }
       }
     });
 
