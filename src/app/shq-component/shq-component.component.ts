@@ -145,9 +145,9 @@ export class ShqComponentComponent {
           SHQ_SLA_REPORT_HEADERS[0]
         } is not available in SLA report in row number :
           ${index + 1}`);
-      } else if (row[3] === null || row[3] === undefined) {
+      } else if (row[1] === null || row[1] === undefined) {
         throw new Error(`SHQ - ${
-          SHQ_SLA_REPORT_HEADERS[3]
+          SHQ_SLA_REPORT_HEADERS[1]
         } is not available in SLA report in row number :
           ${index + 1}`);
       } else if (row[4] === null || row[4] === undefined) {
@@ -165,11 +165,16 @@ export class ShqComponentComponent {
           SHQ_SLA_REPORT_HEADERS[6]
         } is not available in SLA report in row number :
           ${index + 1}`);
+      } else if (row[7] === null || row[7] === undefined) {
+        throw new Error(`SHQ - ${
+          SHQ_SLA_REPORT_HEADERS[7]
+        } is not available in SLA report in row number :
+          ${index + 1}`);
       } else {
-        if (!IP_ADDRESS_PATTERN.test(row[0].match(/\((.*?)\)/)[1].trim())) {
+        if (!IP_ADDRESS_PATTERN.test(row[1].trim())) {
           throw new Error(
             ` SHQ - ${
-              SHQ_SLA_REPORT_HEADERS[0]
+              SHQ_SLA_REPORT_HEADERS[1]
             } is invalid in SLA report in row number : ${index + 1}`
           );
         }
@@ -186,29 +191,29 @@ export class ShqComponentComponent {
         if (workSheetName === 'shq_sla_report') {
           let obj: ShqNMSData = {
             monitor: data[0] ? data[0].trim() : data[0],
-            departments: data[1],
-            ip_address: data[0] ? data[0].match(/\((.*?)\)/)[1].trim() : '',
-            type: data[2],
-            up_percent: data[3],
-            up_time: data[4],
-            down_percent: data[5],
-            down_time: data[6],
-            created_date: data[7],
+            ip_address: data[1] ? data[0].trim() : data[1],
+            departments: data[2],
+            type: data[3],
+            up_percent: data[4],
+            up_time: data[5],
+            down_percent: data[6],
+            down_time: data[7],
+            created_date: data[8],
           };
           result.push(obj);
         } else if (workSheetName === 'shq_alert_report') {
           let obj: ShqAlertData = {
             alert: data[0],
             source: data[1] ? data[1].trim() : data[1],
-            type: data[2],
-            ip_address: data[1] ? data[1].match(/\((.*?)\)/)[1].trim() : '',
-            severity: data[3] ? data[3].trim() : data[3],
-            message: data[4] ? data[4].trim() : data[4],
-            last_poll_time: moment(data[5]).format(),
-            duration: data[6] ? data[6].trim() : data[6],
-            duration_time: moment(data[7]).format(),
+            ip_address: data[2] ? data[2].trim() : data[2],
+            type: data[3],
+            severity: data[4] ? data[4].trim() : data[4],
+            message: data[5] ? data[5].trim() : data[5],
+            alarm_start_time: moment(data[6]).format(),
+            duration: data[7] ? data[7].trim() : data[7],
+            alarm_clear_time: moment(data[8]).format(),
             total_duration_in_minutes: this.ShqService.CalucateTimeInMinutes(
-              data[6]
+              data[7]
             ),
           };
           result.push(obj);
