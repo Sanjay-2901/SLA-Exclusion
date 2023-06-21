@@ -107,6 +107,7 @@ export const BLOCK_SLA_REPORT_HEADERS = [
 
 export const SHQ_SLA_REPORT_HEADERS = [
   'Monitor',
+  'IP Address',
   'Departments',
   'Type',
   'Up (%)',
@@ -182,12 +183,13 @@ export const BLOCK_ALERT_REPORT_HEADERS = [
 export const SHQ_ALERT_REPORT_HEADERS = [
   'Alert',
   'Source',
+  'IP Address',
   'Type',
   'Severity',
   'Message',
-  'Last Poll Time',
+  'Alarm Start Time',
   'Duration',
-  'Duration Time',
+  'Alarm Clear Time',
 ];
 
 export const BLOCK_INPUT_FILE_NAMES = [
@@ -235,9 +237,17 @@ export const BLOCK_SLA_FINAL_REPORT_COLUMNS = [
   { width: 20 },
   { width: 20 },
   { width: 20 },
+  { width: 20 },
+  { width: 20 },
 ];
 
 export const SHQ_SLQ_FINAL_REPORT_COLUMNS = [
+  {
+    width: 20,
+  },
+  {
+    width: 20,
+  },
   {
     width: 20,
   },

@@ -1,13 +1,13 @@
 export interface ShqNMSData {
   monitor: string;
   departments: string;
+  ip_address: string;
   type: string;
   up_percent: number;
   up_time: string;
   down_percent: number;
   down_time: string;
   created_date: Date;
-  ip_address: string;
   total_uptime_in_minutes?: number;
   total_downtime_in_minutes?: number;
 }
@@ -30,13 +30,13 @@ export interface ManipulatedShqNmsData extends ShqNMSData {
 export interface ShqAlertData {
   alert: string;
   source: string;
+  ip_address: string;
   type: string;
   severity: string;
   message: string;
-  last_poll_time: string;
+  alarm_start_time: string;
   duration: string;
-  duration_time: string;
-  ip_address: string;
+  alarm_clear_time: string;
   total_duration_in_minutes: number;
 }
 
@@ -95,26 +95,26 @@ export interface ShqSlaSummary {
   tag: string;
   time_span: string;
   no_of_shq_devices: number;
-  up_percent: number;
-  up_minutes: number;
-  total_down_exclusive_of_sla_exclusion_percent: number;
-  total_down_exclusive_of_sla_exclusion_minute: number;
-  power_down_percent: number;
-  power_dowm_minute: number;
-  fibre_down_percent: number;
-  fiber_down_minute: number;
-  equipment_down_percent: number;
-  equipment_down_minute: number;
-  hrt_down_percent: number;
-  hrt_down_minute: number;
-  dcn_down_percent: number;
-  dcn_down_minute: number;
-  planned_maintenance_percent: number;
-  planned_maintenance_minute: number;
-  unknown_downtime_in_percent: number;
-  unknown_downtime_in_minutes: number;
-  total_sla_exclusion_percent: number;
-  total_sla_exclusion_minute: number;
-  total_up_percent: number;
-  total_up_minute: number;
+  up_percent: string;
+  up_minutes: string;
+  total_down_exclusive_of_sla_exclusion_percent: string;
+  total_down_exclusive_of_sla_exclusion_minute: string;
+  power_down_percent: string;
+  power_dowm_minute: string;
+  fibre_down_percent: string;
+  fiber_down_minute: string;
+  equipment_down_percent: string;
+  equipment_down_minute: string;
+  hrt_down_percent: string;
+  hrt_down_minute: string;
+  dcn_down_percent: string;
+  dcn_down_minute: string;
+  planned_maintenance_percent: string;
+  planned_maintenance_minute: string;
+  unknown_downtime_in_percent: string;
+  unknown_downtime_in_minutes: string;
+  total_sla_exclusion_percent: string;
+  total_sla_exclusion_minute: string;
+  total_up_percent: string;
+  total_up_minute: string;
 }
