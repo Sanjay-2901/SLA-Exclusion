@@ -560,6 +560,12 @@ export class BlockComponentComponent {
     let upMinutes = 0;
     let powerDownPercent = 0;
     let powerDownMinutes = 0;
+    let fiberDownPercent = 0;
+    let fiberDownMinute = 0;
+    let equipmentDownPercent = 0;
+    let equipmentDownMinute = 0;
+    let hrtDownPercent = 0;
+    let hrtDownMinute = 0;
     let dcnDownPercent = 0;
     let dcnDownMinutes = 0;
     let plannedMaintenancePercent = 0;
@@ -622,38 +628,34 @@ export class BlockComponentComponent {
       report_type: 'BLOCK-SLA',
       time_span: '',
       no_of_blocks: 79,
-      up_percent: +(upPercent / 79).toFixed(2),
-      up_minutes: +upMinutes.toFixed(2),
+      up_percent: (upPercent / 79).toFixed(2),
+      up_minutes: upMinutes.toFixed(2),
       no_of_up_blocks: '',
-      power_down_percent: +(powerDownPercent / 79).toFixed(2),
-      power_down_minutes: +powerDownMinutes.toFixed(2),
-      fibre_down_percent: 0.0,
-      fibre_down_minutes: 0.0,
-      equipment_down_percent: 0.0,
-      equipment_down_minutes: 0.0,
-      hrt_down_percent: 0.0,
-      hrt_down_minutes: 0.0,
-      dcn_down_percent: +(dcnDownPercent / 79).toFixed(2),
-      dcn_down_minutes: +dcnDownMinutes.toFixed(2),
-      planned_maintenance_percent: +(plannedMaintenancePercent / 79).toFixed(2),
-      planned_maintenance_minutes: plannedMaintenanceMinutes,
-      unknown_downtime_in_percent: +(unKnownDownPercent / 79).toFixed(2),
-      unknown_downtime_in_minutes: unKnownDownMinutes,
-      down_percent_exclusive_of_sla: 100 - upPercent / 79,
-      no_of_down_blocks: '',
-      total_sla_exclusion_percent: +(cumulativeRfoDownInPercent / 79).toFixed(
-        2
-      ),
-      total_sla_exclusion_minutes: +cumulativeRfoDownInMinutes.toFixed(2),
-      total_up_percent: 0,
-      total_up_minutes: 0,
-      total_down_minutes: +totalDownMinutes.toFixed(2),
-      total_down_percent: 100 - +(upPercent / 79).toFixed(2),
-      total_up_percent_exclusion: +(
+      down_percent_exclusive_of_sla: (100 - upPercent / 79).toFixed(2),
+      power_down_percent: (powerDownPercent / 79).toFixed(2),
+      power_down_minutes: powerDownMinutes.toFixed(2),
+      fibre_down_percent: (fiberDownPercent / 79).toFixed(2),
+      fibre_down_minutes: fiberDownMinute.toFixed(2),
+      equipment_down_percent: (equipmentDownPercent / 79).toFixed(2),
+      equipment_down_minutes: equipmentDownMinute.toFixed(2),
+      hrt_down_percent: (hrtDownPercent / 79).toFixed(2),
+      hrt_down_minutes: hrtDownMinute.toFixed(2),
+      dcn_down_percent: (dcnDownPercent / 79).toFixed(2),
+      dcn_down_minutes: dcnDownMinutes.toFixed(2),
+      planned_maintenance_percent: (plannedMaintenancePercent / 79).toFixed(2),
+      planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
+      unknown_downtime_in_percent: (unKnownDownPercent / 79).toFixed(2),
+      unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
+      total_sla_exclusion_percent: (cumulativeRfoDownInPercent / 79).toFixed(2),
+      total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
+      total_down_minutes: totalDownMinutes.toFixed(2),
+      total_down_percent: (100 - +(upPercent / 79)).toFixed(2),
+      total_up_percent_exclusion: (
         (upPercent + pollingTimePercent + totalExclusionPercent) /
         79
       ).toFixed(2),
-      total_up_minutes_exclusion: +(
+
+      total_up_minutes_exclusion: (
         upMinutes +
         pollingTimeMinutes +
         totalExclusionMinutes

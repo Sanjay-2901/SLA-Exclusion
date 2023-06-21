@@ -73,9 +73,9 @@ export class ShqService {
   ) {
     let filteredAlertData = shqAlertData.filter((alert: ShqAlertData) => {
       return (
-        alert.ip_address.trim() == ipAddress &&
-        alert.severity.trim() == SEVERITY_CRITICAL &&
-        alert.message.trim() == ALERT_DOWN_MESSAGE
+        alert.ip_address == ipAddress &&
+        alert.severity == SEVERITY_CRITICAL &&
+        alert.message == ALERT_DOWN_MESSAGE
       );
     });
 
@@ -128,7 +128,7 @@ export class ShqService {
         filteredCriticalAlertData.forEach((alertCriticalData: ShqAlertData) => {
           filteredTTData.forEach((ttData: ShqTTData) => {
             if (
-              moment(alertCriticalData.last_poll_time).isSame(
+              moment(alertCriticalData.alarm_start_time).isSame(
                 ttData.incident_start_on,
                 'minute'
               )
@@ -161,8 +161,8 @@ export class ShqService {
             filteredWarningAlertData.forEach(
               (alertWarningData: ShqAlertData) => {
                 if (
-                  moment(alertCriticalData.duration_time).isSame(
-                    alertWarningData.last_poll_time,
+                  moment(alertCriticalData.alarm_clear_time).isSame(
+                    alertWarningData.alarm_start_time,
                     'minute'
                   )
                 ) {
@@ -203,12 +203,12 @@ export class ShqService {
     }
   }
 
-  calculateCumulativePercentage(value: number): number {
-    return parseInt((value / 22).toFixed(2));
+  calculateCumulativePercentage(value: number): string {
+    return (value / 22).toFixed(2);
   }
 
-  calculateCumulativeMinutes(value: number): number {
-    return parseInt(value.toFixed(2));
+  calculateCumulativeMinutes(value: number): string {
+    return value.toFixed(2);
   }
 
   calculateShqSlaSummary(
@@ -219,8 +219,16 @@ export class ShqService {
     let totalDownExclusiveOfSlaExclusionInMinute = 0;
     let powerDownPercent = 0;
     let powerDownMinutes = 0;
+    let fiberDownPercent = 0;
+    let fiberDownMinute = 0;
+    let equipmentDownPercent = 0;
+    let equipmentDownMinute = 0;
+    let hrtDownPercent = 0;
+    let hrtDownMinute = 0;
     let dcnDownPercent = 0;
     let dcnDownMinutes = 0;
+    let plannedMaintenancePercent = 0;
+    let plannedMaitenanceMinute = 0;
     let unKnownDownMinutes = 0;
     let unKnownDownPercent = 0;
     let cumulativeRfoDownInPercent = 0;
@@ -276,24 +284,31 @@ export class ShqService {
       no_of_shq_devices: 22,
       up_percent: this.calculateCumulativePercentage(upPercent),
       up_minutes: this.calculateCumulativeMinutes(upMinutes),
-      total_down_exclusive_of_sla_exclusion_percent:
-        100 - this.calculateCumulativePercentage(upPercent),
+      total_down_exclusive_of_sla_exclusion_percent: (
+        100 - parseInt(this.calculateCumulativePercentage(upPercent))
+      ).toFixed(2),
       total_down_exclusive_of_sla_exclusion_minute:
         this.calculateCumulativeMinutes(
           totalDownExclusiveOfSlaExclusionInMinute
         ),
       power_down_percent: this.calculateCumulativePercentage(powerDownPercent),
       power_dowm_minute: this.calculateCumulativeMinutes(powerDownMinutes),
-      fibre_down_percent: 0,
-      fiber_down_minute: 0,
-      equipment_down_percent: 0,
-      equipment_down_minute: 0,
-      hrt_down_percent: 0,
-      hrt_down_minute: 0,
+      fibre_down_percent: this.calculateCumulativePercentage(fiberDownPercent),
+      fiber_down_minute: this.calculateCumulativeMinutes(fiberDownMinute),
+      equipment_down_percent:
+        this.calculateCumulativePercentage(equipmentDownPercent),
+      equipment_down_minute:
+        this.calculateCumulativeMinutes(equipmentDownMinute),
+      hrt_down_percent: this.calculateCumulativePercentage(hrtDownPercent),
+      hrt_down_minute: this.calculateCumulativeMinutes(hrtDownMinute),
       dcn_down_percent: this.calculateCumulativePercentage(dcnDownPercent),
       dcn_down_minute: this.calculateCumulativeMinutes(dcnDownMinutes),
-      planned_maintenance_percent: 0,
-      planned_maintenance_minute: 0,
+      planned_maintenance_percent: this.calculateCumulativePercentage(
+        plannedMaintenancePercent
+      ),
+      planned_maintenance_minute: this.calculateCumulativeMinutes(
+        plannedMaitenanceMinute
+      ),
       unknown_downtime_in_percent:
         this.calculateCumulativePercentage(unKnownDownPercent),
       unknown_downtime_in_minutes:
@@ -498,7 +513,7 @@ export class ShqService {
     workSheet.getCell('W6').value = shqSlaSummary.unknown_downtime_in_minutes;
     workSheet.getCell('X6').value = shqSlaSummary.total_sla_exclusion_percent;
     workSheet.getCell('Y6').value = shqSlaSummary.total_sla_exclusion_minute;
-    workSheet.getCell('Z6').value = shqSlaSummary.total_up_minute;
+    workSheet.getCell('Z6').value = shqSlaSummary.total_up_percent;
     workSheet.getCell('AA6').value = shqSlaSummary.total_up_minute;
 
     let row5 = workSheet.getRow(5);
@@ -725,11 +740,9 @@ export class ShqService {
           ? 100
           : upPercent + totalSlaExclusionInPercent + pollingTimeInPercent;
       let totalUpInMinutes: number =
-        upPercent === 100
-          ? 100
-          : upMinute +
-            totalDownExclusivceOfSlaExclusionInMinutes +
-            pollingTimeInMinute;
+        upMinute +
+        totalDownExclusivceOfSlaExclusionInMinutes +
+        pollingTimeInMinute;
 
       const ShqDeviceLevelRowValues = workSheet.addRow([
         reportType,
