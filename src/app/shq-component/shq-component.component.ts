@@ -191,7 +191,7 @@ export class ShqComponentComponent {
         if (workSheetName === 'shq_sla_report') {
           let obj: ShqNMSData = {
             monitor: data[0] ? data[0].trim() : data[0],
-            ip_address: data[1] ? data[0].trim() : data[1],
+            ip_address: data[1] ? data[1].trim() : data[1],
             departments: data[2],
             type: data[3],
             up_percent: data[4],
