@@ -1095,10 +1095,9 @@ export class BlockComponentComponent {
       let pollingTimePercent: number = row.pollingTimeInPercent;
       let pollingTimeMinutes: number = row.pollingTimeInMinutes;
       let totalUpPercentSLAExclusion: number =
-        upPercent + totalExclusionPercent;
-      console.log(row.ip_address ,upMinute, totalExclusionMinutes)
+        upPercent + totalExclusionPercent - pollingTimePercent;
       let totalUpMinutesSLAExclusion: number =
-        upMinute + totalExclusionMinutes;
+        upMinute + totalExclusionMinutes - pollingTimeMinutes;
 
       const blockSummaryPercentRowValues = worksheet.addRow([
         reportType,
