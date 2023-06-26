@@ -10,6 +10,7 @@ import {
   BlockTTData,
   ManipulatedNMSData,
   RFOCategorizedTimeInMinutes,
+  TTCorelation,
 } from './block-component.model';
 import {
   SEVERITY_CRITICAL,
@@ -33,6 +34,8 @@ import {
   BLOCK_INPUT_FILE_NAMES,
   BlockSLASummarytHeaders,
   IP_ADDRESS_PATTERN,
+  BLOCK_TT_CO_RELATION_HEADERS,
+  BLOCK_TT_CO_RELATION_COLUMNS,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
 
@@ -45,8 +48,12 @@ export class BlockComponentComponent {
   blockNMSData: BlockNMSData[] = [];
   blockTTData: BlockTTData[] = [];
   blockAlertData: BlockAlertData[] = [];
+
   manipulatedNMSData: ManipulatedNMSData[] = [];
   blockSLASummary!: BlockSLASummary;
+
+  ttCorelation: TTCorelation[] = [];
+
   worksheet!: ExcelJS.Worksheet;
   file!: any;
   isSheetNamesValid: boolean = true;
@@ -380,6 +387,10 @@ export class BlockComponentComponent {
       let DCNDownArray: BlockAlertData[] = [];
       let criticalAlertAndTTDataTimeMismatch: BlockAlertData[] = [];
 
+      let powerIssueTT: string[] = [];
+      let linkIssueTT: string[] = [];
+      let otherTT: string[] = [];
+
       const filteredCriticalAlertData = this.blockAlertData.filter(
         (alertData: BlockAlertData) => {
           return (
@@ -416,11 +427,15 @@ export class BlockComponentComponent {
               ) {
                 if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
                   powerDownArray.push(alertCriticalData);
+                  powerIssueTT.push(ttData.incident_id);
                 } else if (
                   ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
                   ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
                 ) {
                   DCNDownArray.push(alertCriticalData);
+                  linkIssueTT.push(ttData.incident_id);
+                } else {
+                  otherTT.push(ttData.incident_id);
                 }
               }
             });
@@ -436,6 +451,13 @@ export class BlockComponentComponent {
       } else {
         isAlertReportEmpty = true;
       }
+
+      this.ttCorelation.push({
+        ip: nmsData.ip_address,
+        powerIssueTT: powerIssueTT,
+        linkIssueTT: linkIssueTT,
+        otherTT: otherTT,
+      });
 
       if (criticalAlertAndTTDataTimeMismatch) {
         criticalAlertAndTTDataTimeMismatch.forEach(
@@ -521,12 +543,32 @@ export class BlockComponentComponent {
       let unknownDownTimeInMinutes =
         rfoCategorizedData.alert_report_empty === true
           ? totalDownTimeInMinutes
+          : totalDownTimeInMinutes - alertDownTimeInMinutes <= 15
+          ? 0
           : totalDownTimeInMinutes - alertDownTimeInMinutes;
 
       let unknownDownTimeInPercent = +(
         (unknownDownTimeInMinutes / totalTimeExclusiveOfSLAExclusionInMinutes) *
         100
       ).toFixed(2);
+
+      let pollingTimeMinutes = 0;
+
+      if (totalDownTimeInMinutes - alertDownTimeInMinutes <= 15) {
+        pollingTimeMinutes = totalDownTimeInMinutes - alertDownTimeInMinutes;
+      }
+
+      if (alertDownTimeInMinutes > totalDownTimeInMinutes) {
+        pollingTimeMinutes = alertDownTimeInMinutes - totalDownTimeInMinutes;
+      }
+
+      let pollingTimePercent =
+        pollingTimeMinutes > 0
+          ? +(
+              (pollingTimeMinutes / totalTimeExclusiveOfSLAExclusionInMinutes) *
+              100
+            ).toFixed(2)
+          : 0;
 
       let newNMSData: ManipulatedNMSData = {
         ...nmsData,
@@ -547,6 +589,8 @@ export class BlockComponentComponent {
         dcn_downtime_in_percent: dcnDownTimeInPercent,
         planned_maintenance_in_percent: nmsData.maintenance_percent,
         unknown_downtime_in_percent: unknownDownTimeInPercent,
+        pollingTimeInMinutes: pollingTimeMinutes,
+        pollingTimeInPercent: pollingTimePercent,
       };
       manipulatedBlockNMSData.push(newNMSData);
     });
@@ -1048,17 +1092,13 @@ export class BlockComponentComponent {
         row.power_downtime_in_minutes +
         row.dcn_downtime_in_minutes +
         row.planned_maintenance_in_minutes;
-      let pollingTimePercent: number =
-        upPercent == 100 ? 0 : row.down_percent - +totalExclusionPercent;
-      let pollingTimeMinutes: number =
-        upPercent == 100
-          ? 0
-          : row.total_downtime_in_minutes - totalExclusionMinutes;
-
+      let pollingTimePercent: number = row.pollingTimeInPercent;
+      let pollingTimeMinutes: number = row.pollingTimeInMinutes;
       let totalUpPercentSLAExclusion: number =
-        upPercent + totalExclusionPercent + pollingTimePercent;
+        upPercent + totalExclusionPercent;
+      console.log(row.ip_address ,upMinute, totalExclusionMinutes)
       let totalUpMinutesSLAExclusion: number =
-        upMinute + totalExclusionMinutes + pollingTimeMinutes;
+        upMinute + totalExclusionMinutes;
 
       const blockSummaryPercentRowValues = worksheet.addRow([
         reportType,
@@ -1102,6 +1142,38 @@ export class BlockComponentComponent {
         cell.alignment = { horizontal: 'left' };
       });
     });
+
+    // Generating Sheet 2
+    const ttCorelationWorkSheet = workbook.addWorksheet('Block-TT co-relation');
+    ttCorelationWorkSheet.columns = BLOCK_TT_CO_RELATION_COLUMNS;
+    ttCorelationWorkSheet
+      .addRow(BLOCK_TT_CO_RELATION_HEADERS)
+      .eachCell((cell) => {
+        cell.style = TABLE_HEADERS;
+      });
+    this.ttCorelation.forEach(
+      (ttCorelationData: TTCorelation, index: number) => {
+        let block_device_detail = BLOCK_DEVICE_DETAILS.filter(
+          (device: BlockDeviceDetail) => {
+            return device.ip_address == ttCorelationData.ip;
+          }
+        );
+        let [blockDeviceDetail] = block_device_detail;
+        ttCorelationWorkSheet
+          .addRow([
+            index + 1,
+            ttCorelationData.ip,
+            blockDeviceDetail.block_name,
+            ttCorelationData.powerIssueTT.toString().split(',').join(', '),
+            ttCorelationData.linkIssueTT.toString().split(',').join(', '),
+            ttCorelationData.otherTT.toString().split(',').join(', '),
+          ])
+          .eachCell((cell) => {
+            cell.border = BORDER_STYLE;
+            cell.alignment = { horizontal: 'left' };
+          });
+      }
+    );
 
     workbook.xlsx.writeBuffer().then((buffer) => {
       this.downloadFinalReport(buffer, 'Block-SLA-Exclusion-Report');

@@ -31,6 +31,8 @@ export interface ManipulatedNMSData extends BlockNMSData {
   planned_maintenance_in_percent: number;
   unknown_downtime_in_minutes: number;
   unknown_downtime_in_percent: number;
+  pollingTimeInMinutes: number;
+  pollingTimeInPercent: number;
 }
 
 export interface BlockTTData {
@@ -131,6 +133,13 @@ export interface RFOCategorizedTimeInMinutes {
   total_power_downtime_minutes: number;
   total_dcn_downtime_minutes: number;
   alert_report_empty?: boolean;
+}
+
+export interface TTCorelation {
+  ip: string;
+  powerIssueTT: string[];
+  linkIssueTT: string[];
+  otherTT: string[];
 }
 
 export type AOA = [][];
