@@ -86,7 +86,7 @@ export const BlockSLAFinalReportHeaders = [
   'UnKnown',
   'Total SLA Exclusion',
   'Polling Time',
-  'Total UP ((UP + Total Exclusion)',
+  'Total UP (UP + Total Exclusion)',
 ];
 
 export const BLOCK_SLA_REPORT_HEADERS = [
@@ -331,6 +331,51 @@ export const SHQ_SLQ_FINAL_REPORT_COLUMNS = [
   },
 ];
 
+export const BLOCK_TT_CO_RELATION_COLUMNS = [
+  {
+    width: 10,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+];
+
+export const SHQ_TT_CO_RELATION_COLUMNS = [
+  {
+    width: 10,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+];
+
 export const SEVERITY_CRITICAL = 'Critical';
 export const SEVERITY_WARNING = 'Warning';
 export const ALERT_DOWN_MESSAGE =
@@ -393,6 +438,25 @@ export const SHQ_DEVICE_LEVEL_HEADERS = [
   'Total SLA Exclusion',
   'Polling Time',
   'Total UP (UP+Total Exclusion)',
+];
+
+export const BLOCK_TT_CO_RELATION_HEADERS = [
+  'S No',
+  'IP Address',
+  'Block Name',
+  'Power Issue TT',
+  'Link Issue TT',
+  'Other TT',
+];
+
+export const SHQ_TT_CO_RELATION_HEADERS = [
+  'S No',
+  'Host Name',
+  'IP Address',
+  'Device Type',
+  'Power Issue TT',
+  'Link Issue TT',
+  'Other TT',
 ];
 
 export const BLOCK_DEVICE_DETAILS: BlockDeviceDetail[] = [
