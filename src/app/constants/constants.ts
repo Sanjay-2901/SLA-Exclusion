@@ -350,7 +350,31 @@ export const BLOCK_TT_CO_RELATION_COLUMNS = [
   {
     width: 30,
   },
-]
+];
+
+export const SHQ_TT_CO_RELATION_COLUMNS = [
+  {
+    width: 10,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+];
 
 export const SEVERITY_CRITICAL = 'Critical';
 export const SEVERITY_WARNING = 'Warning';
@@ -420,6 +444,16 @@ export const BLOCK_TT_CO_RELATION_HEADERS = [
   'S No',
   'IP Address',
   'Block Name',
+  'Power Issue TT',
+  'Link Issue TT',
+  'Other TT',
+];
+
+export const SHQ_TT_CO_RELATION_HEADERS = [
+  'S No',
+  'Host Name',
+  'IP Address',
+  'Device Type',
   'Power Issue TT',
   'Link Issue TT',
   'Other TT',

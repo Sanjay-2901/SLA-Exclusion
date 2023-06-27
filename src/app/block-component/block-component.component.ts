@@ -554,7 +554,10 @@ export class BlockComponentComponent {
 
       let pollingTimeMinutes = 0;
 
-      if (totalDownTimeInMinutes - alertDownTimeInMinutes <= 15) {
+      if (
+        alertDownTimeInMinutes < totalDownTimeInMinutes &&
+        totalDownTimeInMinutes - alertDownTimeInMinutes <= 15
+      ) {
         pollingTimeMinutes = totalDownTimeInMinutes - alertDownTimeInMinutes;
       }
 
@@ -589,8 +592,8 @@ export class BlockComponentComponent {
         dcn_downtime_in_percent: dcnDownTimeInPercent,
         planned_maintenance_in_percent: nmsData.maintenance_percent,
         unknown_downtime_in_percent: unknownDownTimeInPercent,
-        pollingTimeInMinutes: pollingTimeMinutes,
-        pollingTimeInPercent: pollingTimePercent,
+        polling_time_in_minutes: pollingTimeMinutes,
+        polling_time_in_percent: pollingTimePercent,
       };
       manipulatedBlockNMSData.push(newNMSData);
     });
@@ -602,6 +605,8 @@ export class BlockComponentComponent {
   calcluateBlockSLASummary() {
     let upPercent = 0;
     let upMinutes = 0;
+    let totalDownMinutes = 0;
+    let totalDownPercent = 0;
     let powerDownPercent = 0;
     let powerDownMinutes = 0;
     let fiberDownPercent = 0;
@@ -618,7 +623,6 @@ export class BlockComponentComponent {
     let unKnownDownPercent = 0;
     let cumulativeRfoDownInPercent = 0;
     let cumulativeRfoDownInMinutes = 0;
-    let totalDownMinutes = 0;
     let totalExclusionPercent = 0;
     let totalExclusionMinutes = 0;
     let pollingTimePercent = 0;
@@ -626,6 +630,9 @@ export class BlockComponentComponent {
 
     this.manipulatedNMSData.forEach((nmsData: ManipulatedNMSData) => {
       upPercent += nmsData.up_percent;
+      upMinutes += nmsData.total_uptime_in_minutes;
+      totalDownMinutes += nmsData.total_downtime_in_minutes;
+      totalDownPercent += nmsData.down_percent;
       powerDownPercent += nmsData.power_downtime_in_percent;
       powerDownMinutes += nmsData.power_downtime_in_minutes;
       dcnDownPercent += nmsData.dcn_downtime_in_percent;
@@ -639,13 +646,11 @@ export class BlockComponentComponent {
         nmsData.dcn_downtime_in_percent +
         nmsData.maintenance_percent +
         nmsData.unknown_downtime_in_percent;
-      upMinutes += nmsData.total_uptime_in_minutes;
       cumulativeRfoDownInMinutes +=
         nmsData.power_downtime_in_minutes +
         nmsData.dcn_downtime_in_minutes +
         nmsData.planned_maintenance_in_minutes +
         nmsData.unknown_downtime_in_minutes;
-      totalDownMinutes += nmsData.total_downtime_in_minutes;
       totalExclusionPercent +=
         nmsData.power_downtime_in_percent +
         nmsData.dcn_downtime_in_percent +
@@ -656,16 +661,8 @@ export class BlockComponentComponent {
         nmsData.dcn_downtime_in_minutes +
         nmsData.planned_maintenance_in_minutes +
         nmsData.unknown_downtime_in_minutes;
-      pollingTimePercent +=
-        nmsData.down_percent -
-        (nmsData.power_downtime_in_percent +
-          nmsData.dcn_downtime_in_percent +
-          nmsData.unknown_downtime_in_percent);
-      pollingTimeMinutes +=
-        nmsData.total_downtime_in_minutes -
-        (nmsData.power_downtime_in_minutes +
-          nmsData.dcn_downtime_in_minutes +
-          nmsData.unknown_downtime_in_minutes);
+      pollingTimePercent += nmsData.polling_time_in_percent;
+      pollingTimeMinutes += nmsData.polling_time_in_minutes;
     });
 
     this.blockSLASummary = {
@@ -695,14 +692,11 @@ export class BlockComponentComponent {
       total_down_minutes: totalDownMinutes.toFixed(2),
       total_down_percent: (100 - +(upPercent / 79)).toFixed(2),
       total_up_percent_exclusion: (
-        (upPercent + pollingTimePercent + totalExclusionPercent) /
+        (upPercent + totalDownPercent) /
         79
       ).toFixed(2),
-
       total_up_minutes_exclusion: (
-        upMinutes +
-        pollingTimeMinutes +
-        totalExclusionMinutes
+        upMinutes + totalDownMinutes
       ).toFixed(2),
     };
   }
@@ -712,7 +706,6 @@ export class BlockComponentComponent {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Block-SLA-Exclusion-Report');
     worksheet.columns = BLOCK_SLA_FINAL_REPORT_COLUMNS;
-    // worksheet.views = [{ state: 'frozen', xSplit: 10, ySplit: 0 }];
 
     worksheet.mergeCells('A1:B1');
     let cellA1 = worksheet.getCell('A1');
@@ -1092,12 +1085,10 @@ export class BlockComponentComponent {
         row.power_downtime_in_minutes +
         row.dcn_downtime_in_minutes +
         row.planned_maintenance_in_minutes;
-      let pollingTimePercent: number = row.pollingTimeInPercent;
-      let pollingTimeMinutes: number = row.pollingTimeInMinutes;
-      let totalUpPercentSLAExclusion: number =
-        upPercent + totalExclusionPercent - pollingTimePercent;
-      let totalUpMinutesSLAExclusion: number =
-        upMinute + totalExclusionMinutes - pollingTimeMinutes;
+      let pollingTimePercent: number = row.polling_time_in_percent;
+      let pollingTimeMinutes: number = row.polling_time_in_minutes;
+      let totalUpPercentSLAExclusion: number = upPercent + downPercent;
+      let totalUpMinutesSLAExclusion: number = upMinute + downMinute;
 
       const blockSummaryPercentRowValues = worksheet.addRow([
         reportType,
