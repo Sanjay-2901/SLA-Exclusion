@@ -84,6 +84,7 @@ export class ShqComponentComponent {
     this.shqAlertData = [];
     this.shqNMSData = [];
     this.shqTTData = [];
+    this.ShqService.ttCorelation = [];
   }
 
   validateWorksheets(worksheet: ExcelJS.Worksheet) {
@@ -173,7 +174,7 @@ export class ShqComponentComponent {
       } else {
         if (!IP_ADDRESS_PATTERN.test(row[1].trim())) {
           throw new Error(
-            ` SHQ - ${
+            `SHQ - ${
               SHQ_SLA_REPORT_HEADERS[1]
             } is invalid in SLA report in row number : ${index + 1}`
           );

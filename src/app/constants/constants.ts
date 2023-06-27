@@ -86,7 +86,7 @@ export const BlockSLAFinalReportHeaders = [
   'UnKnown',
   'Total SLA Exclusion',
   'Polling Time',
-  'Total UP ((UP + Total Exclusion)',
+  'Total UP (UP + Total Exclusion)',
 ];
 
 export const BLOCK_SLA_REPORT_HEADERS = [

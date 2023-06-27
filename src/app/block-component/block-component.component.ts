@@ -108,6 +108,7 @@ export class BlockComponentComponent {
     this.blockAlertData = [];
     this.blockNMSData = [];
     this.blockTTData = [];
+    this.ttCorelation = [];
   }
 
   validateWorksheets(worksheet: ExcelJS.Worksheet) {
