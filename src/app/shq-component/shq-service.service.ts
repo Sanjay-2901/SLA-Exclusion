@@ -357,7 +357,7 @@ export class ShqService {
     workbook: ExcelJS.Workbook,
     workSheet: ExcelJS.Worksheet,
     shqSlaSummary: ShqSlaSummary,
-    ManipulatedShqNmsData: ManipulatedShqNmsData[]
+    manipulatedShqNmsData: ManipulatedShqNmsData[]
   ): void {
     workSheet.columns = SHQ_SLQ_FINAL_REPORT_COLUMNS;
 
@@ -705,7 +705,7 @@ export class ShqService {
       cell.alignment = { horizontal: 'center' };
     });
 
-    ManipulatedShqNmsData.forEach((nmsData: ManipulatedShqNmsData) => {
+    manipulatedShqNmsData.forEach((nmsData: ManipulatedShqNmsData) => {
       let reportType = 'SHQ';
       let tag = 'SHQ Core Device';
       let hostName: string = this.getHostName(nmsData.monitor);
@@ -806,12 +806,17 @@ export class ShqService {
       });
     this.ttCorelation.forEach(
       (ttCorelationData: TTCorelation, index: number) => {
+        let [shqData] = manipulatedShqNmsData.filter(
+          (nmsData: ManipulatedShqNmsData) => {
+            return nmsData.ip_address == ttCorelationData.ip;
+          }
+        );
         ttCorelationWorkSheet
           .addRow([
             index + 1,
-            '',
+            this.getHostName(shqData.monitor),
             ttCorelationData.ip,
-            '',
+            shqData.type,
             ttCorelationData.powerIssueTT.toString().split(',').join(', '),
             ttCorelationData.linkIssueTT.toString().split(',').join(', '),
             ttCorelationData.otherTT.toString().split(',').join(', '),
