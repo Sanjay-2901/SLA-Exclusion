@@ -9,7 +9,6 @@ import {
 } from './shq-component.model';
 import * as moment from 'moment';
 import { ShqService } from './shq-service.service';
-import { AOA } from '../block-component/block-component.model';
 import {
   IP_ADDRESS_PATTERN,
   SHQ_ALERT_REPORT_HEADERS,
@@ -18,6 +17,8 @@ import {
   TT_REPORT_HEADERS,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
+import { AOA } from '../shared/shared-model';
+import { SharedService } from '../shared/shared.service';
 
 @Component({
   selector: 'app-shq-component',
@@ -36,6 +37,7 @@ export class ShqComponentComponent {
 
   constructor(
     private ShqService: ShqService,
+    private sharedService: SharedService,
     private toastrService: ToastrService
   ) {}
 
@@ -212,7 +214,7 @@ export class ShqComponentComponent {
             alarm_start_time: moment(data[6]).format(),
             duration: data[7] ? data[7].trim() : data[7],
             alarm_clear_time: moment(data[8]).format(),
-            total_duration_in_minutes: this.ShqService.CalucateTimeInMinutes(
+            total_duration_in_minutes: this.sharedService.CalucateTimeInMinutes(
               data[7]
             ),
           };
@@ -284,10 +286,10 @@ export class ShqComponentComponent {
   manipulateShqNmsData() {
     let manipulatedShqNmsData: ManipulatedShqNmsData[] = [];
     this.shqNMSData.forEach((nmsData: ShqNMSData) => {
-      let totalUpTimeInMinutes = this.ShqService.CalucateTimeInMinutes(
+      let totalUpTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
         nmsData.up_time
       );
-      let totalDownTimeInMinutes = this.ShqService.CalucateTimeInMinutes(
+      let totalDownTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
         nmsData.down_time
       );
 
@@ -366,7 +368,10 @@ export class ShqComponentComponent {
       this.manipulatedNMSData
     );
     workbook.xlsx.writeBuffer().then((buffer) => {
-      this.ShqService.downloadFinalReport(buffer, 'SHQ-SLA-Exclusion-Report');
+      this.sharedService.downloadFinalReport(
+        buffer,
+        'SHQ-SLA-Exclusion-Report'
+      );
       this.isLoading = false;
       this.resetInputFile();
     });
