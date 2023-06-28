@@ -31,6 +31,8 @@ export interface ManipulatedGpNMSData extends GpNMSData {
   planned_maintenance_in_percent: number;
   unknown_downtime_in_minutes: number;
   unknown_downtime_in_percent: number;
+  polling_time_in_minutes: number;
+  polling_time_in_percent: number;
 }
 
 export interface GpAlertData {

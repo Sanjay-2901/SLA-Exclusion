@@ -87,7 +87,7 @@ export const BlockSLAFinalReportHeaders = [
   'UnKnown',
   'Total SLA Exclusion',
   'Polling Time',
-  'Total UP ((UP + Total Exclusion)',
+  'Total UP (UP + Total Exclusion)',
 ];
 
 export const BLOCK_SLA_REPORT_HEADERS = [
@@ -429,6 +429,83 @@ export const GP_SLA_FINAL_REPORT_COLUMN_WIDTHS = [
   { width: 20 },
   { width: 20 },
   { width: 20 },
+  { width: 20 },
+  { width: 20 },
+];
+
+export const BLOCK_TT_CO_RELATION_COLUMNS_WIDTHS = [
+  {
+    width: 10,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+];
+
+export const SHQ_TT_CO_RELATION_COLUMNS = [
+  {
+    width: 10,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+];
+
+export const GP_TT_CO_RELATION_COLUMN_WIDTHS = [
+  {
+    width: 10,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
+  {
+    width: 30,
+  },
 ];
 
 export const SEVERITY_CRITICAL = 'Critical';
@@ -511,6 +588,37 @@ export const GP_SUMMARY_HEADERS = [
   'Unknown',
   'Total SLA Exclusion',
   'Total UP (UP+Total Exclusion)',
+];
+
+export const BLOCK_TT_CO_RELATION_HEADERS = [
+  'S No',
+  'IP Address',
+  'Block Name',
+  'Power Issue TT',
+  'Link Issue TT',
+  'Other TT',
+];
+
+export const SHQ_TT_CO_RELATION_HEADERS = [
+  'S No',
+  'Host Name',
+  'IP Address',
+  'Device Type',
+  'Power Issue TT',
+  'Link Issue TT',
+  'Other TT',
+];
+
+export const GP_TT_CO_RELATION_HEADERS = [
+  'S No',
+  'IP Address',
+  'Block Name',
+  'GP Name',
+  'Block Power Issue TT',
+  'Block Link Issue TT',
+  'GP Power Issue TT',
+  'GP Link Issue/Fiber Issue TT',
+  'Other TT',
 ];
 
 export const BLOCK_DEVICE_DETAILS: BlockDeviceDetail[] = [

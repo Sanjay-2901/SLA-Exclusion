@@ -18,6 +18,7 @@ import {
 } from './gp.model';
 import { SharedService } from '../shared/shared.service';
 import { GpService } from './gp.service';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-gp',
@@ -175,7 +176,107 @@ export class GpComponent {
     this.storeDataAsObject(workSheetName, data);
   }
 
-  storeDataAsObject(workSheetName: string, data: any) {}
+  storeDataAsObject(workSheetName: string, data: any) {
+    let result: any = [];
+    data.forEach((data: any, index: number) => {
+      if (index >= 1) {
+        if (workSheetName === 'gp_sla_report') {
+          let obj: GpNMSData = {
+            monitor: data[0],
+            ip_address: data[1] ? data[1].trim() : data[1],
+            departments: data[2],
+            type: data[3],
+            up_percent: data[4],
+            up_time: data[5],
+            down_percent: data[6],
+            down_time: data[7],
+            maintenance_percent: data[8],
+            maintenance_time: data[9],
+            total_up_percent: data[10],
+            total_up_time: data[11],
+            created_date: data[12],
+          };
+          result.push(obj);
+        } else if (workSheetName === 'gp_noc_tt_report') {
+          let obj: GpTTData = {
+            incident_id: data[0],
+            parent_incident_id: data[1],
+            enitity_type_name: data[2],
+            entity_subtype_name: data[3],
+            incident_name: data[4],
+            equipment_host: data[5],
+            ip: data[6] ? data[6].trim() : data[6],
+            severity: data[7],
+            status: data[8],
+            priority_of_repair: data[9],
+            effect_on_services: data[10],
+            incident_type: data[11],
+            mode_of_contact: data[12],
+            incident_creation_time: data[13],
+            remark_type: data[14],
+            remarks: data[15],
+            cluster: data[16],
+            city: data[17],
+            block: data[18],
+            gp: data[19],
+            slab_reach: data[20],
+            resolution_method: data[21],
+            rfo: data[22] ? data[22].trim() : data[22],
+            incident_start_on: moment(data[23]).format(),
+            incident_created_on: data[24],
+            ageing: data[25],
+            open_time: data[26],
+            assigned_time: data[27],
+            assigned_to_field: data[28],
+            assigned_to_vendor: data[29],
+            cancelled: data[30],
+            closed: data[31],
+            hold_time: data[32],
+            resolved_date_time: data[33],
+            resolved_by: data[34],
+            total_resolution_time: data[35],
+            resolution_time_in_min: data[36],
+            sla_ageing: data[37],
+            reporting_sla: data[38],
+            reopen_date: data[39],
+            category: data[40],
+            change_id: data[41],
+            exclusion_name: data[42],
+            exclusion_remark: data[43],
+            exclusion_type: data[44],
+            pendency: data[45],
+            vendor_name: data[46],
+          };
+          result.push(obj);
+        } else if (workSheetName === 'gp_alert_report') {
+          let obj: GpAlertData = {
+            alert: data[0],
+            source: data[1],
+            ip_address: data[2] ? data[2].trim() : data[2],
+            departments: data[3],
+            type: data[4],
+            severity: data[5] ? data[5].trim() : data[5],
+            message: data[6] ? data[6].trim() : data[6],
+            alarm_start_time: moment(data[7]).format(),
+            duration: data[8] ? data[8].trim() : data[8],
+            alarm_clear_time: moment(data[9]).format(),
+            total_duration_in_minutes: data[8]
+              ? this.sharedService.CalucateTimeInMinutes(data[8])
+              : 0,
+          };
+          result.push(obj);
+        }
+      }
+    });
+
+    if (workSheetName === 'gp_sla_report') {
+      this.gpNMSData = result;
+    } else if (workSheetName === 'gp_noc_tt_report') {
+      this.gpTTData = result;
+    } else if (workSheetName === 'gp_alert_report') {
+      this.gpAlertData = result;
+    }
+  }
 
   manipulateGpNMSData(): void {
     let manipulatedGpNMSData: ManipulatedGpNMSData[] = [];
@@ -219,12 +320,35 @@ export class GpComponent {
       let unknownDownTimeInMinutes =
         rfoCategorizedData.alert_report_empty === true
           ? totalDownTimeInMinutes
+          : totalDownTimeInMinutes - alertDownTimeInMinutes <= 15
+          ? 0
           : totalDownTimeInMinutes - alertDownTimeInMinutes;
 
       let unknownDownTimeInPercent = +(
         (unknownDownTimeInMinutes / totalTimeExclusiveOfSLAExclusionInMinutes) *
         100
       ).toFixed(2);
+
+      let pollingTimeMinutes = 0;
+
+      if (
+        alertDownTimeInMinutes < totalDownTimeInMinutes &&
+        totalDownTimeInMinutes - alertDownTimeInMinutes <= 15
+      ) {
+        pollingTimeMinutes = totalDownTimeInMinutes - alertDownTimeInMinutes;
+      }
+
+      if (alertDownTimeInMinutes > totalDownTimeInMinutes) {
+        pollingTimeMinutes = alertDownTimeInMinutes - totalDownTimeInMinutes;
+      }
+
+      let pollingTimePercent =
+        pollingTimeMinutes > 0
+          ? +(
+              (pollingTimeMinutes / totalTimeExclusiveOfSLAExclusionInMinutes) *
+              100
+            ).toFixed(2)
+          : 0;
 
       let newNMSData: ManipulatedGpNMSData = {
         ...nmsData,
@@ -245,6 +369,8 @@ export class GpComponent {
         dcn_downtime_in_percent: dcnDownTimeInPercent,
         planned_maintenance_in_percent: nmsData.maintenance_percent,
         unknown_downtime_in_percent: unknownDownTimeInPercent,
+        polling_time_in_minutes: pollingTimeMinutes,
+        polling_time_in_percent: pollingTimePercent,
       };
       manipulatedGpNMSData.push(newNMSData);
     });
@@ -273,6 +399,7 @@ export class GpComponent {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('GP-SLA-Exclusion-Report');
     this.gpService.FrameGpFinalSlaReportWorkbook(
+      workbook,
       worksheet,
       this.gpSlaSummary,
       this.manipulatedNMSData

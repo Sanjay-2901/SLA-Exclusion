@@ -18,6 +18,8 @@ import {
   SHQ_DEVICE_LEVEL_HEADERS,
   SHQ_SLQ_FINAL_REPORT_COLUMN_WIDTHS,
   SHQ_SUMMARY_HEADERS,
+  SHQ_TT_CO_RELATION_COLUMNS,
+  SHQ_TT_CO_RELATION_HEADERS,
   TABLE_HEADERS,
   TABLE_HEADING,
   VALUES,
@@ -27,14 +29,16 @@ import * as moment from 'moment';
 import * as lodash from 'lodash';
 import * as ExcelJS from 'exceljs';
 import {
-  ManipulatedNMSData,
   RFOCategorizedTimeInMinutes,
+  TTCorelation,
 } from '../block-component/block-component.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ShqService {
+  ttCorelation: TTCorelation[] = [];
+
   constructor() {}
 
   shqNMSDatawithoutVmwareDevices(
@@ -78,6 +82,10 @@ export class ShqService {
       let DCNDownArray: ShqAlertData[] = [];
       let criticalAlertAndTTDataTimeMismatch: ShqAlertData[] = [];
 
+      let powerIssueTT: string[] = [];
+      let linkIssueTT: string[] = [];
+      let otherTT: string[] = [];
+
       const filteredCriticalAlertData = shqAlertData.filter(
         (alertData: ShqAlertData) => {
           return (
@@ -113,11 +121,15 @@ export class ShqService {
             ) {
               if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
                 powerDownArray.push(alertCriticalData);
+                powerIssueTT.push(ttData.incident_id);
               } else if (
                 ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
                 ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
               ) {
                 DCNDownArray.push(alertCriticalData);
+                linkIssueTT.push(ttData.incident_id);
+              } else {
+                otherTT.push(ttData.incident_id);
               }
             }
           });
@@ -132,6 +144,13 @@ export class ShqService {
       } else {
         isAlertReportEmpty = true;
       }
+
+      this.ttCorelation.push({
+        ip: nmsData.ip_address,
+        powerIssueTT: powerIssueTT,
+        linkIssueTT: linkIssueTT,
+        otherTT: otherTT,
+      });
 
       if (criticalAlertAndTTDataTimeMismatch) {
         criticalAlertAndTTDataTimeMismatch.forEach(
@@ -194,6 +213,8 @@ export class ShqService {
   ): ShqSlaSummary {
     let upPercent = 0;
     let upMinutes = 0;
+    let downPercent = 0;
+    let downMinutes = 0;
     let totalDownExclusiveOfSlaExclusionInMinute = 0;
     let powerDownPercent = 0;
     let powerDownMinutes = 0;
@@ -219,6 +240,8 @@ export class ShqService {
     manipulatedNMSData.forEach((nmsData: ManipulatedShqNmsData) => {
       upPercent += nmsData.up_percent;
       upMinutes += nmsData.total_uptime_in_minutes;
+      downPercent += nmsData.down_percent;
+      downMinutes += nmsData.total_downtime_in_minutes;
       totalDownExclusiveOfSlaExclusionInMinute +=
         nmsData.total_downtime_in_minutes;
       powerDownPercent += nmsData.power_downtime_in_percent;
@@ -298,11 +321,9 @@ export class ShqService {
         cumulativeRfoDownInMinutes
       ),
       total_up_percent: this.calculateCumulativePercentage(
-        upPercent + pollingTimePercent + totalSlaExclusionPercent
+        upPercent + downPercent
       ),
-      total_up_minute: this.calculateCumulativeMinutes(
-        upMinutes + pollingTimeMinutes + totalSlaExclusionMinute
-      ),
+      total_up_minute: this.calculateCumulativeMinutes(upMinutes + downMinutes),
     };
   }
 
@@ -311,9 +332,10 @@ export class ShqService {
   }
 
   FrameShqFinalSlaReportWorkbook(
+    workbook: ExcelJS.Workbook,
     workSheet: ExcelJS.Worksheet,
     shqSlaSummary: ShqSlaSummary,
-    ManipulatedShqNmsData: ManipulatedShqNmsData[]
+    manipulatedShqNmsData: ManipulatedShqNmsData[]
   ): void {
     workSheet.columns = SHQ_SLQ_FINAL_REPORT_COLUMN_WIDTHS;
 
@@ -661,7 +683,7 @@ export class ShqService {
       cell.alignment = { horizontal: 'center' };
     });
 
-    ManipulatedShqNmsData.forEach((nmsData: ManipulatedShqNmsData) => {
+    manipulatedShqNmsData.forEach((nmsData: ManipulatedShqNmsData) => {
       let reportType = 'SHQ';
       let tag = 'SHQ Core Device';
       let hostName: string = this.getHostName(nmsData.monitor);
@@ -706,21 +728,13 @@ export class ShqService {
           ? 0
           : nmsData.power_downtime_in_minutes + nmsData.dcn_downtime_in_minutes;
       let pollingTimeInPercent: number =
-        upPercent == 100
-          ? 0
-          : nmsData.down_percent - totalSlaExclusionInPercent;
+        upPercent == 100 ? 0 : nmsData.polling_time_in_percent;
       let pollingTimeInMinute: number =
-        upPercent == 100
-          ? 0
-          : nmsData.total_downtime_in_minutes - totalSlaExclusionInMinute;
+        upPercent == 100 ? 0 : nmsData.polling_time_in_minutes;
       let totalUpInPercent: number =
-        upPercent == 100
-          ? 100
-          : upPercent + totalSlaExclusionInPercent + pollingTimeInPercent;
+        upPercent == 100 ? 100 : upPercent + nmsData.down_percent;
       let totalUpInMinutes: number =
-        upMinute +
-        totalDownExclusivceOfSlaExclusionInMinutes +
-        pollingTimeInMinute;
+        upMinute + nmsData.total_downtime_in_minutes;
 
       const ShqDeviceLevelRowValues = workSheet.addRow([
         reportType,
@@ -759,5 +773,37 @@ export class ShqService {
         cell.alignment = { horizontal: 'left' };
       });
     });
+
+    // Generating Sheet 2
+    const ttCorelationWorkSheet = workbook.addWorksheet('SHQ-TT co-relation');
+    ttCorelationWorkSheet.columns = SHQ_TT_CO_RELATION_COLUMNS;
+    ttCorelationWorkSheet
+      .addRow(SHQ_TT_CO_RELATION_HEADERS)
+      .eachCell((cell) => {
+        cell.style = TABLE_HEADERS;
+      });
+    this.ttCorelation.forEach(
+      (ttCorelationData: TTCorelation, index: number) => {
+        let [shqData] = manipulatedShqNmsData.filter(
+          (nmsData: ManipulatedShqNmsData) => {
+            return nmsData.ip_address == ttCorelationData.ip;
+          }
+        );
+        ttCorelationWorkSheet
+          .addRow([
+            index + 1,
+            this.getHostName(shqData.monitor),
+            ttCorelationData.ip,
+            shqData.type,
+            ttCorelationData.powerIssueTT.toString().split(',').join(', '),
+            ttCorelationData.linkIssueTT.toString().split(',').join(', '),
+            ttCorelationData.otherTT.toString().split(',').join(', '),
+          ])
+          .eachCell((cell) => {
+            cell.border = BORDER_STYLE;
+            cell.alignment = { horizontal: 'left' };
+          });
+      }
+    );
   }
 }

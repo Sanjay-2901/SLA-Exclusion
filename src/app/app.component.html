@@ -1,10 +1,19 @@
-<div class="bg-dark">
+<div class="bg-dark p-3">
   <div class="d-flex align-items-center justify-content-center vh-100">
     <div class="row">
       <h1 class="text-success text-center mb-5">
         SLA Exclusion Report Automation
       </h1>
       <br />
+      <div class="col-sm-6">
+        <div class="card bg-secondary text-white">
+          <div class="card-body">
+            <h5 class="card-title">SHQ Devices</h5>
+            <p class="card-text">Select your input files for SHQ Devices.</p>
+            <app-shq-component></app-shq-component>
+          </div>
+        </div>
+      </div>
       <div class="col-sm-6">
         <div class="card bg-primary text-white">
           <div class="card-body">
@@ -13,15 +22,6 @@
               Select your input reports for Block devices.
             </p>
             <app-block-component></app-block-component>
-          </div>
-        </div>
-      </div>
-      <div class="col-sm-6">
-        <div class="card bg-secondary text-white">
-          <div class="card-body">
-            <h5 class="card-title">SHQ Devices</h5>
-            <p class="card-text">Select your input files for SHQ Devices.</p>
-            <app-shq-component></app-shq-component>
           </div>
         </div>
       </div>

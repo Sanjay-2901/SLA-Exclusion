@@ -86,6 +86,7 @@ export class ShqComponentComponent {
     this.shqAlertData = [];
     this.shqNMSData = [];
     this.shqTTData = [];
+    this.ShqService.ttCorelation = [];
   }
 
   validateWorksheets(worksheet: ExcelJS.Worksheet) {
@@ -175,7 +176,7 @@ export class ShqComponentComponent {
       } else {
         if (!IP_ADDRESS_PATTERN.test(row[1].trim())) {
           throw new Error(
-            ` SHQ - ${
+            `SHQ - ${
               SHQ_SLA_REPORT_HEADERS[1]
             } is invalid in SLA report in row number : ${index + 1}`
           );
@@ -324,12 +325,35 @@ export class ShqComponentComponent {
       let unknownDownTimeInMinutes =
         rfoCategorizedData.alert_report_empty === true
           ? totalDownTimeInMinutes
+          : totalDownTimeInMinutes - alertDownTimeInMinutes <= 15
+          ? 0
           : totalDownTimeInMinutes - alertDownTimeInMinutes;
 
       let unknownDownTimeInPercent = +(
         (unknownDownTimeInMinutes / totalTimeSlaExclusionInMinutes) *
         100
       ).toFixed(2);
+
+      let pollingTimeMinutes = 0;
+
+      if (
+        alertDownTimeInMinutes < totalDownTimeInMinutes &&
+        totalDownTimeInMinutes - alertDownTimeInMinutes <= 15
+      ) {
+        pollingTimeMinutes = totalDownTimeInMinutes - alertDownTimeInMinutes;
+      }
+
+      if (alertDownTimeInMinutes > totalDownTimeInMinutes) {
+        pollingTimeMinutes = alertDownTimeInMinutes - totalDownTimeInMinutes;
+      }
+
+      let pollingTimePercent =
+        pollingTimeMinutes > 0
+          ? +(
+              (pollingTimeMinutes / totalTimeSlaExclusionInMinutes) *
+              100
+            ).toFixed(2)
+          : 0;
 
       let newNmsData: ManipulatedShqNmsData = {
         ...nmsData,
@@ -348,6 +372,8 @@ export class ShqComponentComponent {
         power_downtime_in_percent: powerDownTimeInpercent,
         dcn_downtime_in_percent: dcnDownTimeInPercent,
         unknown_downtime_in_percent: unknownDownTimeInPercent,
+        polling_time_in_minutes: pollingTimeMinutes,
+        polling_time_in_percent: pollingTimePercent,
       };
       manipulatedShqNmsData.push(newNmsData);
     });
@@ -363,6 +389,7 @@ export class ShqComponentComponent {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('SHQ-SLA-Exclusion-Report');
     this.ShqService.FrameShqFinalSlaReportWorkbook(
+      workbook,
       worksheet,
       this.shqSlaSummary,
       this.manipulatedNMSData
