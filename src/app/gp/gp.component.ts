@@ -1,47 +1,47 @@
 import { Component } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import {
-  ManipulatedShqNmsData,
-  ShqAlertData,
-  ShqNMSData,
-  ShqSlaSummary,
-  ShqTTData,
-} from './shq-component.model';
-import * as moment from 'moment';
-import { ShqService } from './shq-service.service';
-import {
+  GP_ALERT_REPORT_HEADERS,
+  GP_INPUT_FILE_NAMES,
+  GP_SLA_REPORT_HEADERS,
   IP_ADDRESS_PATTERN,
-  SHQ_ALERT_REPORT_HEADERS,
-  SHQ_INPUT_FILE_NAMES,
-  SHQ_SLA_REPORT_HEADERS,
   TT_REPORT_HEADERS,
 } from '../constants/constants';
-import { ToastrService } from 'ngx-toastr';
 import { AOA } from '../shared/shared-model';
+import { ToastrService } from 'ngx-toastr';
+import {
+  GpAlertData,
+  GpNMSData,
+  GpSLASummary,
+  GpTTData,
+  ManipulatedGpNMSData,
+} from './gp.model';
 import { SharedService } from '../shared/shared.service';
+import { GpService } from './gp.service';
+import * as moment from 'moment';
 
 @Component({
-  selector: 'app-shq-component',
-  templateUrl: './shq-component.component.html',
-  styleUrls: ['./shq-component.component.scss', '../../styles.scss'],
+  selector: 'app-gp',
+  templateUrl: './gp.component.html',
+  styleUrls: ['./gp.component.scss'],
 })
-export class ShqComponentComponent {
-  shqNMSData: ShqNMSData[] = [];
-  shqTTData: ShqTTData[] = [];
-  shqAlertData: ShqAlertData[] = [];
-  manipulatedNMSData: ManipulatedShqNmsData[] = [];
-  worksheet!: ExcelJS.Worksheet;
-  file!: any;
-  shqSlaSummary!: ShqSlaSummary;
+export class GpComponent {
   isLoading: boolean = false;
+  file!: any;
+  worksheet!: ExcelJS.Worksheet;
+  gpAlertData: GpAlertData[] = [];
+  gpNMSData: GpNMSData[] = [];
+  gpTTData: GpTTData[] = [];
+  gpSlaSummary!: GpSLASummary;
+  manipulatedNMSData: ManipulatedGpNMSData[] = [];
 
   constructor(
-    private ShqService: ShqService,
     private sharedService: SharedService,
+    private gpService: GpService,
     private toastrService: ToastrService
   ) {}
 
-  onFileChange(event: any) {
+  onFileChange(event: any): void {
     this.isLoading = true;
     this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
@@ -63,37 +63,22 @@ export class ShqComponentComponent {
           }
         }
         if (
-          this.shqNMSData.length > 0 &&
-          this.shqAlertData.length > 0 &&
-          this.shqTTData.length > 0
+          this.gpNMSData.length > 0 &&
+          this.gpAlertData.length > 0 &&
+          this.gpTTData.length > 0
         ) {
-          this.manipulateShqNmsData();
+          this.manipulateGpNMSData();
         }
       });
     };
     reader.readAsArrayBuffer(this.file);
   }
 
-  resetInputFile(): void {
-    this.isLoading = false;
-    this.file = null;
-    const fileInput = document.getElementById(
-      'shqFileInput'
-    ) as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
-    this.shqAlertData = [];
-    this.shqNMSData = [];
-    this.shqTTData = [];
-    this.ShqService.ttCorelation = [];
-  }
-
   validateWorksheets(worksheet: ExcelJS.Worksheet) {
     let workSheetName = worksheet.name;
-    if (!SHQ_INPUT_FILE_NAMES.includes(workSheetName)) {
+    if (!GP_INPUT_FILE_NAMES.includes(workSheetName)) {
       throw new Error(
-        'SHQ - Invalid sheet name of the input file. Kindly provide the valid sheet names.'
+        'GP - Invalid sheet name of the input file. Kindly provide the valid sheet names.'
       );
     } else {
       let data: AOA = [];
@@ -107,31 +92,31 @@ export class ShqComponentComponent {
 
       const headers = JSON.stringify(data[0]);
 
-      if (workSheetName === 'shq_sla_report') {
-        if (headers !== JSON.stringify(SHQ_SLA_REPORT_HEADERS)) {
+      if (workSheetName === GP_INPUT_FILE_NAMES[0]) {
+        if (headers !== JSON.stringify(GP_SLA_REPORT_HEADERS)) {
           throw new Error(
-            'SHQ - Invalid template of the SLA report. Kindly provide the valid column names.'
+            'GP - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
         } else {
           try {
-            this.validateEachRowsInSlaReport(data, workSheetName);
+            this.validateEachRowsOfSlaReport(data, workSheetName);
           } catch (error: any) {
             this.toastrService.error(error.message);
             this.resetInputFile();
           }
         }
-      } else if (workSheetName === 'shq_noc_tt_report') {
+      } else if (workSheetName === GP_INPUT_FILE_NAMES[1]) {
         if (headers !== JSON.stringify(TT_REPORT_HEADERS)) {
           throw new Error(
-            'SHQ - Invalid template of the TT report. Kindly provide the valid column names.'
+            'GP - Invalid template of the TT report. Kindly provide the valid column names.'
           );
         } else {
           this.storeDataAsObject(workSheetName, data);
         }
-      } else if (workSheetName === 'shq_alert_report') {
-        if (headers !== JSON.stringify(SHQ_ALERT_REPORT_HEADERS)) {
+      } else if (workSheetName === GP_INPUT_FILE_NAMES[2]) {
+        if (headers !== JSON.stringify(GP_ALERT_REPORT_HEADERS)) {
           throw new Error(
-            'SHQ - Invalid template of the Alert report. Kindly provide the valid column names.'
+            'GP - Invalid template of the Alert report. Kindly provide the valid column names.'
           );
         } else {
           this.storeDataAsObject(workSheetName, data);
@@ -140,60 +125,64 @@ export class ShqComponentComponent {
     }
   }
 
-  validateEachRowsInSlaReport(data: AOA, workSheetName: string) {
+  validateEachRowsOfSlaReport(data: AOA, workSheetName: string) {
     for (let index = 1; index < data.length; index++) {
       let row: any = data[index];
-      if (row[0] === null || row[0] === undefined) {
-        throw new Error(`SHQ - ${
-          SHQ_SLA_REPORT_HEADERS[0]
-        } is not available in SLA report in row number :
-          ${index + 1}`);
-      } else if (row[1] === null || row[1] === undefined) {
-        throw new Error(`SHQ - ${
-          SHQ_SLA_REPORT_HEADERS[1]
-        } is not available in SLA report in row number :
-          ${index + 1}`);
+      if (row[1] === null || row[1] === undefined) {
+        throw new Error(`GP - ${
+          GP_SLA_REPORT_HEADERS[1]
+        } is not available in SLA report in row number:
+        ${index + 1}`);
       } else if (row[4] === null || row[4] === undefined) {
-        throw new Error(`SHQ - ${
-          SHQ_SLA_REPORT_HEADERS[4]
-        } is not available in SLA report in row number :
+        throw new Error(`GP - ${
+          GP_SLA_REPORT_HEADERS[4]
+        } is not available in SLA report in row number:
           ${index + 1}`);
       } else if (row[5] === null || row[5] === undefined) {
-        throw new Error(`SHQ - ${
-          SHQ_SLA_REPORT_HEADERS[5]
-        } is not available in SLA report in row number :
+        throw new Error(`GP - ${
+          GP_SLA_REPORT_HEADERS[5]
+        } is not available in SLA report in row number:
           ${index + 1}`);
       } else if (row[6] === null || row[6] === undefined) {
-        throw new Error(`SHQ - ${
-          SHQ_SLA_REPORT_HEADERS[6]
-        } is not available in SLA report in row number :
+        throw new Error(`GP - ${
+          GP_SLA_REPORT_HEADERS[6]
+        } is not available in SLA report in row number:
           ${index + 1}`);
       } else if (row[7] === null || row[7] === undefined) {
-        throw new Error(`SHQ - ${
-          SHQ_SLA_REPORT_HEADERS[7]
-        } is not available in SLA report in row number :
+        throw new Error(`GP - ${
+          GP_SLA_REPORT_HEADERS[7]
+        } is not available in SLA report in row number:
+          ${index + 1}`);
+      } else if (row[8] === null || row[8] === undefined) {
+        throw new Error(`GP - ${
+          GP_SLA_REPORT_HEADERS[8]
+        } is not available in SLA report in row number:
+          ${index + 1}`);
+      } else if (row[9] === null || row[9] === undefined) {
+        throw new Error(`GP - ${
+          GP_SLA_REPORT_HEADERS[5]
+        } is not available in SLA report in row number:
           ${index + 1}`);
       } else {
         if (!IP_ADDRESS_PATTERN.test(row[1].trim())) {
           throw new Error(
-            `SHQ - ${
-              SHQ_SLA_REPORT_HEADERS[1]
-            } is invalid in SLA report in row number : ${index + 1}`
+            ` GP - ${
+              GP_SLA_REPORT_HEADERS[1]
+            } is not valid in SLA report in row number : ${index + 1}`
           );
         }
       }
     }
-
     this.storeDataAsObject(workSheetName, data);
   }
 
-  storeDataAsObject(workSheetName: string, data: any[]): void {
+  storeDataAsObject(workSheetName: string, data: any) {
     let result: any = [];
     data.forEach((data: any, index: number) => {
       if (index >= 1) {
-        if (workSheetName === 'shq_sla_report') {
-          let obj: ShqNMSData = {
-            monitor: data[0] ? data[0].trim() : data[0],
+        if (workSheetName === 'gp_sla_report') {
+          let obj: GpNMSData = {
+            monitor: data[0],
             ip_address: data[1] ? data[1].trim() : data[1],
             departments: data[2],
             type: data[3],
@@ -201,27 +190,15 @@ export class ShqComponentComponent {
             up_time: data[5],
             down_percent: data[6],
             down_time: data[7],
-            created_date: data[8],
+            maintenance_percent: data[8],
+            maintenance_time: data[9],
+            total_up_percent: data[10],
+            total_up_time: data[11],
+            created_date: data[12],
           };
           result.push(obj);
-        } else if (workSheetName === 'shq_alert_report') {
-          let obj: ShqAlertData = {
-            alert: data[0],
-            source: data[1] ? data[1].trim() : data[1],
-            ip_address: data[2] ? data[2].trim() : data[2],
-            type: data[3],
-            severity: data[4] ? data[4].trim() : data[4],
-            message: data[5] ? data[5].trim() : data[5],
-            alarm_start_time: moment(data[6]).format(),
-            duration: data[7] ? data[7].trim() : data[7],
-            alarm_clear_time: moment(data[8]).format(),
-            total_duration_in_minutes: this.sharedService.CalucateTimeInMinutes(
-              data[7]
-            ),
-          };
-          result.push(obj);
-        } else if (workSheetName === 'shq_noc_tt_report') {
-          let obj: ShqTTData = {
+        } else if (workSheetName === 'gp_noc_tt_report') {
+          let obj: GpTTData = {
             incident_id: data[0],
             parent_incident_id: data[1],
             enitity_type_name: data[2],
@@ -258,7 +235,7 @@ export class ShqComponentComponent {
             resolved_date_time: data[33],
             resolved_by: data[34],
             total_resolution_time: data[35],
-            resolution_type_in_min: data[36],
+            resolution_time_in_min: data[36],
             sla_ageing: data[37],
             reporting_sla: data[38],
             reopen_date: data[39],
@@ -271,55 +248,73 @@ export class ShqComponentComponent {
             vendor_name: data[46],
           };
           result.push(obj);
+        } else if (workSheetName === 'gp_alert_report') {
+          let obj: GpAlertData = {
+            alert: data[0],
+            source: data[1],
+            ip_address: data[2] ? data[2].trim() : data[2],
+            departments: data[3],
+            type: data[4],
+            severity: data[5] ? data[5].trim() : data[5],
+            message: data[6] ? data[6].trim() : data[6],
+            alarm_start_time: moment(data[7]).format(),
+            duration: data[8] ? data[8].trim() : data[8],
+            alarm_clear_time: moment(data[9]).format(),
+            total_duration_in_minutes: data[8]
+              ? this.sharedService.CalucateTimeInMinutes(data[8])
+              : 0,
+          };
+          result.push(obj);
         }
       }
     });
 
-    if (workSheetName === 'shq_sla_report') {
-      this.shqNMSData = this.ShqService.shqNMSDatawithoutVmwareDevices(result);
-    } else if (workSheetName === 'shq_alert_report') {
-      this.shqAlertData = result;
-    } else if (workSheetName === 'shq_noc_tt_report') {
-      this.shqTTData = result;
+    if (workSheetName === 'gp_sla_report') {
+      this.gpNMSData = result;
+    } else if (workSheetName === 'gp_noc_tt_report') {
+      this.gpTTData = result;
+    } else if (workSheetName === 'gp_alert_report') {
+      this.gpAlertData = result;
     }
   }
 
-  manipulateShqNmsData() {
-    let manipulatedShqNmsData: ManipulatedShqNmsData[] = [];
-    this.shqNMSData.forEach((nmsData: ShqNMSData) => {
+  manipulateGpNMSData(): void {
+    let manipulatedGpNMSData: ManipulatedGpNMSData[] = [];
+    this.gpNMSData.forEach((nmsData: GpNMSData) => {
       let totalUpTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
-        nmsData.up_time
+        nmsData.total_up_time
       );
       let totalDownTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
         nmsData.down_time
       );
-
-      let totalTimeSlaExclusionInMinutes =
+      let plannedMaintenanceInMinutes =
+        this.sharedService.CalucateTimeInMinutes(nmsData.maintenance_time);
+      let totalTimeExclusiveOfSLAExclusionInMinutes =
         totalUpTimeInMinutes + totalDownTimeInMinutes;
-      let totalTimeSlaExclusionInPercent =
+      let totalTimeExclusiveOfSLAExclusionInPercent =
         nmsData.up_percent + nmsData.down_percent;
       let alertDownTimeInMinutes =
-        this.ShqService.calculateAlertDownTimeInMinutes(
+        this.gpService.calculateAlertDownTimeInMinutes(
           nmsData.ip_address,
-          this.shqAlertData
+          this.gpAlertData
         );
       let alertDownTimeInPercent = +(
-        (alertDownTimeInMinutes / totalTimeSlaExclusionInMinutes) *
+        (alertDownTimeInMinutes / totalTimeExclusiveOfSLAExclusionInMinutes) *
         100
       ).toFixed(2);
-      let rfoCategorizedData = this.ShqService.categorizeRFO(
+      let rfoCategorizedData = this.gpService.categorizeRFO(
         nmsData,
-        this.shqAlertData,
-        this.shqTTData
+        this.gpAlertData,
+        this.gpTTData
       );
       let powerDownTimeInpercent = +(
         (rfoCategorizedData.total_power_downtime_minutes /
-          totalTimeSlaExclusionInMinutes) *
+          totalTimeExclusiveOfSLAExclusionInMinutes) *
         100
       ).toFixed(2);
       let dcnDownTimeInPercent = +(
         (rfoCategorizedData.total_dcn_downtime_minutes /
-          totalTimeSlaExclusionInMinutes) *
+          totalTimeExclusiveOfSLAExclusionInMinutes) *
         100
       ).toFixed(2);
       let unknownDownTimeInMinutes =
@@ -330,7 +325,7 @@ export class ShqComponentComponent {
           : totalDownTimeInMinutes - alertDownTimeInMinutes;
 
       let unknownDownTimeInPercent = +(
-        (unknownDownTimeInMinutes / totalTimeSlaExclusionInMinutes) *
+        (unknownDownTimeInMinutes / totalTimeExclusiveOfSLAExclusionInMinutes) *
         100
       ).toFixed(2);
 
@@ -350,55 +345,67 @@ export class ShqComponentComponent {
       let pollingTimePercent =
         pollingTimeMinutes > 0
           ? +(
-              (pollingTimeMinutes / totalTimeSlaExclusionInMinutes) *
+              (pollingTimeMinutes / totalTimeExclusiveOfSLAExclusionInMinutes) *
               100
             ).toFixed(2)
           : 0;
 
-      let newNmsData: ManipulatedShqNmsData = {
+      let newNMSData: ManipulatedGpNMSData = {
         ...nmsData,
         total_uptime_in_minutes: totalUpTimeInMinutes,
         total_downtime_in_minutes: totalDownTimeInMinutes,
         total_time_exclusive_of_sla_exclusions_in_min:
-          totalTimeSlaExclusionInMinutes,
+          totalTimeExclusiveOfSLAExclusionInMinutes,
         total_time_exclusive_of_sla_exclusions_in_percent:
-          totalTimeSlaExclusionInPercent,
+          totalTimeExclusiveOfSLAExclusionInPercent,
         alert_downtime_in_minutes: alertDownTimeInMinutes,
         alert_downtime_in_percent: alertDownTimeInPercent,
         power_downtime_in_minutes:
           rfoCategorizedData.total_power_downtime_minutes,
         dcn_downtime_in_minutes: rfoCategorizedData.total_dcn_downtime_minutes,
+        planned_maintenance_in_minutes: plannedMaintenanceInMinutes,
         unknown_downtime_in_minutes: unknownDownTimeInMinutes,
         power_downtime_in_percent: powerDownTimeInpercent,
         dcn_downtime_in_percent: dcnDownTimeInPercent,
+        planned_maintenance_in_percent: nmsData.maintenance_percent,
         unknown_downtime_in_percent: unknownDownTimeInPercent,
         polling_time_in_minutes: pollingTimeMinutes,
         polling_time_in_percent: pollingTimePercent,
       };
-      manipulatedShqNmsData.push(newNmsData);
+      manipulatedGpNMSData.push(newNMSData);
     });
-
-    this.manipulatedNMSData = manipulatedShqNmsData;
-    this.shqSlaSummary = this.ShqService.calculateShqSlaSummary(
+    this.manipulatedNMSData = manipulatedGpNMSData;
+    this.gpSlaSummary = this.gpService.calculateGpSlaSummary(
       this.manipulatedNMSData
     );
     this.generateFinalBlockReport();
   }
 
+  resetInputFile(): void {
+    this.isLoading = false;
+    this.file = null;
+    const fileInput = document.getElementById(
+      'gpFileInput'
+    ) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    this.gpAlertData = [];
+    this.gpNMSData = [];
+    this.gpTTData = [];
+  }
+
   generateFinalBlockReport() {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('SHQ-SLA-Exclusion-Report');
-    this.ShqService.FrameShqFinalSlaReportWorkbook(
+    const worksheet = workbook.addWorksheet('GP-SLA-Exclusion-Report');
+    this.gpService.FrameGpFinalSlaReportWorkbook(
       workbook,
       worksheet,
-      this.shqSlaSummary,
+      this.gpSlaSummary,
       this.manipulatedNMSData
     );
     workbook.xlsx.writeBuffer().then((buffer) => {
-      this.sharedService.downloadFinalReport(
-        buffer,
-        'SHQ-SLA-Exclusion-Report'
-      );
+      this.sharedService.downloadFinalReport(buffer, 'GP-SLA-Exclusion-Report');
       this.isLoading = false;
       this.resetInputFile();
     });

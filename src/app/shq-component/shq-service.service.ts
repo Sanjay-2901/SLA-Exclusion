@@ -16,7 +16,7 @@ import {
   SEVERITY_WARNING,
   SHEET_HEADING,
   SHQ_DEVICE_LEVEL_HEADERS,
-  SHQ_SLQ_FINAL_REPORT_COLUMNS,
+  SHQ_SLQ_FINAL_REPORT_COLUMN_WIDTHS,
   SHQ_SUMMARY_HEADERS,
   SHQ_TT_CO_RELATION_COLUMNS,
   SHQ_TT_CO_RELATION_HEADERS,
@@ -47,28 +47,6 @@ export class ShqService {
     return AllShqDevicesArray.filter((nmsData) => {
       return nmsData.type.trim() !== VMWAREDEVICE;
     });
-  }
-
-  CalucateTimeInMinutes(timePeriod: string): number {
-    if (timePeriod) {
-      let totalTimeinMinutes = timePeriod.trim().split(' ');
-      if (timePeriod.includes('days')) {
-        return +(
-          parseInt(totalTimeinMinutes[0]) * 1440 +
-          parseInt(totalTimeinMinutes[2]) * 60 +
-          parseInt(totalTimeinMinutes[4]) +
-          parseInt(totalTimeinMinutes[6]) / 60
-        ).toFixed(2);
-      } else {
-        return +(
-          parseInt(totalTimeinMinutes[0]) * 60 +
-          parseInt(totalTimeinMinutes[2]) +
-          parseInt(totalTimeinMinutes[4]) / 60
-        ).toFixed(2);
-      }
-    } else {
-      return 0;
-    }
   }
 
   calculateAlertDownTimeInMinutes(
@@ -359,7 +337,7 @@ export class ShqService {
     shqSlaSummary: ShqSlaSummary,
     manipulatedShqNmsData: ManipulatedShqNmsData[]
   ): void {
-    workSheet.columns = SHQ_SLQ_FINAL_REPORT_COLUMNS;
+    workSheet.columns = SHQ_SLQ_FINAL_REPORT_COLUMN_WIDTHS;
 
     workSheet.mergeCells('A1:B1:C1');
     let cellA1 = workSheet.getCell('A1');
@@ -827,16 +805,5 @@ export class ShqService {
           });
       }
     );
-  }
-
-  downloadFinalReport(buffer: ArrayBuffer, fileName: string) {
-    const data = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(data);
-    link.download =
-      fileName + ' ' + moment().format('DD/MM/YYYY, hh:mm') + '.xlsx';
-    link.click();
   }
 }

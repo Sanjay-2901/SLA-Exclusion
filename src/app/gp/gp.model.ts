@@ -1,4 +1,4 @@
-export interface BlockNMSData {
+export interface GpNMSData {
   created_date: Date;
   departments: string;
   down_percent: number;
@@ -16,7 +16,7 @@ export interface BlockNMSData {
   total_downtime_in_minutes?: number;
 }
 
-export interface ManipulatedNMSData extends BlockNMSData {
+export interface ManipulatedGpNMSData extends GpNMSData {
   total_uptime_in_minutes: number;
   total_downtime_in_minutes: number;
   total_time_exclusive_of_sla_exclusions_in_min: number;
@@ -35,7 +35,21 @@ export interface ManipulatedNMSData extends BlockNMSData {
   polling_time_in_percent: number;
 }
 
-export interface BlockTTData {
+export interface GpAlertData {
+  alarm_clear_time: string;
+  alarm_start_time: string;
+  alert: string;
+  departments: string;
+  duration: string;
+  ip_address: string;
+  message: string;
+  severity: string;
+  source: string;
+  type: string;
+  total_duration_in_minutes: number;
+}
+
+export interface GpTTData {
   ageing: string;
   assigned_time: string;
   assigned_to_field: string;
@@ -85,21 +99,7 @@ export interface BlockTTData {
   vendor_name: string;
 }
 
-export interface BlockAlertData {
-  alarm_clear_time: string;
-  alarm_start_time: string;
-  alert: string;
-  departments: string;
-  duration: string;
-  ip_address: string;
-  message: string;
-  severity: string;
-  source: string;
-  type: string;
-  total_duration_in_minutes: number;
-}
-
-export interface BlockSLASummary {
+export interface GpSLASummary {
   report_type: string;
   time_span: string;
   no_of_blocks: number;
@@ -129,15 +129,17 @@ export interface BlockSLASummary {
   total_up_minutes_exclusion: string;
 }
 
-export interface RFOCategorizedTimeInMinutes {
-  total_power_downtime_minutes: number;
-  total_dcn_downtime_minutes: number;
-  alert_report_empty?: boolean;
-}
-
-export interface TTCorelation {
-  ip: string;
-  powerIssueTT: string[];
-  linkIssueTT: string[];
-  otherTT: string[];
+export interface GpDeviceDetails {
+  report_type: string;
+  host_name: string;
+  gp_ip_address: string;
+  state: string;
+  cluster: string;
+  district: string;
+  district_lgd_code: number;
+  block_name: string;
+  block_ip_address: string;
+  block_lgd_code: string;
+  gp_name: string;
+  gp_lgd_code: number;
 }

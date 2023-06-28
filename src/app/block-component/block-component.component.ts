@@ -3,7 +3,6 @@ import * as ExcelJS from 'exceljs';
 import * as moment from 'moment';
 import * as lodash from 'lodash';
 import {
-  AOA,
   BlockAlertData,
   BlockNMSData,
   BlockSLASummary,
@@ -17,7 +16,6 @@ import {
   ALERT_DOWN_MESSAGE,
   SEVERITY_WARNING,
   RFO_CATEGORIZATION,
-  BLOCK_SLA_FINAL_REPORT_COLUMNS,
   SHEET_HEADING,
   TABLE_HEADING,
   BORDER_STYLE,
@@ -34,10 +32,13 @@ import {
   BLOCK_INPUT_FILE_NAMES,
   BlockSLASummarytHeaders,
   IP_ADDRESS_PATTERN,
+  BLOCK_SLA_FINAL_REPORT_COLUMN_WIDTHS,
   BLOCK_TT_CO_RELATION_HEADERS,
-  BLOCK_TT_CO_RELATION_COLUMNS,
+  BLOCK_TT_CO_RELATION_COLUMNS_WIDTHS,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
+import { AOA } from '../shared/shared-model';
+import { SharedService } from '../shared/shared.service';
 
 @Component({
   selector: 'app-block-component',
@@ -59,7 +60,10 @@ export class BlockComponentComponent {
   isSheetNamesValid: boolean = true;
   isLoading: boolean = false;
 
-  constructor(private toastrService: ToastrService) {}
+  constructor(
+    private toastrService: ToastrService,
+    private sharedService: SharedService
+  ) {}
 
   // Getting the input file (excel workbook containing the required sheets)
   onFileChange(event: any): void {
@@ -692,13 +696,10 @@ export class BlockComponentComponent {
       total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
       total_down_minutes: totalDownMinutes.toFixed(2),
       total_down_percent: (100 - +(upPercent / 79)).toFixed(2),
-      total_up_percent_exclusion: (
-        (upPercent + totalDownPercent) /
-        79
-      ).toFixed(2),
-      total_up_minutes_exclusion: (
-        upMinutes + totalDownMinutes
-      ).toFixed(2),
+      total_up_percent_exclusion: ((upPercent + totalDownPercent) / 79).toFixed(
+        2
+      ),
+      total_up_minutes_exclusion: (upMinutes + totalDownMinutes).toFixed(2),
     };
   }
 
@@ -706,7 +707,8 @@ export class BlockComponentComponent {
   generateFinalBlockReport(): void {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Block-SLA-Exclusion-Report');
-    worksheet.columns = BLOCK_SLA_FINAL_REPORT_COLUMNS;
+    worksheet.columns = BLOCK_SLA_FINAL_REPORT_COLUMN_WIDTHS;
+    // worksheet.views = [{ state: 'frozen', xSplit: 10, ySplit: 0 }];
 
     worksheet.mergeCells('A1:B1');
     let cellA1 = worksheet.getCell('A1');
@@ -902,6 +904,7 @@ export class BlockComponentComponent {
     worksheet.mergeCells('H10:H11');
     worksheet.mergeCells('I10:I11');
     worksheet.mergeCells('J10:J11');
+
     worksheet.mergeCells('K10:L10');
     worksheet.mergeCells('M10:N10');
     worksheet.mergeCells('O10:P10');
@@ -1052,6 +1055,7 @@ export class BlockComponentComponent {
       let blockName: string = blockDeviceDetail.block_name;
       let blockLGDCode: string = blockDeviceDetail.block_lgd_code;
       let noOfGPinBlock: number = blockDeviceDetail.no_of_gp_in_block;
+
       let upPercent: number = row.up_percent;
       let upMinute: number = row.total_uptime_in_minutes;
       let downPercent: number = upPercent == 100 ? 0 : row.down_percent;
@@ -1136,7 +1140,7 @@ export class BlockComponentComponent {
 
     // Generating Sheet 2
     const ttCorelationWorkSheet = workbook.addWorksheet('Block-TT co-relation');
-    ttCorelationWorkSheet.columns = BLOCK_TT_CO_RELATION_COLUMNS;
+    ttCorelationWorkSheet.columns = BLOCK_TT_CO_RELATION_COLUMNS_WIDTHS;
     ttCorelationWorkSheet
       .addRow(BLOCK_TT_CO_RELATION_HEADERS)
       .eachCell((cell) => {
@@ -1167,21 +1171,12 @@ export class BlockComponentComponent {
     );
 
     workbook.xlsx.writeBuffer().then((buffer) => {
-      this.downloadFinalReport(buffer, 'Block-SLA-Exclusion-Report');
+      this.sharedService.downloadFinalReport(
+        buffer,
+        'Block-SLA-Exclusion-Report'
+      );
+      this.isLoading = false;
+      this.resetInputFile();
     });
-  }
-
-  // Downloading the generated final excel workbook
-  downloadFinalReport(buffer: ArrayBuffer, fileName: string): void {
-    const data = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(data);
-    link.download =
-      fileName + ' ' + moment().format('DD/MM/YYYY, hh:mm') + '.xlsx';
-    link.click();
-    this.isLoading = false;
-    this.resetInputFile();
   }
 }
