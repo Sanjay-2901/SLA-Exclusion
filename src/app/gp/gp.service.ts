@@ -30,12 +30,17 @@ import * as moment from 'moment';
 import * as lodash from 'lodash';
 import * as ExcelJS from 'exceljs';
 
-import { RFOCategorizedTimeInMinutes } from '../block-component/block-component.model';
+import {
+  RFOCategorizedTimeInMinutes,
+  TTCorelation,
+} from '../block-component/block-component.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class GpService {
+  ttCorelation: TTCorelation[] = [];
+
   constructor() {}
 
   calculateAlertDownTimeInMinutes(
@@ -70,6 +75,10 @@ export class GpService {
       let powerDownArray: GpAlertData[] = [];
       let DCNDownArray: GpAlertData[] = [];
       let criticalAlertAndTTDataTimeMismatch: GpAlertData[] = [];
+
+      let powerIssueTT: string[] = [];
+      let linkIssueTT: string[] = [];
+      let otherTT: string[] = [];
 
       const filteredCriticalAlertData = gpAlertData.filter(
         (alertData: GpAlertData) => {
@@ -106,11 +115,15 @@ export class GpService {
             ) {
               if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
                 powerDownArray.push(alertCriticalData);
+                powerIssueTT.push(ttData.incident_id);
               } else if (
                 ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
                 ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
               ) {
                 DCNDownArray.push(alertCriticalData);
+                linkIssueTT.push(ttData.incident_id);
+              } else {
+                otherTT.push(ttData.incident_id);
               }
             }
           });
@@ -125,6 +138,13 @@ export class GpService {
       } else {
         isAlertReportEmpty = true;
       }
+
+      this.ttCorelation.push({
+        ip: nmsData.ip_address,
+        powerIssueTT: powerIssueTT,
+        linkIssueTT: linkIssueTT,
+        otherTT: otherTT,
+      });
 
       if (criticalAlertAndTTDataTimeMismatch) {
         criticalAlertAndTTDataTimeMismatch.forEach(
@@ -239,34 +259,39 @@ export class GpService {
     });
 
     return {
-      report_type: 'BLOCK-SLA',
+      report_type: 'GP-SLA',
       time_span: '',
       no_of_blocks: 79,
-      up_percent: (upPercent / 79).toFixed(2),
+      up_percent: (upPercent / 5001).toFixed(2),
       up_minutes: upMinutes.toFixed(2),
       no_of_up_blocks: '',
-      down_percent_exclusive_of_sla: (100 - upPercent / 79).toFixed(2),
-      power_down_percent: (powerDownPercent / 79).toFixed(2),
+      down_percent_exclusive_of_sla: (100 - upPercent / 5001).toFixed(2),
+      power_down_percent: (powerDownPercent / 5001).toFixed(2),
       power_down_minutes: powerDownMinutes.toFixed(2),
-      fibre_down_percent: (fiberDownPercent / 79).toFixed(2),
+      fibre_down_percent: (fiberDownPercent / 5001).toFixed(2),
       fibre_down_minutes: fiberDownMinute.toFixed(2),
-      equipment_down_percent: (equipmentDownPercent / 79).toFixed(2),
+      equipment_down_percent: (equipmentDownPercent / 5001).toFixed(2),
       equipment_down_minutes: equipmentDownMinute.toFixed(2),
-      hrt_down_percent: (hrtDownPercent / 79).toFixed(2),
+      hrt_down_percent: (hrtDownPercent / 5001).toFixed(2),
       hrt_down_minutes: hrtDownMinute.toFixed(2),
-      dcn_down_percent: (dcnDownPercent / 79).toFixed(2),
+      dcn_down_percent: (dcnDownPercent / 5001).toFixed(2),
       dcn_down_minutes: dcnDownMinutes.toFixed(2),
-      planned_maintenance_percent: (plannedMaintenancePercent / 79).toFixed(2),
-      planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
-      unknown_downtime_in_percent: (unKnownDownPercent / 79).toFixed(2),
-      unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
-      total_sla_exclusion_percent: (cumulativeRfoDownInPercent / 79).toFixed(2),
-      total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
-      total_down_minutes: totalDownMinutes.toFixed(2),
-      total_down_percent: (100 - +(upPercent / 79)).toFixed(2),
-      total_up_percent_exclusion: ((upPercent + totalDownPercent) / 79).toFixed(
+      planned_maintenance_percent: (plannedMaintenancePercent / 5001).toFixed(
         2
       ),
+      planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
+      unknown_downtime_in_percent: (unKnownDownPercent / 5001).toFixed(2),
+      unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
+      total_sla_exclusion_percent: (cumulativeRfoDownInPercent / 5001).toFixed(
+        2
+      ),
+      total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
+      total_down_minutes: totalDownMinutes.toFixed(2),
+      total_down_percent: (100 - +(upPercent / 5001)).toFixed(2),
+      total_up_percent_exclusion: (
+        (upPercent + totalDownPercent) /
+        5001
+      ).toFixed(2),
 
       total_up_minutes_exclusion: (upMinutes + totalDownMinutes).toFixed(2),
     };
@@ -617,13 +642,13 @@ export class GpService {
     manipulatedGpNmsData.forEach((row: any) => {
       let gp_device_details = GP_DEVICE_DETAILS.filter(
         (deviceDetails: GpDeviceDetails) =>
-          deviceDetails.block_ip_address == row.ip_address
+          deviceDetails.gp_ip_address == row.ip_address
       )[0];
 
       let reportType: string = gp_device_details.report_type;
       let hostName: string = gp_device_details.host_name;
       let gpIpAddress: string = gp_device_details.gp_ip_address;
-      let state: string = gp_device_details.gp_ip_address;
+      let state: string = gp_device_details.state;
       let cluster: string = gp_device_details.cluster;
       let district: string = gp_device_details.district;
       let distrctlgdCode: number = gp_device_details.district_lgd_code;
@@ -719,6 +744,9 @@ export class GpService {
         cell.alignment = { horizontal: 'left' };
       });
     });
+
+    //Generating TT co-relation report for GP
+
     const gpTtCoRelationWorkSheet = workbook.addWorksheet('GP TT co-relation');
     gpTtCoRelationWorkSheet.columns = GP_TT_CO_RELATION_COLUMN_WIDTHS;
     gpTtCoRelationWorkSheet
@@ -726,5 +754,31 @@ export class GpService {
       .eachCell((cell) => {
         cell.style = TABLE_HEADERS;
       });
+
+    this.ttCorelation.forEach(
+      (ttCorelationData: TTCorelation, index: number) => {
+        let gpDevicedetails = GP_DEVICE_DETAILS.filter(
+          (gpDevice: GpDeviceDetails) =>
+            gpDevice.gp_ip_address === ttCorelationData.ip
+        )[0];
+
+        gpTtCoRelationWorkSheet
+          .addRow([
+            index + 1,
+            ttCorelationData.ip,
+            gpDevicedetails.block_name,
+            gpDevicedetails.gp_name,
+            '',
+            '',
+            ttCorelationData.powerIssueTT.toString().split(',').join(', '),
+            ttCorelationData.linkIssueTT.toString().split(',').join(', '),
+            ttCorelationData.otherTT.toString().split(',').join(', '),
+          ])
+          .eachCell((cell) => {
+            cell.border = BORDER_STYLE;
+            cell.alignment = { horizontal: 'left' };
+          });
+      }
+    );
   }
 }
