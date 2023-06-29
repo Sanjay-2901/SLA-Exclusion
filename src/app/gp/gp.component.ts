@@ -252,7 +252,7 @@ export class GpComponent {
           let obj: GpAlertData = {
             alert: data[0],
             source: data[1],
-            ip_address: data[2] ? data[2].trim() : data[2],
+            ip_address: data[1].match(/\((.*?)\)/)[1].trim(),
             departments: data[3],
             type: data[4],
             severity: data[5] ? data[5].trim() : data[5],
@@ -393,6 +393,7 @@ export class GpComponent {
     this.gpAlertData = [];
     this.gpNMSData = [];
     this.gpTTData = [];
+    this.gpService.ttCorelation = [];
   }
 
   generateFinalBlockReport() {
