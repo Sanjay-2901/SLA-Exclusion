@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import * as moment from 'moment';
 import * as lodash from 'lodash';
@@ -60,6 +60,9 @@ export class BlockComponentComponent {
   isSheetNamesValid: boolean = true;
   isLoading: boolean = false;
 
+  @Output() isBlockLoading = new EventEmitter<boolean>();
+  @Input() shouldDisable!: boolean;
+
   constructor(
     private toastrService: ToastrService,
     private sharedService: SharedService
@@ -68,6 +71,7 @@ export class BlockComponentComponent {
   // Getting the input file (excel workbook containing the required sheets)
   onFileChange(event: any): void {
     this.isLoading = true;
+    this.isBlockLoading.emit(true);
     this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
     const reader = new FileReader();
@@ -82,6 +86,7 @@ export class BlockComponentComponent {
             this.validateWorksheets(this.worksheet);
           } catch (error: any) {
             this.isLoading = false;
+            this.isBlockLoading.emit(false);
             this.resetInputFile();
             this.toastrService.error(error.message);
             break;
@@ -102,6 +107,7 @@ export class BlockComponentComponent {
 
   resetInputFile(): void {
     this.isLoading = false;
+    this.isBlockLoading.emit(false);
     this.file = null;
     const fileInput = document.getElementById(
       'blockFileInput'
@@ -1176,6 +1182,7 @@ export class BlockComponentComponent {
         'Block-SLA-Exclusion-Report'
       );
       this.isLoading = false;
+      this.isBlockLoading.emit(false);
       this.resetInputFile();
     });
   }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import {
   GP_ALERT_REPORT_HEADERS,
@@ -34,6 +34,8 @@ export class GpComponent {
   gpTTData: GpTTData[] = [];
   gpSlaSummary!: GpSLASummary;
   manipulatedNMSData: ManipulatedGpNMSData[] = [];
+  @Output() isGpLoading = new EventEmitter<boolean>();
+  @Input() shouldDisable!: boolean;
 
   constructor(
     private sharedService: SharedService,
@@ -43,6 +45,7 @@ export class GpComponent {
 
   onFileChange(event: any): void {
     this.isLoading = true;
+    this.isGpLoading.emit(true);
     this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
     const reader = new FileReader();
@@ -57,6 +60,7 @@ export class GpComponent {
             this.validateWorksheets(this.worksheet);
           } catch (error: any) {
             this.isLoading = false;
+            this.isGpLoading.emit(false);
             this.resetInputFile();
             this.toastrService.error(error.message);
             break;
@@ -383,6 +387,7 @@ export class GpComponent {
 
   resetInputFile(): void {
     this.isLoading = false;
+    this.isGpLoading.emit(false);
     this.file = null;
     const fileInput = document.getElementById(
       'gpFileInput'
@@ -408,6 +413,7 @@ export class GpComponent {
     workbook.xlsx.writeBuffer().then((buffer) => {
       this.sharedService.downloadFinalReport(buffer, 'GP-SLA-Exclusion-Report');
       this.isLoading = false;
+      this.isGpLoading.emit(false);
       this.resetInputFile();
     });
   }
