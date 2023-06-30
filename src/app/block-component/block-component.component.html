@@ -6,7 +6,7 @@
     multiple="false"
     accept=".xlsx"
     class="p-4"
-    [disabled]="isLoading"
+    [disabled]="isLoading || shouldDisable"
     *ngIf="!isLoading"
   />
 

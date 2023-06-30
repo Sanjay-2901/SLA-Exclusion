@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import {
   ManipulatedShqNmsData,
@@ -35,6 +35,9 @@ export class ShqComponentComponent {
   shqSlaSummary!: ShqSlaSummary;
   isLoading: boolean = false;
 
+  @Input() shouldDisable!: boolean;
+  @Output() isShqLoading = new EventEmitter<boolean>();
+
   constructor(
     private ShqService: ShqService,
     private sharedService: SharedService,
@@ -43,6 +46,7 @@ export class ShqComponentComponent {
 
   onFileChange(event: any) {
     this.isLoading = true;
+    this.isShqLoading.emit(true);
     this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
     const reader = new FileReader();
@@ -57,6 +61,7 @@ export class ShqComponentComponent {
             this.validateWorksheets(this.worksheet);
           } catch (error: any) {
             this.isLoading = false;
+            this.isShqLoading.emit(false);
             this.resetInputFile();
             this.toastrService.error(error.message);
             break;
@@ -76,6 +81,7 @@ export class ShqComponentComponent {
 
   resetInputFile(): void {
     this.isLoading = false;
+    this.isShqLoading.emit(false);
     this.file = null;
     const fileInput = document.getElementById(
       'shqFileInput'
@@ -400,6 +406,7 @@ export class ShqComponentComponent {
         'SHQ-SLA-Exclusion-Report'
       );
       this.isLoading = false;
+      this.isShqLoading.emit(false);
       this.resetInputFile();
     });
   }
