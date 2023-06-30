@@ -31,6 +31,7 @@ import * as lodash from 'lodash';
 import * as ExcelJS from 'exceljs';
 
 import {
+  BlockDeviceLevelHeaders,
   RFOCategorizedTimeInMinutes,
   TTCorelation,
 } from '../block-component/block-component.model';
@@ -301,7 +302,8 @@ export class GpService {
     workbook: ExcelJS.Workbook,
     workSheet: ExcelJS.Worksheet,
     gpSlaSummary: GpSLASummary,
-    manipulatedGpNmsData: ManipulatedGpNMSData[]
+    manipulatedGpNmsData: ManipulatedGpNMSData[],
+    blockFinalreport: BlockDeviceLevelHeaders[]
   ): void {
     workSheet.columns = GP_SLA_FINAL_REPORT_COLUMN_WIDTHS;
 
@@ -643,6 +645,11 @@ export class GpService {
       let gp_device_details = GP_DEVICE_DETAILS.filter(
         (deviceDetails: GpDeviceDetails) =>
           deviceDetails.gp_ip_address == row.ip_address
+      )[0];
+
+      let block_output_report_details = blockFinalreport.filter(
+        (blockDetails: BlockDeviceLevelHeaders) =>
+          blockDetails.ip_address == row.ip_address
       )[0];
 
       let reportType: string = gp_device_details.report_type;

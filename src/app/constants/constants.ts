@@ -265,6 +265,8 @@ export const GP_INPUT_FILE_NAMES = [
   'gp_sla_report',
   'gp_noc_tt_report',
   'gp_alert_report',
+  'block_final_report',
+  'block_co_relation-report'
 ];
 
 export const BLOCK_SLA_FINAL_REPORT_COLUMN_WIDTHS = [
