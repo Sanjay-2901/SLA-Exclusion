@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import {
   ManipulatedShqNmsData,
@@ -35,6 +35,9 @@ export class ShqComponentComponent {
   shqSlaSummary!: ShqSlaSummary;
   isLoading: boolean = false;
 
+  @Input() shouldDisable!: boolean;
+  @Output() isShqLoading = new EventEmitter<boolean>();
+
   constructor(
     private ShqService: ShqService,
     private sharedService: SharedService,
@@ -43,6 +46,7 @@ export class ShqComponentComponent {
 
   onFileChange(event: any) {
     this.isLoading = true;
+    this.isShqLoading.emit(true);
     this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
     const reader = new FileReader();
@@ -57,6 +61,7 @@ export class ShqComponentComponent {
             this.validateWorksheets(this.worksheet);
           } catch (error: any) {
             this.isLoading = false;
+            this.isShqLoading.emit(false);
             this.resetInputFile();
             this.toastrService.error(error.message);
             break;
@@ -76,6 +81,7 @@ export class ShqComponentComponent {
 
   resetInputFile(): void {
     this.isLoading = false;
+    this.isShqLoading.emit(false);
     this.file = null;
     const fileInput = document.getElementById(
       'shqFileInput'
@@ -97,7 +103,7 @@ export class ShqComponentComponent {
       );
     } else {
       let data: AOA = [];
-      this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
+      this.worksheet.eachRow({ includeEmpty: false }, (row: ExcelJS.Row) => {
         const rowData: any = [];
         row.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell) => {
           rowData.push(cell.value);
@@ -215,9 +221,8 @@ export class ShqComponentComponent {
             alarm_start_time: moment(data[6]).format(),
             duration: data[7] ? data[7].trim() : data[7],
             alarm_clear_time: moment(data[8]).format(),
-            total_duration_in_minutes: this.sharedService.CalucateTimeInMinutes(
-              data[7]
-            ),
+            total_duration_in_minutes:
+              this.sharedService.calculateTimeInMinutes(data[7]),
           };
           result.push(obj);
         } else if (workSheetName === 'shq_noc_tt_report') {
@@ -287,10 +292,10 @@ export class ShqComponentComponent {
   manipulateShqNmsData() {
     let manipulatedShqNmsData: ManipulatedShqNmsData[] = [];
     this.shqNMSData.forEach((nmsData: ShqNMSData) => {
-      let totalUpTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
+      let totalUpTimeInMinutes = this.sharedService.calculateTimeInMinutes(
         nmsData.up_time
       );
-      let totalDownTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
+      let totalDownTimeInMinutes = this.sharedService.calculateTimeInMinutes(
         nmsData.down_time
       );
 
@@ -400,6 +405,7 @@ export class ShqComponentComponent {
         'SHQ-SLA-Exclusion-Report'
       );
       this.isLoading = false;
+      this.isShqLoading.emit(false);
       this.resetInputFile();
     });
   }

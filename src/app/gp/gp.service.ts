@@ -31,6 +31,7 @@ import * as lodash from 'lodash';
 import * as ExcelJS from 'exceljs';
 
 import {
+  BlockAlertData,
   BlockDeviceLevelHeaders,
   RFOCategorizedTimeInMinutes,
   TTCorelation,
@@ -66,7 +67,8 @@ export class GpService {
   categorizeRFO(
     nmsData: GpNMSData,
     gpAlertData: GpAlertData[],
-    gpTTData: GpTTData[]
+    gpTTData: GpTTData[],
+    blockAlertData: BlockAlertData[]
   ) {
     if (nmsData.up_percent !== 100) {
       let totalPowerDownTimeInMinutes = 0;
@@ -81,7 +83,7 @@ export class GpService {
       let linkIssueTT: string[] = [];
       let otherTT: string[] = [];
 
-      const filteredCriticalAlertData = gpAlertData.filter(
+      const filteredCriticalGpAlertData = gpAlertData.filter(
         (alertData: GpAlertData) => {
           return (
             alertData.ip_address == nmsData.ip_address &&
@@ -105,37 +107,86 @@ export class GpService {
         return ttData.ip == nmsData.ip_address;
       });
 
-      if (filteredCriticalAlertData.length) {
-        filteredCriticalAlertData.forEach((alertCriticalData: GpAlertData) => {
-          filteredTTData.forEach((ttData: GpTTData) => {
-            if (
-              moment(alertCriticalData.alarm_start_time).isSame(
-                ttData.incident_start_on,
-                'minute'
-              )
-            ) {
-              if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
-                powerDownArray.push(alertCriticalData);
-                powerIssueTT.push(ttData.incident_id);
-              } else if (
-                ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
-                ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+      const correspondingBlockIpForGp = GP_DEVICE_DETAILS.filter(
+        (gpDeviceDetail: GpDeviceDetails) => {
+          return nmsData.ip_address === gpDeviceDetail.gp_ip_address;
+        }
+      )[0].block_ip_address;
+
+      const filteredBlockAlertData = blockAlertData.filter(
+        (blockAlertData: BlockAlertData) => {
+          return (
+            blockAlertData.ip_address == correspondingBlockIpForGp &&
+            blockAlertData.severity == SEVERITY_CRITICAL &&
+            blockAlertData.message == ALERT_DOWN_MESSAGE
+          );
+        }
+      );
+
+      filteredCriticalGpAlertData.forEach(
+        (gpAlertCriticalData: GpAlertData) => {
+          filteredBlockAlertData.forEach(
+            (blockAlertCriticalData: BlockAlertData) => {
+              let alarmStartTimeDifference = moment(
+                gpAlertCriticalData.alarm_start_time
+              ).diff(
+                moment(blockAlertCriticalData.alarm_start_time),
+                'minutes'
+              );
+              let alarmClearTimeDifference = moment(
+                gpAlertCriticalData.alarm_clear_time
+              ).diff(
+                moment(blockAlertCriticalData.alarm_clear_time),
+                'minutes'
+              );
+              if (
+                alarmStartTimeDifference > 0 &&
+                alarmStartTimeDifference <= 10 &&
+                alarmClearTimeDifference > 0 &&
+                alarmClearTimeDifference <= 10
               ) {
-                DCNDownArray.push(alertCriticalData);
-                linkIssueTT.push(ttData.incident_id);
-              } else {
-                otherTT.push(ttData.incident_id);
+                DCNDownArray.push(gpAlertCriticalData);
               }
             }
-          });
+          );
+        }
+      );
 
-          if (
-            !lodash.some(powerDownArray, alertCriticalData) &&
-            !lodash.some(DCNDownArray, alertCriticalData)
-          ) {
-            criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
+      if (filteredCriticalGpAlertData.length) {
+        filteredCriticalGpAlertData.forEach(
+          (alertCriticalData: GpAlertData) => {
+            filteredTTData.forEach((ttData: GpTTData) => {
+              if (
+                moment(alertCriticalData.alarm_start_time).isSame(
+                  ttData.incident_start_on,
+                  'minute'
+                )
+              ) {
+                if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
+                  powerDownArray.push(alertCriticalData);
+                  powerIssueTT.push(ttData.incident_id);
+                } else if (
+                  ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
+                  ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
+                ) {
+                  if (!lodash.some(DCNDownArray, alertCriticalData)) {
+                    DCNDownArray.push(alertCriticalData);
+                  }
+                  linkIssueTT.push(ttData.incident_id);
+                } else {
+                  otherTT.push(ttData.incident_id);
+                }
+              }
+            });
+
+            if (
+              !lodash.some(powerDownArray, alertCriticalData) &&
+              !lodash.some(DCNDownArray, alertCriticalData)
+            ) {
+              criticalAlertAndTTDataTimeMismatch.push(alertCriticalData);
+            }
           }
-        });
+        );
       } else {
         isAlertReportEmpty = true;
       }
@@ -163,7 +214,13 @@ export class GpService {
               }
             );
 
-            if (!lodash.some(powerDownArray, alertCriticalData)) {
+            if (
+              !lodash.some(
+                powerDownArray,
+                alertCriticalData &&
+                  !lodash.some(DCNDownArray, alertCriticalData)
+              )
+            ) {
               DCNDownArray.push(alertCriticalData);
             }
           }
@@ -303,7 +360,8 @@ export class GpService {
     workSheet: ExcelJS.Worksheet,
     gpSlaSummary: GpSLASummary,
     manipulatedGpNmsData: ManipulatedGpNMSData[],
-    blockFinalreport: BlockDeviceLevelHeaders[]
+    blockFinalreport: BlockDeviceLevelHeaders[],
+    blockTTCorelationReport: TTCorelation[]
   ): void {
     workSheet.columns = GP_SLA_FINAL_REPORT_COLUMN_WIDTHS;
 
@@ -768,18 +826,34 @@ export class GpService {
           (gpDevice: GpDeviceDetails) =>
             gpDevice.gp_ip_address === ttCorelationData.ip
         )[0];
-
+        let blockTTCoRelation: TTCorelation = blockTTCorelationReport.filter(
+          (blockTTCoRelationData: TTCorelation) => {
+            return (
+              blockTTCoRelationData.ip === gpDevicedetails.block_ip_address
+            );
+          }
+        )[0];
         gpTtCoRelationWorkSheet
           .addRow([
             index + 1,
             ttCorelationData.ip,
             gpDevicedetails.block_name,
             gpDevicedetails.gp_name,
-            '',
-            '',
-            ttCorelationData.powerIssueTT.toString().split(',').join(', '),
-            ttCorelationData.linkIssueTT.toString().split(',').join(', '),
-            ttCorelationData.otherTT.toString().split(',').join(', '),
+            blockTTCoRelation?.powerIssueTT
+              ? blockTTCoRelation.powerIssueTT[0]
+              : '',
+            blockTTCoRelation?.linkIssueTT
+              ? blockTTCoRelation.linkIssueTT[0]
+              : '',
+            ttCorelationData?.powerIssueTT
+              ? ttCorelationData.powerIssueTT.toString().split(',').join(', ')
+              : '',
+            ttCorelationData?.linkIssueTT
+              ? ttCorelationData.linkIssueTT.toString().split(',').join(', ')
+              : '',
+            ttCorelationData?.otherTT
+              ? ttCorelationData.otherTT.toString().split(',').join(', ')
+              : '',
           ])
           .eachCell((cell) => {
             cell.border = BORDER_STYLE;

@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import {
+  BLOCK_ALERT_REPORT_HEADERS,
   BLOCK_INPUT_FILE_NAMES,
   BLOCK_TT_CO_RELATION_HEADERS,
   GP_ALERT_REPORT_HEADERS,
@@ -22,6 +23,7 @@ import { SharedService } from '../shared/shared.service';
 import { GpService } from './gp.service';
 import * as moment from 'moment';
 import {
+  BlockAlertData,
   BlockDeviceLevelHeaders,
   TTCorelation,
 } from '../block-component/block-component.model';
@@ -42,6 +44,9 @@ export class GpComponent {
   manipulatedNMSData: ManipulatedGpNMSData[] = [];
   blockFinalReport: BlockDeviceLevelHeaders[] = [];
   blockTTCorelationReport: TTCorelation[] = [];
+  blockAlertData: BlockAlertData[] = [];
+  @Output() isGpLoading = new EventEmitter<boolean>();
+  @Input() shouldDisable!: boolean;
 
   constructor(
     private sharedService: SharedService,
@@ -51,6 +56,7 @@ export class GpComponent {
 
   onFileChange(event: any): void {
     this.isLoading = true;
+    this.isGpLoading.emit(true);
     this.file = event.target.files[0];
     const workbook = new ExcelJS.Workbook();
     const reader = new FileReader();
@@ -59,25 +65,31 @@ export class GpComponent {
       const buffer = e.target.result;
 
       workbook.xlsx.load(buffer).then(() => {
-        for (let index = 1; index <= workbook.worksheets.length; index++) {
-          this.worksheet = workbook.getWorksheet(index);
-          try {
-            this.validateWorksheets(this.worksheet);
-          } catch (error: any) {
-            this.isLoading = false;
-            this.resetInputFile();
-            this.toastrService.error(error.message);
-            break;
+        if (workbook.worksheets.length !== 6) {
+          this.toastrService.error(
+            'Some files cannot be found. Please upload all necessary files'
+          );
+          this.resetInputFile();
+        } else {
+          for (let index = 1; index <= workbook.worksheets.length; index++) {
+            this.worksheet = workbook.getWorksheet(index);
+            try {
+              this.validateWorksheets(this.worksheet);
+            } catch (error: any) {
+              this.isLoading = false;
+              this.isGpLoading.emit(false);
+              this.resetInputFile();
+              this.toastrService.error(error.message);
+              break;
+            }
           }
         }
-        if (
-          this.gpNMSData.length > 0 &&
-          this.gpAlertData.length > 0 &&
-          this.gpTTData.length > 0 &&
-          this.blockFinalReport.length > 0 &&
-          this.blockTTCorelationReport.length > 0
-        ) {
+
+        if (this.gpNMSData.length > 0 && this.blockFinalReport.length > 0) {
           this.manipulateGpNMSData();
+        } else {
+          this.toastrService.error('No Data found in NMS Report');
+          this.resetInputFile();
         }
       });
     };
@@ -92,7 +104,7 @@ export class GpComponent {
       );
     } else {
       let data: AOA = [];
-      this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
+      this.worksheet.eachRow({ includeEmpty: false }, (row: ExcelJS.Row) => {
         const rowData: any = [];
         row.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell) => {
           rowData.push(cell.value);
@@ -141,8 +153,36 @@ export class GpComponent {
         } else {
           this.storeDataAsObject(workSheetName, data);
         }
+      } else if (workSheetName === GP_INPUT_FILE_NAMES[5]) {
+        if (headers !== JSON.stringify(BLOCK_ALERT_REPORT_HEADERS)) {
+          throw new Error(
+            'Block - Invalid template of the  Alert report. Kindly provide the valid column names.'
+          );
+        } else {
+          try {
+            this.validateEachRowsOfAlertReport(data, workSheetName);
+          } catch (error: any) {
+            this.toastrService.error(error.message);
+            this.resetInputFile();
+          }
+        }
       }
     }
+  }
+
+  validateEachRowsOfAlertReport(data: AOA, workSheetName: string) {
+    data.forEach((row: any, index: number) => {
+      if (index >= 1) {
+        if (!IP_ADDRESS_PATTERN.test(row[2])) {
+          throw new Error(
+            ` BLOCK - ${
+              BLOCK_ALERT_REPORT_HEADERS[2]
+            } is invalid in Alert report in row number : ${index + 1}`
+          );
+        }
+      }
+    });
+    this.storeDataAsObject(workSheetName, data);
   }
 
   validateEachRowsOfSlaReport(data: AOA, workSheetName: string) {
@@ -199,7 +239,7 @@ export class GpComponent {
   storeDataAsObject(workSheetName: string, data: any) {
     let result: any = [];
     data.forEach((data: any, index: number) => {
-      if (workSheetName === 'gp_sla_report' && index >= 1) {
+      if (workSheetName === GP_INPUT_FILE_NAMES[0] && index >= 1) {
         let obj: GpNMSData = {
           monitor: data[0],
           ip_address: data[1] ? data[1].trim() : data[1],
@@ -216,7 +256,7 @@ export class GpComponent {
           created_date: data[12],
         };
         result.push(obj);
-      } else if (workSheetName === 'gp_noc_tt_report' && index >= 1) {
+      } else if (workSheetName === GP_INPUT_FILE_NAMES[1] && index >= 1) {
         let obj: GpTTData = {
           incident_id: data[0],
           parent_incident_id: data[1],
@@ -267,11 +307,11 @@ export class GpComponent {
           vendor_name: data[46],
         };
         result.push(obj);
-      } else if (workSheetName === 'gp_alert_report' && index >= 1) {
+      } else if (workSheetName === GP_INPUT_FILE_NAMES[2] && index >= 1) {
         let obj: GpAlertData = {
           alert: data[0],
           source: data[1],
-          ip_address: data[1].match(/\((.*?)\)/)[1].trim(),
+          ip_address: data[2],
           departments: data[3],
           type: data[4],
           severity: data[5] ? data[5].trim() : data[5],
@@ -280,11 +320,11 @@ export class GpComponent {
           duration: data[8] ? data[8].trim() : data[8],
           alarm_clear_time: moment(data[9]).format(),
           total_duration_in_minutes: data[8]
-            ? this.sharedService.CalucateTimeInMinutes(data[8])
+            ? this.sharedService.calculateTimeInMinutes(data[8])
             : 0,
         };
         result.push(obj);
-      } else if (workSheetName === 'block_final_report' && index >= 11) {
+      } else if (workSheetName === GP_INPUT_FILE_NAMES[3] && index >= 11) {
         let obj: BlockDeviceLevelHeaders = {
           report_type: data[0],
           host_name: data[1],
@@ -322,41 +362,60 @@ export class GpComponent {
           total_up_minute: data[33],
         };
         result.push(obj);
-      } else if (workSheetName === 'block_co_relation-report' && index >= 1) {
+      } else if (workSheetName === GP_INPUT_FILE_NAMES[4] && index >= 1) {
         let obj: TTCorelation = {
-          ip: data[0],
-          powerIssueTT: data[1],
-          linkIssueTT: data[2],
-          otherTT: data[3],
+          ip: data[1],
+          powerIssueTT: [data[3]],
+          linkIssueTT: [data[4]],
+          otherTT: [data[5]],
+        };
+        result.push(obj);
+      } else if (workSheetName === GP_INPUT_FILE_NAMES[5] && index >= 1) {
+        let obj: BlockAlertData = {
+          alert: data[0],
+          source: data[1],
+          ip_address: data[2] ? data[2].trim() : data[2],
+          departments: data[3],
+          type: data[4],
+          severity: data[5] ? data[5].trim() : data[5],
+          message: data[6] ? data[6].trim() : data[6],
+          alarm_start_time: moment(data[7]).format(),
+          duration: data[8] ? data[8].trim() : data[8],
+          alarm_clear_time: moment(data[9]).format(),
+          total_duration_in_minutes: data[8]
+            ? this.sharedService.calculateTimeInMinutes(data[8])
+            : 0,
         };
         result.push(obj);
       }
     });
 
-    if (workSheetName === 'gp_sla_report') {
+    if (workSheetName === GP_INPUT_FILE_NAMES[0]) {
       this.gpNMSData = result;
-    } else if (workSheetName === 'gp_noc_tt_report') {
+    } else if (workSheetName === GP_INPUT_FILE_NAMES[1]) {
       this.gpTTData = result;
-    } else if (workSheetName === 'gp_alert_report') {
+    } else if (workSheetName === GP_INPUT_FILE_NAMES[2]) {
       this.gpAlertData = result;
-    } else if (workSheetName === BLOCK_INPUT_FILE_NAMES[3]) {
+    } else if (workSheetName === GP_INPUT_FILE_NAMES[3]) {
       this.blockFinalReport = result;
-    } else if (workSheetName === BLOCK_INPUT_FILE_NAMES[4]) {
+    } else if (workSheetName === GP_INPUT_FILE_NAMES[4]) {
       this.blockTTCorelationReport = result;
+    } else if (workSheetName === GP_INPUT_FILE_NAMES[5]) {
+      this.blockAlertData = result;
     }
   }
 
   manipulateGpNMSData(): void {
     let manipulatedGpNMSData: ManipulatedGpNMSData[] = [];
     this.gpNMSData.forEach((nmsData: GpNMSData) => {
-      let totalUpTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
+      let totalUpTimeInMinutes = this.sharedService.calculateTimeInMinutes(
         nmsData.total_up_time
       );
-      let totalDownTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
+      let totalDownTimeInMinutes = this.sharedService.calculateTimeInMinutes(
         nmsData.down_time
       );
       let plannedMaintenanceInMinutes =
-        this.sharedService.CalucateTimeInMinutes(nmsData.maintenance_time);
+        this.sharedService.calculateTimeInMinutes(nmsData.maintenance_time);
       let totalTimeExclusiveOfSLAExclusionInMinutes =
         totalUpTimeInMinutes + totalDownTimeInMinutes;
       let totalTimeExclusiveOfSLAExclusionInPercent =
@@ -373,7 +432,8 @@ export class GpComponent {
       let rfoCategorizedData = this.gpService.categorizeRFO(
         nmsData,
         this.gpAlertData,
-        this.gpTTData
+        this.gpTTData,
+        this.blockAlertData
       );
       let powerDownTimeInpercent = +(
         (rfoCategorizedData.total_power_downtime_minutes /
@@ -451,6 +511,7 @@ export class GpComponent {
 
   resetInputFile(): void {
     this.isLoading = false;
+    this.isGpLoading.emit(false);
     this.file = null;
     const fileInput = document.getElementById(
       'gpFileInput'
@@ -472,11 +533,13 @@ export class GpComponent {
       worksheet,
       this.gpSlaSummary,
       this.manipulatedNMSData,
-      this.blockFinalReport
+      this.blockFinalReport,
+      this.blockTTCorelationReport
     );
     workbook.xlsx.writeBuffer().then((buffer) => {
       this.sharedService.downloadFinalReport(buffer, 'GP-SLA-Exclusion-Report');
       this.isLoading = false;
+      this.isGpLoading.emit(false);
       this.resetInputFile();
     });
   }

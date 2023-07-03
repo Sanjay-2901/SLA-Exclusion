@@ -10,7 +10,7 @@
           <div class="card-body">
             <h5 class="card-title">SHQ Devices</h5>
             <p class="card-text">Select your input files for SHQ Devices.</p>
-            <app-shq-component></app-shq-component>
+            <app-shq-component [shouldDisable]="shouldDisable" (isShqLoading)="isShqLoading($event)"></app-shq-component>
           </div>
         </div>
       </div>
@@ -21,7 +21,7 @@
             <p class="card-text">
               Select your input reports for Block devices.
             </p>
-            <app-block-component></app-block-component>
+            <app-block-component [shouldDisable]="shouldDisable" (isBlockLoading)="isBlockLoading($event)"></app-block-component>
           </div>
         </div>
       </div>
@@ -31,7 +31,7 @@
             <div class="card-body">
               <h5 class="card-title">GP Devices</h5>
               <p class="card-text">Select your input files for GP Devices.</p>
-              <app-gp></app-gp>
+              <app-gp [shouldDisable]="shouldDisable" (isGpLoading)="isGpLoading($event)"></app-gp>
             </div>
           </div>
         </div>
