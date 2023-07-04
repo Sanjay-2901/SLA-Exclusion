@@ -281,7 +281,10 @@ export class GpComponent {
           slab_reach: data[20],
           resolution_method: data[21],
           rfo: data[22] ? data[22].trim() : data[22],
-          incident_start_on: moment(data[23]).format(),
+          incident_start_on: moment(data[23])
+            .subtract(5, 'hours')
+            .subtract(30, 'minutes')
+            .format(),
           incident_created_on: data[24],
           ageing: data[25],
           open_time: data[26],

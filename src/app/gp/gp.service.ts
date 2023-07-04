@@ -140,9 +140,9 @@ export class GpService {
                 'minutes'
               );
               if (
-                alarmStartTimeDifference > 0 &&
+                alarmStartTimeDifference >= 0 &&
                 alarmStartTimeDifference <= 10 &&
-                alarmClearTimeDifference > 0 &&
+                alarmClearTimeDifference >= 0 &&
                 alarmClearTimeDifference <= 10
               ) {
                 DCNDownArray.push(gpAlertCriticalData);
@@ -163,16 +163,24 @@ export class GpService {
                 )
               ) {
                 if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
-                  powerDownArray.push(alertCriticalData);
-                  powerIssueTT.push(ttData.incident_id);
+                  if (!lodash.some(DCNDownArray, alertCriticalData)) {
+                    powerIssueTT.push(ttData.incident_id);
+                    powerDownArray.push(alertCriticalData);
+                  }
                 } else if (
                   ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
                   ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
                 ) {
-                  if (!lodash.some(DCNDownArray, alertCriticalData)) {
+                  if (
+                    !lodash.some(
+                      DCNDownArray,
+                      alertCriticalData &&
+                        !lodash.some(powerDownArray, alertCriticalData)
+                    )
+                  ) {
                     DCNDownArray.push(alertCriticalData);
+                    linkIssueTT.push(ttData.incident_id);
                   }
-                  linkIssueTT.push(ttData.incident_id);
                 } else {
                   otherTT.push(ttData.incident_id);
                 }
@@ -209,7 +217,12 @@ export class GpService {
                     'minute'
                   )
                 ) {
-                  powerDownArray.push(alertCriticalData);
+                  if (
+                    !lodash.some(powerDownArray, alertCriticalData) &&
+                    !lodash.some(DCNDownArray, alertCriticalData)
+                  ) {
+                    powerDownArray.push(alertCriticalData);
+                  }
                 }
               }
             );
