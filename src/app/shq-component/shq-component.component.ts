@@ -103,7 +103,7 @@ export class ShqComponentComponent {
       );
     } else {
       let data: AOA = [];
-      this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
+      this.worksheet.eachRow({ includeEmpty: false }, (row: ExcelJS.Row) => {
         const rowData: any = [];
         row.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell) => {
           rowData.push(cell.value);
@@ -221,9 +221,8 @@ export class ShqComponentComponent {
             alarm_start_time: moment(data[6]).format(),
             duration: data[7] ? data[7].trim() : data[7],
             alarm_clear_time: moment(data[8]).format(),
-            total_duration_in_minutes: this.sharedService.CalucateTimeInMinutes(
-              data[7]
-            ),
+            total_duration_in_minutes:
+              this.sharedService.calculateTimeInMinutes(data[7]),
           };
           result.push(obj);
         } else if (workSheetName === 'shq_noc_tt_report') {
@@ -293,10 +292,10 @@ export class ShqComponentComponent {
   manipulateShqNmsData() {
     let manipulatedShqNmsData: ManipulatedShqNmsData[] = [];
     this.shqNMSData.forEach((nmsData: ShqNMSData) => {
-      let totalUpTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
+      let totalUpTimeInMinutes = this.sharedService.calculateTimeInMinutes(
         nmsData.up_time
       );
-      let totalDownTimeInMinutes = this.sharedService.CalucateTimeInMinutes(
+      let totalDownTimeInMinutes = this.sharedService.calculateTimeInMinutes(
         nmsData.down_time
       );
 

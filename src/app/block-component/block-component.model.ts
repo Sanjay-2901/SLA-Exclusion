@@ -141,3 +141,40 @@ export interface TTCorelation {
   linkIssueTT: string[];
   otherTT: string[];
 }
+
+export interface BlockDeviceLevelHeaders {
+  report_type: string;
+  host_name: string;
+  ip_address: string;
+  state: string;
+  cluster: string;
+  district: string;
+  district_lgd_code: number;
+  block_name: string;
+  block_lgd_code: number;
+  no_of_gp_in_block: number;
+  up_percent: string;
+  up_minute: string;
+  total_down_exclusive_of_sla_exclusion_percent: string;
+  total_down_exclusive_of_sla_exclusion_minute: string;
+  power_down_percent: string;
+  power_down_minute: string;
+  fibre_down_percent: string;
+  fibre_down_minute: string;
+  equipement_down_percent: string;
+  equipement_down_minute: string;
+  hrt_down_percent: string;
+  hrt_down_minute: string;
+  dcn_down_percent: string;
+  dcn_down_miniute: string;
+  planned_maintenance_percent: string;
+  planned_maintenance_minute: string;
+  unknown_percent: string;
+  unknown_minute: string;
+  total_sla_exclusion_percent: string;
+  total_sla_exclusion_minute: string;
+  polling_time_percent: string;
+  polling_time_minute: string;
+  total_up_percent: string;
+  total_up_minute: string;
+}

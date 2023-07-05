@@ -129,7 +129,7 @@ export class BlockComponentComponent {
       );
     } else {
       let data: AOA = [];
-      this.worksheet.eachRow({ includeEmpty: true }, (row: ExcelJS.Row) => {
+      this.worksheet.eachRow({ includeEmpty: false }, (row: ExcelJS.Row) => {
         const rowData: any = [];
         row.eachCell({ includeEmpty: true }, (cell: ExcelJS.Cell) => {
           rowData.push(cell.value);

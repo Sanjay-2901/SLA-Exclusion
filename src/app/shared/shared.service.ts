@@ -7,7 +7,7 @@ import * as moment from 'moment';
 export class SharedService {
   constructor() {}
 
-  CalucateTimeInMinutes(timePeriod: string): number {
+  calculateTimeInMinutes(timePeriod: string): number {
     if (timePeriod) {
       let totalTimeinMinutes = timePeriod.trim().split(' ');
       if (timePeriod.includes('days')) {
