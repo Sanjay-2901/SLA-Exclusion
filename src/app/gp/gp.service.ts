@@ -140,6 +140,12 @@ export class GpService {
                 'minutes'
               );
               if (
+                moment(gpAlertCriticalData.alarm_start_time).isAfter(
+                  moment(blockAlertCriticalData.alarm_start_time)
+                ) &&
+                moment(gpAlertCriticalData.alarm_clear_time).isAfter(
+                  moment(blockAlertCriticalData.alarm_clear_time)
+                ) &&
                 alarmStartTimeDifference >= 0 &&
                 alarmStartTimeDifference <= 10 &&
                 alarmClearTimeDifference >= 0 &&
