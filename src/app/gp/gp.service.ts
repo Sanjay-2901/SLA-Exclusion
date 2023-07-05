@@ -236,7 +236,7 @@ export class GpService {
             if (
               !lodash.some(
                 powerDownArray,
-                alertCriticalData &&
+                alertCriticalData ||
                   !lodash.some(DCNDownArray, alertCriticalData)
               )
             ) {
@@ -245,7 +245,7 @@ export class GpService {
           }
         );
       }
-
+      
       powerDownArray.forEach((powerDownAlert: GpAlertData) => {
         totalPowerDownTimeInMinutes += powerDownAlert.total_duration_in_minutes;
       });
