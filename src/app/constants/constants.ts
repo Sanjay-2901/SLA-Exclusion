@@ -270,6 +270,12 @@ export const GP_INPUT_FILE_NAMES = [
   'block_alert_report',
 ];
 
+export enum DEVICES_COUNT {
+  SHQ = 22,
+  BLOCK = 79,
+  GP = 5001,
+}
+
 export const BLOCK_SLA_FINAL_REPORT_COLUMN_WIDTHS = [
   { width: 20 },
   { width: 28 },

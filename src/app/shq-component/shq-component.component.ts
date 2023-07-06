@@ -15,6 +15,7 @@ import {
   SHQ_INPUT_FILE_NAMES,
   SHQ_SLA_REPORT_HEADERS,
   TT_REPORT_HEADERS,
+  DEVICES_COUNT,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
 import { AOA } from '../shared/shared-model';
@@ -67,12 +68,13 @@ export class ShqComponentComponent {
             break;
           }
         }
-        if (
-          this.shqNMSData.length > 0 &&
-          this.shqAlertData.length > 0 &&
-          this.shqTTData.length > 0
-        ) {
+        if (this.shqNMSData.length === DEVICES_COUNT.SHQ) {
           this.manipulateShqNmsData();
+        } else {
+          this.resetInputFile();
+          this.toastrService.error(
+            'NMS data is insufficient. Please provide the correct data.'
+          );
         }
       });
     };
