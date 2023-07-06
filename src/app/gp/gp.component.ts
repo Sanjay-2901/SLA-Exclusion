@@ -2,8 +2,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import * as ExcelJS from 'exceljs';
 import {
   BLOCK_ALERT_REPORT_HEADERS,
-  BLOCK_INPUT_FILE_NAMES,
   BLOCK_TT_CO_RELATION_HEADERS,
+  DEVICES_COUNT,
   GP_ALERT_REPORT_HEADERS,
   GP_INPUT_FILE_NAMES,
   GP_SLA_REPORT_HEADERS,
@@ -85,11 +85,13 @@ export class GpComponent {
           }
         }
 
-        if (this.gpNMSData.length > 0 && this.blockFinalReport.length > 0) {
+        if (this.gpNMSData.length === DEVICES_COUNT.GP) {
           this.manipulateGpNMSData();
         } else {
-          this.toastrService.error('No Data found in NMS Report');
           this.resetInputFile();
+          this.toastrService.error(
+            'NMS data is insufficient. Please provide the correct data.'
+          );
         }
       });
     };

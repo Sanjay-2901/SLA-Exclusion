@@ -35,6 +35,7 @@ import {
   BLOCK_SLA_FINAL_REPORT_COLUMN_WIDTHS,
   BLOCK_TT_CO_RELATION_HEADERS,
   BLOCK_TT_CO_RELATION_COLUMNS_WIDTHS,
+  DEVICES_COUNT,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
 import { AOA } from '../shared/shared-model';
@@ -92,12 +93,13 @@ export class BlockComponentComponent {
             break;
           }
         }
-        if (
-          this.blockNMSData.length > 0 &&
-          this.blockTTData.length > 0 &&
-          this.blockAlertData.length > 0
-        ) {
+        if (this.blockNMSData.length === DEVICES_COUNT.BLOCK) {
           this.manipulateBlockNMSData();
+        } else {
+          this.resetInputFile();
+          this.toastrService.error(
+            'NMS data is insufficient. Please provide the correct data.'
+          );
         }
       });
     };

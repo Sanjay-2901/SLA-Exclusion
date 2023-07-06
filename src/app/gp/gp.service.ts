@@ -151,6 +151,7 @@ export class GpService {
                 alarmClearTimeDifference >= 0 &&
                 alarmClearTimeDifference <= 10
               ) {
+                console.log(new Date(gpAlertCriticalData.alarm_clear_time))
                 DCNDownArray.push(gpAlertCriticalData);
               }
             }
