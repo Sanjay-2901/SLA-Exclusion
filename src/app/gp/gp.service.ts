@@ -64,6 +64,24 @@ export class GpService {
     return alertDownTimeInMinutes;
   }
 
+  checkBlockAlarmDeviation(
+    gpAlarmStartTime: any,
+    blockAlarmStartTime: any
+  ): boolean {
+    let gp_time = new Date(gpAlarmStartTime);
+    let block_time = new Date(blockAlarmStartTime);
+    let tenMinutesInMilliseconds = 600000;
+
+    let lowerBound = new Date(gp_time.getTime() - tenMinutesInMilliseconds);
+    let upperBound = new Date(gp_time.getTime() + tenMinutesInMilliseconds);
+
+    if (block_time >= lowerBound && block_time <= upperBound) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   categorizeRFO(
     nmsData: GpNMSData,
     gpAlertData: GpAlertData[],
@@ -123,43 +141,29 @@ export class GpService {
         }
       );
 
-      filteredCriticalGpAlertData.forEach(
-        (gpAlertCriticalData: GpAlertData) => {
-          filteredBlockAlertData.forEach(
-            (blockAlertCriticalData: BlockAlertData) => {
-              let alarmStartTimeDifference = moment(
-                gpAlertCriticalData.alarm_start_time
-              ).diff(
-                moment(blockAlertCriticalData.alarm_start_time),
-                'minutes'
-              );
-              let alarmClearTimeDifference = moment(
-                gpAlertCriticalData.alarm_clear_time
-              ).diff(
-                moment(blockAlertCriticalData.alarm_clear_time),
-                'minutes'
-              );
-              if (
-                moment(gpAlertCriticalData.alarm_start_time).isAfter(
-                  moment(blockAlertCriticalData.alarm_start_time)
-                ) &&
-                moment(gpAlertCriticalData.alarm_clear_time).isAfter(
-                  moment(blockAlertCriticalData.alarm_clear_time)
-                ) &&
-                alarmStartTimeDifference >= 0 &&
-                alarmStartTimeDifference <= 10 &&
-                alarmClearTimeDifference >= 0 &&
-                alarmClearTimeDifference <= 10
-              ) {
-                console.log(new Date(gpAlertCriticalData.alarm_clear_time))
-                DCNDownArray.push(gpAlertCriticalData);
-              }
-            }
-          );
-        }
-      );
-
       if (filteredCriticalGpAlertData.length) {
+        // scenario 1 : Checking wheather GP Down due to BLOCK DOWn
+        filteredCriticalGpAlertData.forEach(
+          (gpAlertCriticalData: GpAlertData) => {
+            filteredBlockAlertData.forEach(
+              (blockAlertCriticalData: BlockAlertData) => {
+                let isTenMinutesDeviationFound = this.checkBlockAlarmDeviation(
+                  gpAlertCriticalData.alarm_start_time,
+                  blockAlertCriticalData.alarm_start_time
+                );
+
+                if (
+                  isTenMinutesDeviationFound &&
+                  !lodash.some(DCNDownArray, gpAlertCriticalData)
+                ) {
+                  DCNDownArray.push(gpAlertCriticalData);
+                }
+              }
+            );
+          }
+        );
+
+        // scenario 2 : Checking with NOC TT RFO
         filteredCriticalGpAlertData.forEach(
           (alertCriticalData: GpAlertData) => {
             filteredTTData.forEach((ttData: GpTTData) => {
@@ -170,7 +174,10 @@ export class GpService {
                 )
               ) {
                 if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
-                  if (!lodash.some(DCNDownArray, alertCriticalData)) {
+                  if (
+                    !lodash.some(DCNDownArray, alertCriticalData) &&
+                    !lodash.some(powerDownArray, alertCriticalData)
+                  ) {
                     powerIssueTT.push(ttData.incident_id);
                     powerDownArray.push(alertCriticalData);
                   }
@@ -179,11 +186,8 @@ export class GpService {
                   ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
                 ) {
                   if (
-                    !lodash.some(
-                      DCNDownArray,
-                      alertCriticalData &&
-                        !lodash.some(powerDownArray, alertCriticalData)
-                    )
+                    !lodash.some(DCNDownArray, alertCriticalData) &&
+                    !lodash.some(powerDownArray, alertCriticalData)
                   ) {
                     DCNDownArray.push(alertCriticalData);
                     linkIssueTT.push(ttData.incident_id);
@@ -213,6 +217,8 @@ export class GpService {
         otherTT: otherTT,
       });
 
+      // scenario :3  Checking with warning Alerts
+
       if (criticalAlertAndTTDataTimeMismatch) {
         criticalAlertAndTTDataTimeMismatch.forEach(
           (alertCriticalData: GpAlertData) => {
@@ -235,18 +241,15 @@ export class GpService {
             );
 
             if (
-              !lodash.some(
-                powerDownArray,
-                alertCriticalData ||
-                  !lodash.some(DCNDownArray, alertCriticalData)
-              )
+              !lodash.some(powerDownArray, alertCriticalData) &&
+              !lodash.some(DCNDownArray, alertCriticalData)
             ) {
               DCNDownArray.push(alertCriticalData);
             }
           }
         );
       }
-      
+
       powerDownArray.forEach((powerDownAlert: GpAlertData) => {
         totalPowerDownTimeInMinutes += powerDownAlert.total_duration_in_minutes;
       });
