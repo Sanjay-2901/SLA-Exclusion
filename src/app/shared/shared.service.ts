@@ -10,7 +10,7 @@ export class SharedService {
   calculateTimeInMinutes(timePeriod: string): number {
     if (timePeriod) {
       let totalTimeinMinutes = timePeriod.trim().split(' ');
-      if (timePeriod.includes('days')) {
+      if (timePeriod.includes('day')) {
         return +(
           parseInt(totalTimeinMinutes[0]) * 1440 +
           parseInt(totalTimeinMinutes[2]) * 60 +
@@ -26,6 +26,28 @@ export class SharedService {
       }
     } else {
       return 0;
+    }
+  }
+
+  setDuration(
+    timeSpan: string,
+    alarmStartTime: any,
+    alarmClearTime: any,
+    duration: string
+  ): string {
+    let toDate = moment(
+      timeSpan.substring(timeSpan.indexOf('To ') + 3)
+    ).format();
+
+    if (moment(alarmClearTime).isAfter(moment(toDate))) {
+      let diffInMilliSeconds = moment(toDate).diff(moment(alarmStartTime));
+      let days = moment.duration(diffInMilliSeconds).days();
+      let hours = moment.duration(diffInMilliSeconds).hours();
+      let minutes = moment.duration(diffInMilliSeconds).minutes();
+      let seconds = moment.duration(diffInMilliSeconds).seconds();
+      return `${days} day(s) ${hours} hour(s) ${minutes} minute(s) ${seconds} second(s)`;
+    } else {
+      return duration;
     }
   }
 

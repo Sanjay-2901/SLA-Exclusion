@@ -8,6 +8,7 @@ import {
   GP_INPUT_FILE_NAMES,
   GP_SLA_REPORT_HEADERS,
   IP_ADDRESS_PATTERN,
+  TIME_SPAN_REGEX_PATTERN,
   TT_REPORT_HEADERS,
 } from '../constants/constants';
 import { AOA } from '../shared/shared-model';
@@ -45,6 +46,7 @@ export class GpComponent {
   blockFinalReport: BlockDeviceLevelHeaders[] = [];
   blockTTCorelationReport: TTCorelation[] = [];
   blockAlertData: BlockAlertData[] = [];
+  timeSpanValue: string = '';
   @Output() isGpLoading = new EventEmitter<boolean>();
   @Input() shouldDisable!: boolean;
 
@@ -117,7 +119,16 @@ export class GpComponent {
       const headers = JSON.stringify(data[0]);
 
       if (workSheetName === GP_INPUT_FILE_NAMES[0]) {
-        if (headers !== JSON.stringify(GP_SLA_REPORT_HEADERS)) {
+        const timeSpanRow: string[] = data[0];
+        this.timeSpanValue = timeSpanRow[0];
+        const slaReportHeader = JSON.stringify(data[1]);
+
+        if (!TIME_SPAN_REGEX_PATTERN.test(this.timeSpanValue)) {
+          throw new Error(
+            'GP - The Time Span value in the first column is either incorrect or unavailable. Please provide a valid Time Span.'
+          );
+        }
+        if (slaReportHeader !== JSON.stringify(GP_SLA_REPORT_HEADERS)) {
           throw new Error(
             'GP - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
@@ -188,7 +199,7 @@ export class GpComponent {
   }
 
   validateEachRowsOfSlaReport(data: AOA, workSheetName: string) {
-    for (let index = 1; index < data.length; index++) {
+    for (let index = 2; index < data.length; index++) {
       let row: any = data[index];
       if (row[1] === null || row[1] === undefined) {
         throw new Error(`GP - ${
@@ -241,7 +252,7 @@ export class GpComponent {
   storeDataAsObject(workSheetName: string, data: any) {
     let result: any = [];
     data.forEach((data: any, index: number) => {
-      if (workSheetName === GP_INPUT_FILE_NAMES[0] && index >= 1) {
+      if (workSheetName === GP_INPUT_FILE_NAMES[0] && index >= 2) {
         let obj: GpNMSData = {
           monitor: data[0],
           ip_address: data[1] ? data[1].trim() : data[1],
@@ -322,11 +333,21 @@ export class GpComponent {
           severity: data[5] ? data[5].trim() : data[5],
           message: data[6] ? data[6].trim() : data[6],
           alarm_start_time: moment(data[7]).format(),
-          duration: data[8] ? data[8].trim() : data[8],
+          duration: this.sharedService.setDuration(
+            this.timeSpanValue,
+            moment(data[7]).format(),
+            moment(data[9]).format(),
+            data[8]
+          ),
           alarm_clear_time: moment(data[9]).format(),
-          total_duration_in_minutes: data[8]
-            ? this.sharedService.calculateTimeInMinutes(data[8])
-            : 0,
+          total_duration_in_minutes: this.sharedService.calculateTimeInMinutes(
+            this.sharedService.setDuration(
+              this.timeSpanValue,
+              moment(data[7]).format(),
+              moment(data[9]).format(),
+              data[8]
+            )
+          ),
         };
         result.push(obj);
       } else if (workSheetName === GP_INPUT_FILE_NAMES[3] && index >= 11) {
@@ -385,11 +406,21 @@ export class GpComponent {
           severity: data[5] ? data[5].trim() : data[5],
           message: data[6] ? data[6].trim() : data[6],
           alarm_start_time: moment(data[7]).format(),
-          duration: data[8] ? data[8].trim() : data[8],
+          duration: this.sharedService.setDuration(
+            this.timeSpanValue,
+            moment(data[7]).format(),
+            moment(data[9]).format(),
+            data[8]
+          ),
           alarm_clear_time: moment(data[9]).format(),
-          total_duration_in_minutes: data[8]
-            ? this.sharedService.calculateTimeInMinutes(data[8])
-            : 0,
+          total_duration_in_minutes: this.sharedService.calculateTimeInMinutes(
+            this.sharedService.setDuration(
+              this.timeSpanValue,
+              moment(data[7]).format(),
+              moment(data[9]).format(),
+              data[8]
+            )
+          ),
         };
         result.push(obj);
       }
