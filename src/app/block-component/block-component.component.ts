@@ -62,6 +62,7 @@ export class BlockComponentComponent {
   isSheetNamesValid: boolean = true;
   isLoading: boolean = false;
   timeSpanValue: string = '';
+  isAllFilesValid: boolean = true;
 
   @Output() isBlockLoading = new EventEmitter<boolean>();
   @Input() shouldDisable!: boolean;
@@ -89,23 +90,28 @@ export class BlockComponentComponent {
             this.validateWorksheets(this.worksheet);
           } catch (error: any) {
             this.isLoading = false;
+            this.isAllFilesValid = false;
             this.isBlockLoading.emit(false);
             this.resetInputFile();
             this.toastrService.error(error.message);
             break;
           }
         }
-        if (this.blockNMSData.length === DEVICES_COUNT.BLOCK) {
-          this.manipulateBlockNMSData();
+
+        if (this.isAllFilesValid) {
+          if (this.blockNMSData.length === DEVICES_COUNT.BLOCK) {
+            this.manipulateBlockNMSData();
+          } else {
+            this.resetInputFile();
+            this.toastrService.error(
+              'NMS data is insufficient. Please provide the correct data.'
+            );
+          }
         } else {
-          this.resetInputFile();
-          this.toastrService.error(
-            'NMS data is insufficient. Please provide the correct data.'
-          );
+          this.isAllFilesValid = true;
         }
       });
     };
-
     reader.readAsArrayBuffer(this.file);
   }
 
@@ -499,14 +505,19 @@ export class BlockComponentComponent {
                   moment(alertCriticalData.alarm_clear_time).isSame(
                     alertWarningData.alarm_start_time,
                     'minute'
-                  )
+                  ) &&
+                  !lodash.some(powerDownArray, alertCriticalData) &&
+                  !lodash.some(DCNDownArray, alertCriticalData)
                 ) {
                   powerDownArray.push(alertCriticalData);
                 }
               }
             );
 
-            if (!lodash.some(powerDownArray, alertCriticalData)) {
+            if (
+              !lodash.some(powerDownArray, alertCriticalData) &&
+              !lodash.some(DCNDownArray, alertCriticalData)
+            ) {
               DCNDownArray.push(alertCriticalData);
             }
           }
