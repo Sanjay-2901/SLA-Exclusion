@@ -16,6 +16,7 @@ import {
   SHQ_SLA_REPORT_HEADERS,
   TT_REPORT_HEADERS,
   DEVICES_COUNT,
+  TIME_SPAN_REGEX_PATTERN,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
 import { AOA } from '../shared/shared-model';
@@ -35,6 +36,7 @@ export class ShqComponentComponent {
   file!: any;
   shqSlaSummary!: ShqSlaSummary;
   isLoading: boolean = false;
+  timeSpanValue: string = '';
 
   @Input() shouldDisable!: boolean;
   @Output() isShqLoading = new EventEmitter<boolean>();
@@ -116,7 +118,17 @@ export class ShqComponentComponent {
       const headers = JSON.stringify(data[0]);
 
       if (workSheetName === 'shq_sla_report') {
-        if (headers !== JSON.stringify(SHQ_SLA_REPORT_HEADERS)) {
+        const timeSpanRow: string[] = data[0];
+        this.timeSpanValue = timeSpanRow[0];
+        const slaReportHeader = JSON.stringify(data[1]);
+
+        if (!TIME_SPAN_REGEX_PATTERN.test(this.timeSpanValue)) {
+          throw new Error(
+            'SHQ - The Time Span value in the first column is either incorrect or unavailable.Please provide a valid Time Span.'
+          );
+        }
+
+        if (slaReportHeader !== JSON.stringify(SHQ_SLA_REPORT_HEADERS)) {
           throw new Error(
             'SHQ - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
@@ -149,7 +161,7 @@ export class ShqComponentComponent {
   }
 
   validateEachRowsInSlaReport(data: AOA, workSheetName: string) {
-    for (let index = 1; index < data.length; index++) {
+    for (let index = 2; index < data.length; index++) {
       let row: any = data[index];
       if (row[0] === null || row[0] === undefined) {
         throw new Error(`SHQ - ${
@@ -198,87 +210,97 @@ export class ShqComponentComponent {
   storeDataAsObject(workSheetName: string, data: any[]): void {
     let result: any = [];
     data.forEach((data: any, index: number) => {
-      if (index >= 1) {
-        if (workSheetName === 'shq_sla_report') {
-          let obj: ShqNMSData = {
-            monitor: data[0] ? data[0].trim() : data[0],
-            ip_address: data[1] ? data[1].trim() : data[1],
-            departments: data[2],
-            type: data[3],
-            up_percent: data[4],
-            up_time: data[5],
-            down_percent: data[6],
-            down_time: data[7],
-            created_date: data[8],
-          };
-          result.push(obj);
-        } else if (workSheetName === 'shq_alert_report') {
-          let obj: ShqAlertData = {
-            alert: data[0],
-            source: data[1] ? data[1].trim() : data[1],
-            ip_address: data[2] ? data[2].trim() : data[2],
-            type: data[3],
-            severity: data[4] ? data[4].trim() : data[4],
-            message: data[5] ? data[5].trim() : data[5],
-            alarm_start_time: moment(data[6]).format(),
-            duration: data[7] ? data[7].trim() : data[7],
-            alarm_clear_time: moment(data[8]).format(),
-            total_duration_in_minutes:
-              this.sharedService.calculateTimeInMinutes(data[7]),
-          };
-          result.push(obj);
-        } else if (workSheetName === 'shq_noc_tt_report') {
-          let obj: ShqTTData = {
-            incident_id: data[0],
-            parent_incident_id: data[1],
-            enitity_type_name: data[2],
-            entity_subtype_name: data[3],
-            incident_name: data[4],
-            equipment_host: data[5],
-            ip: data[6] ? data[6].trim() : data[6],
-            severity: data[7],
-            status: data[8],
-            priority_of_repair: data[9],
-            effect_on_services: data[10],
-            incident_type: data[11],
-            mode_of_contact: data[12],
-            incident_creation_time: data[13],
-            remark_type: data[14],
-            remarks: data[15],
-            cluster: data[16],
-            city: data[17],
-            block: data[18],
-            gp: data[19],
-            slab_reach: data[20],
-            resolution_method: data[21],
-            rfo: data[22] ? data[22].trim() : data[22],
-            incident_start_on: moment(data[23]).format(),
-            incident_created_on: data[24],
-            ageing: data[25],
-            open_time: data[26],
-            assigned_time: data[27],
-            assigned_to_field: data[28],
-            assigned_to_vendor: data[29],
-            cancelled: data[30],
-            closed: data[31],
-            hold_time: data[32],
-            resolved_date_time: data[33],
-            resolved_by: data[34],
-            total_resolution_time: data[35],
-            resolution_type_in_min: data[36],
-            sla_ageing: data[37],
-            reporting_sla: data[38],
-            reopen_date: data[39],
-            category: data[40],
-            change_id: data[41],
-            exclusion_name: data[42],
-            exclusion_remark: data[43],
-            exclusion_type: data[44],
-            pendency: data[45],
-            vendor_name: data[46],
-          };
-          result.push(obj);
-        }
+      if (workSheetName === 'shq_sla_report' && index >= 2) {
+        let obj: ShqNMSData = {
+          monitor: data[0] ? data[0].trim() : data[0],
+          ip_address: data[1] ? data[1].trim() : data[1],
+          departments: data[2],
+          type: data[3],
+          up_percent: data[4],
+          up_time: data[5],
+          down_percent: data[6],
+          down_time: data[7],
+          created_date: data[8],
+        };
+        result.push(obj);
+      } else if (workSheetName === 'shq_alert_report' && index >= 1) {
+        let obj: ShqAlertData = {
+          alert: data[0],
+          source: data[1] ? data[1].trim() : data[1],
+          ip_address: data[2] ? data[2].trim() : data[2],
+          type: data[3],
+          severity: data[4] ? data[4].trim() : data[4],
+          message: data[5] ? data[5].trim() : data[5],
+          alarm_start_time: moment(data[6]).format(),
+          // duration: data[7] ? data[7].trim() : data[7],
+          duration: this.sharedService.setDuration(
+            this.timeSpanValue,
+            moment(data[6]).format(),
+            moment(data[8]).format(),
+            data[7]
+          ),
+          alarm_clear_time: moment(data[8]).format(),
+          total_duration_in_minutes: this.sharedService.calculateTimeInMinutes(
+            this.sharedService.setDuration(
+              this.timeSpanValue,
+              moment(data[6]).format(),
+              moment(data[8]).format(),
+              data[7]
+            )
+          ),
+        };
+        result.push(obj);
+      } else if (workSheetName === 'shq_noc_tt_report' && index >= 1) {
+        let obj: ShqTTData = {
+          incident_id: data[0],
+          parent_incident_id: data[1],
+          enitity_type_name: data[2],
+          entity_subtype_name: data[3],
+          incident_name: data[4],
+          equipment_host: data[5],
+          ip: data[6] ? data[6].trim() : data[6],
+          severity: data[7],
+          status: data[8],
+          priority_of_repair: data[9],
+          effect_on_services: data[10],
+          incident_type: data[11],
+          mode_of_contact: data[12],
+          incident_creation_time: data[13],
+          remark_type: data[14],
+          remarks: data[15],
+          cluster: data[16],
+          city: data[17],
+          block: data[18],
+          gp: data[19],
+          slab_reach: data[20],
+          resolution_method: data[21],
+          rfo: data[22] ? data[22].trim() : data[22],
+          incident_start_on: moment(data[23]).format(),
+          incident_created_on: data[24],
+          ageing: data[25],
+          open_time: data[26],
+          assigned_time: data[27],
+          assigned_to_field: data[28],
+          assigned_to_vendor: data[29],
+          cancelled: data[30],
+          closed: data[31],
+          hold_time: data[32],
+          resolved_date_time: data[33],
+          resolved_by: data[34],
+          total_resolution_time: data[35],
+          resolution_type_in_min: data[36],
+          sla_ageing: data[37],
+          reporting_sla: data[38],
+          reopen_date: data[39],
+          category: data[40],
+          change_id: data[41],
+          exclusion_name: data[42],
+          exclusion_remark: data[43],
+          exclusion_type: data[44],
+          pendency: data[45],
+          vendor_name: data[46],
+        };
+        result.push(obj);
       }
     });
 

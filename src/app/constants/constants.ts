@@ -46,6 +46,9 @@ export enum VALUES {
 export const IP_ADDRESS_PATTERN =
   /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
+export const TIME_SPAN_REGEX_PATTERN =
+  /^Time Span: From \d{2} \w{3}  \d{4} \d{2}:\d{2}:\d{2} (AM|PM) To \d{2} \w{3}  \d{4} \d{2}:\d{2}:\d{2} (AM|PM)$/;
+
 export const BlockSLASummarytHeaders = [
   'Report type',
   'TAG',

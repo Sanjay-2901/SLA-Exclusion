@@ -36,6 +36,7 @@ import {
   BLOCK_TT_CO_RELATION_HEADERS,
   BLOCK_TT_CO_RELATION_COLUMNS_WIDTHS,
   DEVICES_COUNT,
+  TIME_SPAN_REGEX_PATTERN,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
 import { AOA } from '../shared/shared-model';
@@ -60,6 +61,7 @@ export class BlockComponentComponent {
   file!: any;
   isSheetNamesValid: boolean = true;
   isLoading: boolean = false;
+  timeSpanValue: string = '';
 
   @Output() isBlockLoading = new EventEmitter<boolean>();
   @Input() shouldDisable!: boolean;
@@ -142,7 +144,15 @@ export class BlockComponentComponent {
       const headers = JSON.stringify(data[0]);
 
       if (workSheetName === 'block_sla_report') {
-        if (headers !== JSON.stringify(BLOCK_SLA_REPORT_HEADERS)) {
+        const timeSpanRow: string[] = data[0];
+        this.timeSpanValue = timeSpanRow[0];
+        const slaReportHeader = JSON.stringify(data[1]);
+        if (!TIME_SPAN_REGEX_PATTERN.test(this.timeSpanValue)) {
+          throw new Error(
+            'BLOCK - The Time Span value in the first column is either incorrect or unavailable.Please provide a valid Time Span.'
+          );
+        }
+        if (slaReportHeader !== JSON.stringify(BLOCK_SLA_REPORT_HEADERS)) {
           throw new Error(
             'Block - Invalid template of the SLA report. Kindly provide the valid column names.'
           );
@@ -180,7 +190,7 @@ export class BlockComponentComponent {
   }
 
   validateEachRowsOfSlaReport(data: AOA, workSheetName: string) {
-    for (let index = 1; index < data.length; index++) {
+    for (let index = 2; index < data.length; index++) {
       let row: any = data[index];
       if (row[1] === null || row[1] === undefined) {
         throw new Error(`Block - ${
@@ -249,93 +259,101 @@ export class BlockComponentComponent {
   storeDataAsObject(workSheetName: string, data: any): void {
     let result: any = [];
     data.forEach((data: any, index: number) => {
-      if (index >= 1) {
-        if (workSheetName === 'block_sla_report') {
-          let obj: BlockNMSData = {
-            monitor: data[0],
-            ip_address: data[1] ? data[1].trim() : data[1],
-            departments: data[2],
-            type: data[3],
-            up_percent: data[4],
-            up_time: data[5],
-            down_percent: data[6],
-            down_time: data[7],
-            maintenance_percent: data[8],
-            maintenance_time: data[9],
-            total_up_percent: data[10],
-            total_up_time: data[11],
-            created_date: data[12],
-          };
-          result.push(obj);
-        } else if (workSheetName === 'block_noc_tt_report') {
-          let obj: BlockTTData = {
-            incident_id: data[0],
-            parent_incident_id: data[1],
-            enitity_type_name: data[2],
-            entity_subtype_name: data[3],
-            incident_name: data[4],
-            equipment_host: data[5],
-            ip: data[6] ? data[6].trim() : data[6],
-            severity: data[7],
-            status: data[8],
-            priority_of_repair: data[9],
-            effect_on_services: data[10],
-            incident_type: data[11],
-            mode_of_contact: data[12],
-            incident_creation_time: data[13],
-            remark_type: data[14],
-            remarks: data[15],
-            cluster: data[16],
-            city: data[17],
-            block: data[18],
-            gp: data[19],
-            slab_reach: data[20],
-            resolution_method: data[21],
-            rfo: data[22] ? data[22].trim() : data[22],
-            incident_start_on: moment(data[23]).format(),
-            incident_created_on: data[24],
-            ageing: data[25],
-            open_time: data[26],
-            assigned_time: data[27],
-            assigned_to_field: data[28],
-            assigned_to_vendor: data[29],
-            cancelled: data[30],
-            closed: data[31],
-            hold_time: data[32],
-            resolved_date_time: data[33],
-            resolved_by: data[34],
-            total_resolution_time: data[35],
-            resolution_time_in_min: data[36],
-            sla_ageing: data[37],
-            reporting_sla: data[38],
-            reopen_date: data[39],
-            category: data[40],
-            change_id: data[41],
-            exclusion_name: data[42],
-            exclusion_remark: data[43],
-            exclusion_type: data[44],
-            pendency: data[45],
-            vendor_name: data[46],
-          };
-          result.push(obj);
-        } else if (workSheetName === 'block_alert_report') {
-          let obj: BlockAlertData = {
-            alert: data[0],
-            source: data[1],
-            ip_address: data[2] ? data[2].trim() : data[2],
-            departments: data[3],
-            type: data[4],
-            severity: data[5] ? data[5].trim() : data[5],
-            message: data[6] ? data[6].trim() : data[6],
-            alarm_start_time: moment(data[7]).format(),
-            duration: data[8] ? data[8].trim() : data[8],
-            alarm_clear_time: moment(data[9]).format(),
-            total_duration_in_minutes: data[8]
-              ? this.calculateTimeInMinutes(data[8])
-              : 0,
-          };
-          result.push(obj);
-        }
+      if (workSheetName === 'block_sla_report' && index >= 2) {
+        let obj: BlockNMSData = {
+          monitor: data[0],
+          ip_address: data[1] ? data[1].trim() : data[1],
+          departments: data[2],
+          type: data[3],
+          up_percent: data[4],
+          up_time: data[5],
+          down_percent: data[6],
+          down_time: data[7],
+          maintenance_percent: data[8],
+          maintenance_time: data[9],
+          total_up_percent: data[10],
+          total_up_time: data[11],
+          created_date: data[12],
+        };
+        result.push(obj);
+      } else if (workSheetName === 'block_noc_tt_report' && index >= 1) {
+        let obj: BlockTTData = {
+          incident_id: data[0],
+          parent_incident_id: data[1],
+          enitity_type_name: data[2],
+          entity_subtype_name: data[3],
+          incident_name: data[4],
+          equipment_host: data[5],
+          ip: data[6] ? data[6].trim() : data[6],
+          severity: data[7],
+          status: data[8],
+          priority_of_repair: data[9],
+          effect_on_services: data[10],
+          incident_type: data[11],
+          mode_of_contact: data[12],
+          incident_creation_time: data[13],
+          remark_type: data[14],
+          remarks: data[15],
+          cluster: data[16],
+          city: data[17],
+          block: data[18],
+          gp: data[19],
+          slab_reach: data[20],
+          resolution_method: data[21],
+          rfo: data[22] ? data[22].trim() : data[22],
+          incident_start_on: moment(data[23]).format(),
+          incident_created_on: data[24],
+          ageing: data[25],
+          open_time: data[26],
+          assigned_time: data[27],
+          assigned_to_field: data[28],
+          assigned_to_vendor: data[29],
+          cancelled: data[30],
+          closed: data[31],
+          hold_time: data[32],
+          resolved_date_time: data[33],
+          resolved_by: data[34],
+          total_resolution_time: data[35],
+          resolution_time_in_min: data[36],
+          sla_ageing: data[37],
+          reporting_sla: data[38],
+          reopen_date: data[39],
+          category: data[40],
+          change_id: data[41],
+          exclusion_name: data[42],
+          exclusion_remark: data[43],
+          exclusion_type: data[44],
+          pendency: data[45],
+          vendor_name: data[46],
+        };
+        result.push(obj);
+      } else if (workSheetName === 'block_alert_report' && index >= 1) {
+        let obj: BlockAlertData = {
+          alert: data[0],
+          source: data[1],
+          ip_address: data[2] ? data[2].trim() : data[2],
+          departments: data[3],
+          type: data[4],
+          severity: data[5] ? data[5].trim() : data[5],
+          message: data[6] ? data[6].trim() : data[6],
+          alarm_start_time: moment(data[7]).format(),
+          duration: this.sharedService.setDuration(
+            this.timeSpanValue,
+            moment(data[7]).format(),
+            moment(data[9]).format(),
+            data[8]
+          ),
+          alarm_clear_time: moment(data[9]).format(),
+          total_duration_in_minutes: this.calculateTimeInMinutes(
+            this.sharedService.setDuration(
+              this.timeSpanValue,
+              moment(data[7]).format(),
+              moment(data[9]).format(),
+              data[8]
+            )
+          ),
+        };
+        result.push(obj);
       }
     });
 
