@@ -145,10 +145,10 @@ export class GpService {
         // scenario 1 : Checking whether GP Down due to BLOCK Down
         filteredCriticalGpAlertData.forEach(
           (gpAlertCriticalData: GpAlertData) => {
-            let matchingGpAlerts: GpAlertData[] = [];
+            let matchingGpAlerts: GpAlertData[] = []; 
             filteredBlockAlertData.forEach(
               (blockAlertCriticalData: BlockAlertData) => {
-                let isTenMinutesDeviationFoundForStartTime =
+                let isTenMinutesDeviationFoundForStartTime: boolean =
                   this.checkBlockAlarmDeviation(
                     gpAlertCriticalData.alarm_start_time,
                     blockAlertCriticalData.alarm_start_time
@@ -170,7 +170,7 @@ export class GpService {
                     if (
                       // (gpAlertAndBlockAlertDifference >= 0 &&
                       //   gpAlertAndBlockAlertDifference <= 10) ||
-                      gpAlertAndBlockAlertDifference < 0
+                      gpAlertAndBlockAlertDifference <= 0
                     ) {
                       totalDCNDownTimeInMinutes +=
                         gpAlertCriticalData.total_duration_in_minutes;
