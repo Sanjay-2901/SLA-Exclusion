@@ -124,7 +124,7 @@ export class ShqComponentComponent {
 
         if (!TIME_SPAN_REGEX_PATTERN.test(this.timeSpanValue)) {
           throw new Error(
-            'SHQ - The Time Span value in the first column is either incorrect or unavailable.Please provide a valid Time Span.'
+            'SHQ - The Time Span value in the first column is either incorrect or unavailable. Please provide a valid Time Span.'
           );
         }
 
@@ -232,7 +232,6 @@ export class ShqComponentComponent {
           severity: data[4] ? data[4].trim() : data[4],
           message: data[5] ? data[5].trim() : data[5],
           alarm_start_time: moment(data[6]).format(),
-          // duration: data[7] ? data[7].trim() : data[7],
           duration: this.sharedService.setDuration(
             this.timeSpanValue,
             moment(data[6]).format(),

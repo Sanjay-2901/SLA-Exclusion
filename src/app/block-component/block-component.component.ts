@@ -149,7 +149,7 @@ export class BlockComponentComponent {
         const slaReportHeader = JSON.stringify(data[1]);
         if (!TIME_SPAN_REGEX_PATTERN.test(this.timeSpanValue)) {
           throw new Error(
-            'BLOCK - The Time Span value in the first column is either incorrect or unavailable.Please provide a valid Time Span.'
+            'BLOCK - The Time Span value in the first column is either incorrect or unavailable. Please provide a valid Time Span.'
           );
         }
         if (slaReportHeader !== JSON.stringify(BLOCK_SLA_REPORT_HEADERS)) {

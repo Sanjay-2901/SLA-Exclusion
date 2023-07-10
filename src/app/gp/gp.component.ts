@@ -125,7 +125,7 @@ export class GpComponent {
 
         if (!TIME_SPAN_REGEX_PATTERN.test(this.timeSpanValue)) {
           throw new Error(
-            'GP - The Time Span value in the first column is either incorrect or unavailable.Please provide a valid Time Span.'
+            'GP - The Time Span value in the first column is either incorrect or unavailable. Please provide a valid Time Span.'
           );
         }
         if (slaReportHeader !== JSON.stringify(GP_SLA_REPORT_HEADERS)) {
