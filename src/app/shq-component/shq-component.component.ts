@@ -37,6 +37,7 @@ export class ShqComponentComponent {
   shqSlaSummary!: ShqSlaSummary;
   isLoading: boolean = false;
   timeSpanValue: string = '';
+  isAllFilesValid: boolean = true;
 
   @Input() shouldDisable!: boolean;
   @Output() isShqLoading = new EventEmitter<boolean>();
@@ -64,19 +65,25 @@ export class ShqComponentComponent {
             this.validateWorksheets(this.worksheet);
           } catch (error: any) {
             this.isLoading = false;
+            this.isAllFilesValid = false;
             this.isShqLoading.emit(false);
             this.resetInputFile();
             this.toastrService.error(error.message);
             break;
           }
         }
-        if (this.shqNMSData.length === DEVICES_COUNT.SHQ) {
-          this.manipulateShqNmsData();
+
+        if (this.isAllFilesValid) {
+          if (this.shqNMSData.length === DEVICES_COUNT.SHQ) {
+            this.manipulateShqNmsData();
+          } else {
+            this.resetInputFile();
+            this.toastrService.error(
+              'NMS data is insufficient. Please provide the correct data.'
+            );
+          }
         } else {
-          this.resetInputFile();
-          this.toastrService.error(
-            'NMS data is insufficient. Please provide the correct data.'
-          );
+          this.isAllFilesValid = true;
         }
       });
     };
@@ -93,6 +100,7 @@ export class ShqComponentComponent {
     if (fileInput) {
       fileInput.value = '';
     }
+    this.timeSpanValue = '';
     this.shqAlertData = [];
     this.shqNMSData = [];
     this.shqTTData = [];

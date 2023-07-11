@@ -47,6 +47,7 @@ export class GpComponent {
   blockTTCorelationReport: TTCorelation[] = [];
   blockAlertData: BlockAlertData[] = [];
   timeSpanValue: string = '';
+  isAllFilesValid: boolean = true;
   @Output() isGpLoading = new EventEmitter<boolean>();
   @Input() shouldDisable!: boolean;
 
@@ -79,6 +80,7 @@ export class GpComponent {
               this.validateWorksheets(this.worksheet);
             } catch (error: any) {
               this.isLoading = false;
+              this.isAllFilesValid = false;
               this.isGpLoading.emit(false);
               this.resetInputFile();
               this.toastrService.error(error.message);
@@ -87,13 +89,17 @@ export class GpComponent {
           }
         }
 
-        if (this.gpNMSData.length === DEVICES_COUNT.GP) {
-          this.manipulateGpNMSData();
+        if (this.isAllFilesValid) {
+          if (this.gpNMSData.length === DEVICES_COUNT.GP) {
+            this.manipulateGpNMSData();
+          } else {
+            this.resetInputFile();
+            this.toastrService.error(
+              'NMS data is insufficient. Please provide the correct data.'
+            );
+          }
         } else {
-          this.resetInputFile();
-          this.toastrService.error(
-            'NMS data is insufficient. Please provide the correct data.'
-          );
+          this.isAllFilesValid = true;
         }
       });
     };
@@ -555,6 +561,7 @@ export class GpComponent {
     if (fileInput) {
       fileInput.value = '';
     }
+    this.timeSpanValue = '';
     this.gpAlertData = [];
     this.gpNMSData = [];
     this.gpTTData = [];

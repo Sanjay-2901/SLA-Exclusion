@@ -161,14 +161,19 @@ export class ShqService {
                   moment(alertCriticalData.alarm_clear_time).isSame(
                     alertWarningData.alarm_start_time,
                     'minute'
-                  )
+                  ) &&
+                  !lodash.some(powerDownArray, alertCriticalData) &&
+                  !lodash.some(DCNDownArray, alertCriticalData)
                 ) {
                   powerDownArray.push(alertCriticalData);
                 }
               }
             );
 
-            if (!lodash.some(powerDownArray, alertCriticalData)) {
+            if (
+              !lodash.some(powerDownArray, alertCriticalData) &&
+              !lodash.some(DCNDownArray, alertCriticalData)
+            ) {
               DCNDownArray.push(alertCriticalData);
             }
           }
