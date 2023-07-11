@@ -324,10 +324,10 @@ export const SHQ_SLQ_FINAL_REPORT_COLUMN_WIDTHS = [
     width: 20,
   },
   {
-    width: 20,
+    width: 35,
   },
   {
-    width: 20,
+    width: 35,
   },
   {
     width: 20,

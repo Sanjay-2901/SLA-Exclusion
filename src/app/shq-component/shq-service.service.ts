@@ -339,6 +339,7 @@ export class ShqService {
   FrameShqFinalSlaReportWorkbook(
     workbook: ExcelJS.Workbook,
     workSheet: ExcelJS.Worksheet,
+    timeSpan: string,
     shqSlaSummary: ShqSlaSummary,
     manipulatedShqNmsData: ManipulatedShqNmsData[]
   ): void {
@@ -405,7 +406,7 @@ export class ShqService {
 
     workSheet.getCell('A5').value = 'SHQ - SLA';
     workSheet.getCell('B5').value = 'SHQ Core Device';
-    workSheet.getCell('C5').value = '';
+    workSheet.getCell('C5').value = timeSpan.replace(/Time Span: /, '');
     workSheet.getCell('E5').value = '22';
 
     let F5 = workSheet.getCell('F5');

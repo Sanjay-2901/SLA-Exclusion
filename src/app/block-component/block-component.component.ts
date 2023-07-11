@@ -812,6 +812,10 @@ export class BlockComponentComponent {
     worksheet.getCell('A5').value = 'Block - SLA';
     worksheet.getCell('B5').value = 'Q&M Block';
     worksheet.getCell('H5').value = '79';
+    worksheet.getCell('C5').value = this.timeSpanValue.replace(
+      /Time Span: /,
+      ''
+    );
     worksheet.getCell('I5').value = '5001';
     let k5 = worksheet.getCell('K5');
     k5.value = VALUES.PERCENT;

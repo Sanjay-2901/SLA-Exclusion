@@ -427,6 +427,7 @@ export class ShqComponentComponent {
     this.ShqService.FrameShqFinalSlaReportWorkbook(
       workbook,
       worksheet,
+      this.timeSpanValue,
       this.shqSlaSummary,
       this.manipulatedNMSData
     );

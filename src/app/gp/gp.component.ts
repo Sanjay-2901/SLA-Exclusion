@@ -574,6 +574,7 @@ export class GpComponent {
     this.gpService.FrameGpFinalSlaReportWorkbook(
       workbook,
       worksheet,
+      this.timeSpanValue,
       this.gpSlaSummary,
       this.manipulatedNMSData,
       this.blockFinalReport,
