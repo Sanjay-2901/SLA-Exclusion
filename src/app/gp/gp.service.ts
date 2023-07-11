@@ -904,7 +904,7 @@ export class GpService {
               ? ttCorelationData.otherTT.toString().split(',').join(', ')
               : '',
           ])
-          .eachCell((cell) => {
+          .eachCell({ includeEmpty: true }, (cell) => {
             cell.border = BORDER_STYLE;
             cell.alignment = { horizontal: 'left' };
           });
