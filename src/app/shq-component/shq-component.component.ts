@@ -72,7 +72,7 @@ export class ShqComponentComponent {
             break;
           }
         }
-        
+
         if (this.isAllFilesValid) {
           if (this.shqNMSData.length === DEVICES_COUNT.SHQ) {
             this.manipulateShqNmsData();
@@ -100,6 +100,7 @@ export class ShqComponentComponent {
     if (fileInput) {
       fileInput.value = '';
     }
+    this.timeSpanValue = '';
     this.shqAlertData = [];
     this.shqNMSData = [];
     this.shqTTData = [];
@@ -426,6 +427,7 @@ export class ShqComponentComponent {
     this.ShqService.FrameShqFinalSlaReportWorkbook(
       workbook,
       worksheet,
+      this.timeSpanValue,
       this.shqSlaSummary,
       this.manipulatedNMSData
     );

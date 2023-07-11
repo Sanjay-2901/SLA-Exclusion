@@ -561,6 +561,7 @@ export class GpComponent {
     if (fileInput) {
       fileInput.value = '';
     }
+    this.timeSpanValue = '';
     this.gpAlertData = [];
     this.gpNMSData = [];
     this.gpTTData = [];
@@ -573,6 +574,7 @@ export class GpComponent {
     this.gpService.FrameGpFinalSlaReportWorkbook(
       workbook,
       worksheet,
+      this.timeSpanValue,
       this.gpSlaSummary,
       this.manipulatedNMSData,
       this.blockFinalReport,

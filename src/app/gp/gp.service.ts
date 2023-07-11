@@ -145,7 +145,7 @@ export class GpService {
         // scenario 1 : Checking whether GP Down due to BLOCK Down
         filteredCriticalGpAlertData.forEach(
           (gpAlertCriticalData: GpAlertData) => {
-            let matchingGpAlerts: GpAlertData[] = []; 
+            let matchingGpAlerts: GpAlertData[] = [];
             filteredBlockAlertData.forEach(
               (blockAlertCriticalData: BlockAlertData) => {
                 let isTenMinutesDeviationFoundForStartTime: boolean =
@@ -406,6 +406,7 @@ export class GpService {
   FrameGpFinalSlaReportWorkbook(
     workbook: ExcelJS.Workbook,
     workSheet: ExcelJS.Worksheet,
+    timeSpan: string,
     gpSlaSummary: GpSLASummary,
     manipulatedGpNmsData: ManipulatedGpNMSData[],
     blockFinalreport: BlockDeviceLevelHeaders[],
@@ -475,7 +476,7 @@ export class GpService {
 
     workSheet.getCell('A5').value = 'GP - SLA';
     workSheet.getCell('B5').value = 'O&M GP';
-    workSheet.getCell('C5').value = '';
+    workSheet.getCell('C5').value = timeSpan.replace(/Time Span: /, '');
     workSheet.getCell('K5').value = '5001';
 
     let M5 = workSheet.getCell('M5');
