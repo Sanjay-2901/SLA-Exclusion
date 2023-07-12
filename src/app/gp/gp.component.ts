@@ -15,6 +15,7 @@ import { AOA } from '../shared/shared-model';
 import { ToastrService } from 'ngx-toastr';
 import {
   GpAlertData,
+  GpCount,
   GpNMSData,
   GpSLASummary,
   GpTTData,
@@ -50,6 +51,7 @@ export class GpComponent {
   blockTTCorelationReport: TTCorelation[] = [];
   blockAlertData: BlockAlertData[] = [];
   timeSpanValue: string = '';
+  gpCount!: GpCount;
   isAllFilesValid: boolean = true;
   @Output() isGpLoading = new EventEmitter<boolean>();
   @Input() shouldDisable!: boolean;
@@ -566,6 +568,12 @@ export class GpComponent {
           !lodash.some(gpNmsDataWithoutAlerts, gpNmsData)
       )
     );
+    this.gpCount = {
+      no_of_total_gp: this.manipulatedNMSData.length,
+      no_of_gp_without_alerts: gpNmsDataWithoutAlerts.length,
+      no_of_gp_with_alerts:
+        this.manipulatedNMSData.length - gpNmsDataWithoutAlerts.length,
+    };
     this.generateFinalGpReport();
   }
 
@@ -594,6 +602,9 @@ export class GpComponent {
       worksheet,
       this.timeSpanValue,
       this.gpSlaSummary,
+      this.gpSlaSummaryWithAlerts,
+      this.gpSlaSummaryWithoutAlerts,
+      this.gpCount,
       this.manipulatedNMSData,
       this.blockFinalReport,
       this.blockTTCorelationReport

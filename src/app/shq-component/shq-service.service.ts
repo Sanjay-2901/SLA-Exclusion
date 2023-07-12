@@ -352,7 +352,7 @@ export class ShqService {
 
     workSheet.mergeCells('C1:D1');
     let cellC1 = workSheet.getCell('C1');
-    cellC1.value = 'Report-Frequency- Daily';
+    cellC1.value = 'Report-Frequency: ';
     cellC1.style = {
       font: { bold: true },
       alignment: { horizontal: 'center' },

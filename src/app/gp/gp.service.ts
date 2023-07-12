@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   GpAlertData,
+  GpCount,
   GpDeviceDetails,
   GpNMSData,
   GpSLASummary,
@@ -300,114 +301,6 @@ export class GpService {
     }
   }
 
-  // calculateGpSlaSummary(
-  //   manipulatedGpNMSData: ManipulatedGpNMSData[]
-  // ): GpSLASummary {
-  //   let upPercent = 0;
-  //   let upMinutes = 0;
-  //   let totalDownPercent = 0;
-  //   let powerDownPercent = 0;
-  //   let powerDownMinutes = 0;
-  //   let fiberDownPercent = 0;
-  //   let fiberDownMinute = 0;
-  //   let equipmentDownPercent = 0;
-  //   let equipmentDownMinute = 0;
-  //   let hrtDownPercent = 0;
-  //   let hrtDownMinute = 0;
-  //   let dcnDownPercent = 0;
-  //   let dcnDownMinutes = 0;
-  //   let plannedMaintenancePercent = 0;
-  //   let plannedMaintenanceMinutes = 0;
-  //   let unKnownDownMinutes = 0;
-  //   let unKnownDownPercent = 0;
-  //   let cumulativeRfoDownInPercent = 0;
-  //   let cumulativeRfoDownInMinutes = 0;
-  //   let totalDownMinutes = 0;
-  //   let totalExclusionPercent = 0;
-  //   let totalExclusionMinutes = 0;
-  //   let pollingTimePercent = 0;
-  //   let pollingTimeMinutes = 0;
-
-  //   manipulatedGpNMSData.forEach((nmsData: ManipulatedGpNMSData) => {
-  //     upPercent += nmsData.up_percent;
-  //     totalDownPercent += nmsData.down_percent;
-  //     powerDownPercent += nmsData.power_downtime_in_percent;
-  //     powerDownMinutes += nmsData.power_downtime_in_minutes;
-  //     dcnDownPercent += nmsData.dcn_downtime_in_percent;
-  //     dcnDownMinutes += nmsData.dcn_downtime_in_minutes;
-  //     plannedMaintenancePercent += nmsData.maintenance_percent;
-  //     plannedMaintenanceMinutes += nmsData.planned_maintenance_in_minutes;
-  //     unKnownDownMinutes += nmsData.unknown_downtime_in_minutes;
-  //     unKnownDownPercent += nmsData.unknown_downtime_in_percent;
-  //     cumulativeRfoDownInPercent +=
-  //       nmsData.power_downtime_in_percent +
-  //       nmsData.dcn_downtime_in_percent +
-  //       hrtDownPercent +
-  //       nmsData.maintenance_percent +
-  //       nmsData.polling_time_in_percent;
-  //     upMinutes += nmsData.total_uptime_in_minutes;
-  //     cumulativeRfoDownInMinutes +=
-  //       nmsData.power_downtime_in_minutes +
-  //       nmsData.dcn_downtime_in_minutes +
-  //       hrtDownMinute +
-  //       nmsData.planned_maintenance_in_minutes +
-  //       nmsData.polling_time_in_minutes;
-  //     totalDownMinutes += nmsData.total_downtime_in_minutes;
-  //     totalExclusionPercent +=
-  //       nmsData.power_downtime_in_percent +
-  //       nmsData.dcn_downtime_in_percent +
-  //       nmsData.planned_maintenance_in_percent +
-  //       nmsData.unknown_downtime_in_percent;
-  //     totalExclusionMinutes +=
-  //       nmsData.power_downtime_in_minutes +
-  //       nmsData.dcn_downtime_in_minutes +
-  //       nmsData.planned_maintenance_in_minutes +
-  //       nmsData.unknown_downtime_in_minutes;
-  //     pollingTimePercent += nmsData.polling_time_in_percent;
-  //     pollingTimeMinutes += nmsData.polling_time_in_minutes;
-  //   });
-
-  //   return {
-  //     report_type: 'GP-SLA',
-  //     time_span: '',
-  //     no_of_blocks: 79,
-  //     up_percent: (upPercent / 5001).toFixed(2),
-  //     up_minutes: upMinutes.toFixed(2),
-  //     no_of_up_blocks: '',
-  //     down_percent_exclusive_of_sla: (100 - upPercent / 5001).toFixed(2),
-  //     power_down_percent: (powerDownPercent / 5001).toFixed(2),
-  //     power_down_minutes: powerDownMinutes.toFixed(2),
-  //     fibre_down_percent: (fiberDownPercent / 5001).toFixed(2),
-  //     fibre_down_minutes: fiberDownMinute.toFixed(2),
-  //     equipment_down_percent: (equipmentDownPercent / 5001).toFixed(2),
-  //     equipment_down_minutes: equipmentDownMinute.toFixed(2),
-  //     hrt_down_percent: (hrtDownPercent / 5001).toFixed(2),
-  //     hrt_down_minutes: hrtDownMinute.toFixed(2),
-  //     dcn_down_percent: (dcnDownPercent / 5001).toFixed(2),
-  //     dcn_down_minutes: dcnDownMinutes.toFixed(2),
-  //     planned_maintenance_percent: (plannedMaintenancePercent / 5001).toFixed(
-  //       2
-  //     ),
-  //     planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
-  //     unknown_downtime_in_percent: (unKnownDownPercent / 5001).toFixed(2),
-  //     unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
-  //     total_sla_exclusion_percent: (cumulativeRfoDownInPercent / 5001).toFixed(
-  //       2
-  //     ),
-  //     total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
-  //     total_down_minutes: totalDownMinutes.toFixed(2),
-  //     total_down_percent: (100 - +(upPercent / 5001)).toFixed(2),
-  //     total_up_percent_exclusion: (
-  //       (upPercent + cumulativeRfoDownInPercent) /
-  //       5001
-  //     ).toFixed(2),
-
-  //     total_up_minutes_exclusion: (
-  //       upMinutes + cumulativeRfoDownInMinutes
-  //     ).toFixed(2),
-  //   };
-  // }
-
   calculateGpSlaSummary(
     manipulatedGpNMSData: ManipulatedGpNMSData[]
   ): GpSLASummary {
@@ -494,15 +387,15 @@ export class GpService {
       hrt_down_minutes: hrtDownMinute.toFixed(2),
       dcn_down_percent: (dcnDownPercent / gpCount).toFixed(2),
       dcn_down_minutes: dcnDownMinutes.toFixed(2),
-      planned_maintenance_percent: (plannedMaintenancePercent / gpCount).toFixed(
-        2
-      ),
+      planned_maintenance_percent: (
+        plannedMaintenancePercent / gpCount
+      ).toFixed(2),
       planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
       unknown_downtime_in_percent: (unKnownDownPercent / gpCount).toFixed(2),
       unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
-      total_sla_exclusion_percent: (cumulativeRfoDownInPercent / gpCount).toFixed(
-        2
-      ),
+      total_sla_exclusion_percent: (
+        cumulativeRfoDownInPercent / gpCount
+      ).toFixed(2),
       total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
       total_down_minutes: totalDownMinutes.toFixed(2),
       total_down_percent: (100 - +(upPercent / gpCount)).toFixed(2),
@@ -522,6 +415,9 @@ export class GpService {
     workSheet: ExcelJS.Worksheet,
     timeSpan: string,
     gpSlaSummary: GpSLASummary,
+    gpSlaSummaryWithAlerts: GpSLASummary,
+    gpSlaSummaryWithoutAlerts: GpSLASummary,
+    gpCount: GpCount,
     manipulatedGpNmsData: ManipulatedGpNMSData[],
     blockFinalreport: BlockDeviceLevelHeaders[],
     blockTTCorelationReport: TTCorelation[]
@@ -535,7 +431,7 @@ export class GpService {
 
     workSheet.mergeCells('C1:D1');
     let cellC1 = workSheet.getCell('C1');
-    cellC1.value = 'Report-Frequency- Daily';
+    cellC1.value = 'Report-Frequency: ';
     cellC1.style = {
       font: { bold: true },
       alignment: { horizontal: 'center' },
@@ -706,6 +602,121 @@ export class GpService {
       cell.border = BORDER_STYLE;
       cell.alignment = { horizontal: 'center' };
     });
+
+    workSheet.mergeCells('I7:J7');
+    let cellI7 = workSheet.getCell('I7');
+    cellI7.value = "GP's with Alerts";
+
+    workSheet.mergeCells('I8:J8');
+    let cellI8 = workSheet.getCell('I8');
+    cellI8.value = "GP's without Alerts";
+
+    workSheet.mergeCells('K7:L7');
+    let cellK7 = workSheet.getCell('K7');
+    cellK7.value = gpCount.no_of_gp_with_alerts;
+
+    workSheet.getCell('M7').value = gpSlaSummaryWithAlerts.up_percent;
+    workSheet.getCell('N7').value = gpSlaSummaryWithAlerts.up_minutes;
+    workSheet.getCell('O7').value = gpSlaSummaryWithAlerts.total_down_percent;
+    workSheet.getCell('P7').value = gpSlaSummaryWithAlerts.total_down_minutes;
+    workSheet.getCell('Q7').value = gpSlaSummaryWithAlerts.power_down_percent;
+    workSheet.getCell('R7').value = gpSlaSummaryWithAlerts.power_down_minutes;
+    workSheet.getCell('S7').value = gpSlaSummaryWithAlerts.fibre_down_percent;
+    workSheet.getCell('T7').value = gpSlaSummaryWithAlerts.fibre_down_minutes;
+    workSheet.getCell('U7').value =
+      gpSlaSummaryWithAlerts.equipment_down_percent;
+    workSheet.getCell('V7').value =
+      gpSlaSummaryWithAlerts.equipment_down_minutes;
+    workSheet.getCell('W7').value = gpSlaSummaryWithAlerts.hrt_down_percent;
+    workSheet.getCell('X7').value = gpSlaSummaryWithAlerts.hrt_down_minutes;
+    workSheet.getCell('Y7').value = gpSlaSummaryWithAlerts.dcn_down_percent;
+    workSheet.getCell('Z7').value = gpSlaSummaryWithAlerts.dcn_down_minutes;
+    workSheet.getCell('AA7').value =
+      gpSlaSummaryWithAlerts.planned_maintenance_percent;
+    workSheet.getCell('AB7').value =
+      gpSlaSummaryWithAlerts.planned_maintenance_minutes;
+    workSheet.getCell('AC7').value =
+      gpSlaSummaryWithAlerts.unknown_downtime_in_percent;
+    workSheet.getCell('AD7').value =
+      gpSlaSummaryWithAlerts.unknown_downtime_in_minutes;
+    workSheet.getCell('AE7').value =
+      gpSlaSummaryWithAlerts.total_sla_exclusion_percent;
+    workSheet.getCell('AF7').value =
+      gpSlaSummaryWithAlerts.total_sla_exclusion_minutes;
+    workSheet.getCell('AG7').value =
+      gpSlaSummaryWithAlerts.total_up_percent_exclusion;
+    workSheet.getCell('AH7').value =
+      gpSlaSummaryWithAlerts.total_up_minutes_exclusion;
+
+    let row7 = workSheet.getRow(7);
+    row7.eachCell((cell: ExcelJS.Cell) => {
+      cell.style = {
+        border: BORDER_STYLE,
+        alignment: { horizontal: 'center' },
+      };
+    });
+    cellK7.font = { bold: true };
+
+    workSheet.mergeCells('K8:L8');
+    let cellK8 = workSheet.getCell('K8');
+    cellK8.value = gpCount.no_of_gp_without_alerts;
+
+    workSheet.getCell('M8').value = gpSlaSummaryWithoutAlerts.up_percent;
+    workSheet.getCell('N8').value = gpSlaSummaryWithoutAlerts.up_minutes;
+    workSheet.getCell('O8').value =
+      gpSlaSummaryWithoutAlerts.total_down_percent;
+    workSheet.getCell('P8').value =
+      gpSlaSummaryWithoutAlerts.total_down_minutes;
+    workSheet.getCell('Q8').value =
+      gpSlaSummaryWithoutAlerts.power_down_percent;
+    workSheet.getCell('R8').value =
+      gpSlaSummaryWithoutAlerts.power_down_minutes;
+    workSheet.getCell('S8').value =
+      gpSlaSummaryWithoutAlerts.fibre_down_percent;
+    workSheet.getCell('T8').value =
+      gpSlaSummaryWithoutAlerts.fibre_down_minutes;
+    workSheet.getCell('U8').value =
+      gpSlaSummaryWithoutAlerts.equipment_down_percent;
+    workSheet.getCell('V8').value =
+      gpSlaSummaryWithoutAlerts.equipment_down_minutes;
+    workSheet.getCell('W8').value = gpSlaSummaryWithoutAlerts.hrt_down_percent;
+    workSheet.getCell('X8').value = gpSlaSummaryWithoutAlerts.hrt_down_minutes;
+    workSheet.getCell('Y8').value = gpSlaSummaryWithoutAlerts.dcn_down_percent;
+    workSheet.getCell('Z8').value = gpSlaSummaryWithoutAlerts.dcn_down_minutes;
+    workSheet.getCell('AA8').value =
+      gpSlaSummaryWithoutAlerts.planned_maintenance_percent;
+    workSheet.getCell('AB8').value =
+      gpSlaSummaryWithoutAlerts.planned_maintenance_minutes;
+    workSheet.getCell('AC8').value =
+      gpSlaSummaryWithoutAlerts.unknown_downtime_in_percent;
+    workSheet.getCell('AD8').value =
+      gpSlaSummaryWithoutAlerts.unknown_downtime_in_minutes;
+    workSheet.getCell('AE8').value =
+      gpSlaSummaryWithoutAlerts.total_sla_exclusion_percent;
+    workSheet.getCell('AF8').value =
+      gpSlaSummaryWithoutAlerts.total_sla_exclusion_minutes;
+    workSheet.getCell('AG8').value =
+      gpSlaSummaryWithoutAlerts.total_up_percent_exclusion;
+    workSheet.getCell('AH8').value =
+      gpSlaSummaryWithoutAlerts.total_up_minutes_exclusion;
+
+    let row8 = workSheet.getRow(8);
+    row8.eachCell((cell: ExcelJS.Cell) => {
+      cell.style = {
+        border: BORDER_STYLE,
+        alignment: { horizontal: 'center' },
+      };
+    });
+    cellK8.font = { bold: true };
+    cellI7.style = TABLE_HEADERS;
+    cellI8.style = TABLE_HEADERS;
+
+    workSheet.getCell('AC6').style = UNKNOWN_COLUMN_COLOR;
+    workSheet.getCell('AD6').style = UNKNOWN_COLUMN_COLOR;
+    workSheet.getCell('AC7').style = UNKNOWN_COLUMN_COLOR;
+    workSheet.getCell('AD7').style = UNKNOWN_COLUMN_COLOR;
+    workSheet.getCell('AC8').style = UNKNOWN_COLUMN_COLOR;
+    workSheet.getCell('AD8').style = UNKNOWN_COLUMN_COLOR;
 
     workSheet.mergeCells('A9:B9');
     let cellA11 = workSheet.getCell('A9');

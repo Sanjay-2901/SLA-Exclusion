@@ -42,7 +42,7 @@ export const UNKNOWN_COLUMN_COLOR = {
   fill: {
     type: 'pattern',
     pattern: 'solid',
-    fgColor: { argb: 'ffe2ffff' },
+    fgColor: { argb: 'ffe6e6fa' },
   },
 } as ExcelJS.Style;
 

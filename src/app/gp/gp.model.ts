@@ -143,3 +143,9 @@ export interface GpDeviceDetails {
   gp_name: string;
   gp_lgd_code: number;
 }
+
+export interface GpCount {
+  no_of_total_gp: number;
+  no_of_gp_with_alerts: number;
+  no_of_gp_without_alerts: number;
+}
