@@ -24,6 +24,7 @@ import {
   SHEET_HEADING,
   TABLE_HEADERS,
   TABLE_HEADING,
+  UNKNOWN_COLUMN_COLOR,
   VALUES,
 } from '../constants/constants';
 import * as moment from 'moment';
@@ -299,6 +300,114 @@ export class GpService {
     }
   }
 
+  // calculateGpSlaSummary(
+  //   manipulatedGpNMSData: ManipulatedGpNMSData[]
+  // ): GpSLASummary {
+  //   let upPercent = 0;
+  //   let upMinutes = 0;
+  //   let totalDownPercent = 0;
+  //   let powerDownPercent = 0;
+  //   let powerDownMinutes = 0;
+  //   let fiberDownPercent = 0;
+  //   let fiberDownMinute = 0;
+  //   let equipmentDownPercent = 0;
+  //   let equipmentDownMinute = 0;
+  //   let hrtDownPercent = 0;
+  //   let hrtDownMinute = 0;
+  //   let dcnDownPercent = 0;
+  //   let dcnDownMinutes = 0;
+  //   let plannedMaintenancePercent = 0;
+  //   let plannedMaintenanceMinutes = 0;
+  //   let unKnownDownMinutes = 0;
+  //   let unKnownDownPercent = 0;
+  //   let cumulativeRfoDownInPercent = 0;
+  //   let cumulativeRfoDownInMinutes = 0;
+  //   let totalDownMinutes = 0;
+  //   let totalExclusionPercent = 0;
+  //   let totalExclusionMinutes = 0;
+  //   let pollingTimePercent = 0;
+  //   let pollingTimeMinutes = 0;
+
+  //   manipulatedGpNMSData.forEach((nmsData: ManipulatedGpNMSData) => {
+  //     upPercent += nmsData.up_percent;
+  //     totalDownPercent += nmsData.down_percent;
+  //     powerDownPercent += nmsData.power_downtime_in_percent;
+  //     powerDownMinutes += nmsData.power_downtime_in_minutes;
+  //     dcnDownPercent += nmsData.dcn_downtime_in_percent;
+  //     dcnDownMinutes += nmsData.dcn_downtime_in_minutes;
+  //     plannedMaintenancePercent += nmsData.maintenance_percent;
+  //     plannedMaintenanceMinutes += nmsData.planned_maintenance_in_minutes;
+  //     unKnownDownMinutes += nmsData.unknown_downtime_in_minutes;
+  //     unKnownDownPercent += nmsData.unknown_downtime_in_percent;
+  //     cumulativeRfoDownInPercent +=
+  //       nmsData.power_downtime_in_percent +
+  //       nmsData.dcn_downtime_in_percent +
+  //       hrtDownPercent +
+  //       nmsData.maintenance_percent +
+  //       nmsData.polling_time_in_percent;
+  //     upMinutes += nmsData.total_uptime_in_minutes;
+  //     cumulativeRfoDownInMinutes +=
+  //       nmsData.power_downtime_in_minutes +
+  //       nmsData.dcn_downtime_in_minutes +
+  //       hrtDownMinute +
+  //       nmsData.planned_maintenance_in_minutes +
+  //       nmsData.polling_time_in_minutes;
+  //     totalDownMinutes += nmsData.total_downtime_in_minutes;
+  //     totalExclusionPercent +=
+  //       nmsData.power_downtime_in_percent +
+  //       nmsData.dcn_downtime_in_percent +
+  //       nmsData.planned_maintenance_in_percent +
+  //       nmsData.unknown_downtime_in_percent;
+  //     totalExclusionMinutes +=
+  //       nmsData.power_downtime_in_minutes +
+  //       nmsData.dcn_downtime_in_minutes +
+  //       nmsData.planned_maintenance_in_minutes +
+  //       nmsData.unknown_downtime_in_minutes;
+  //     pollingTimePercent += nmsData.polling_time_in_percent;
+  //     pollingTimeMinutes += nmsData.polling_time_in_minutes;
+  //   });
+
+  //   return {
+  //     report_type: 'GP-SLA',
+  //     time_span: '',
+  //     no_of_blocks: 79,
+  //     up_percent: (upPercent / 5001).toFixed(2),
+  //     up_minutes: upMinutes.toFixed(2),
+  //     no_of_up_blocks: '',
+  //     down_percent_exclusive_of_sla: (100 - upPercent / 5001).toFixed(2),
+  //     power_down_percent: (powerDownPercent / 5001).toFixed(2),
+  //     power_down_minutes: powerDownMinutes.toFixed(2),
+  //     fibre_down_percent: (fiberDownPercent / 5001).toFixed(2),
+  //     fibre_down_minutes: fiberDownMinute.toFixed(2),
+  //     equipment_down_percent: (equipmentDownPercent / 5001).toFixed(2),
+  //     equipment_down_minutes: equipmentDownMinute.toFixed(2),
+  //     hrt_down_percent: (hrtDownPercent / 5001).toFixed(2),
+  //     hrt_down_minutes: hrtDownMinute.toFixed(2),
+  //     dcn_down_percent: (dcnDownPercent / 5001).toFixed(2),
+  //     dcn_down_minutes: dcnDownMinutes.toFixed(2),
+  //     planned_maintenance_percent: (plannedMaintenancePercent / 5001).toFixed(
+  //       2
+  //     ),
+  //     planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
+  //     unknown_downtime_in_percent: (unKnownDownPercent / 5001).toFixed(2),
+  //     unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
+  //     total_sla_exclusion_percent: (cumulativeRfoDownInPercent / 5001).toFixed(
+  //       2
+  //     ),
+  //     total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
+  //     total_down_minutes: totalDownMinutes.toFixed(2),
+  //     total_down_percent: (100 - +(upPercent / 5001)).toFixed(2),
+  //     total_up_percent_exclusion: (
+  //       (upPercent + cumulativeRfoDownInPercent) /
+  //       5001
+  //     ).toFixed(2),
+
+  //     total_up_minutes_exclusion: (
+  //       upMinutes + cumulativeRfoDownInMinutes
+  //     ).toFixed(2),
+  //   };
+  // }
+
   calculateGpSlaSummary(
     manipulatedGpNMSData: ManipulatedGpNMSData[]
   ): GpSLASummary {
@@ -326,6 +435,7 @@ export class GpService {
     let totalExclusionMinutes = 0;
     let pollingTimePercent = 0;
     let pollingTimeMinutes = 0;
+    const gpCount = manipulatedGpNMSData.length;
 
     manipulatedGpNMSData.forEach((nmsData: ManipulatedGpNMSData) => {
       upPercent += nmsData.up_percent;
@@ -341,14 +451,16 @@ export class GpService {
       cumulativeRfoDownInPercent +=
         nmsData.power_downtime_in_percent +
         nmsData.dcn_downtime_in_percent +
+        hrtDownPercent +
         nmsData.maintenance_percent +
-        nmsData.unknown_downtime_in_percent;
+        nmsData.polling_time_in_percent;
       upMinutes += nmsData.total_uptime_in_minutes;
       cumulativeRfoDownInMinutes +=
         nmsData.power_downtime_in_minutes +
         nmsData.dcn_downtime_in_minutes +
+        hrtDownMinute +
         nmsData.planned_maintenance_in_minutes +
-        nmsData.unknown_downtime_in_minutes;
+        nmsData.polling_time_in_minutes;
       totalDownMinutes += nmsData.total_downtime_in_minutes;
       totalExclusionPercent +=
         nmsData.power_downtime_in_percent +
@@ -368,38 +480,40 @@ export class GpService {
       report_type: 'GP-SLA',
       time_span: '',
       no_of_blocks: 79,
-      up_percent: (upPercent / 5001).toFixed(2),
+      up_percent: (upPercent / gpCount).toFixed(2),
       up_minutes: upMinutes.toFixed(2),
       no_of_up_blocks: '',
-      down_percent_exclusive_of_sla: (100 - upPercent / 5001).toFixed(2),
-      power_down_percent: (powerDownPercent / 5001).toFixed(2),
+      down_percent_exclusive_of_sla: (100 - upPercent / gpCount).toFixed(2),
+      power_down_percent: (powerDownPercent / gpCount).toFixed(2),
       power_down_minutes: powerDownMinutes.toFixed(2),
-      fibre_down_percent: (fiberDownPercent / 5001).toFixed(2),
+      fibre_down_percent: (fiberDownPercent / gpCount).toFixed(2),
       fibre_down_minutes: fiberDownMinute.toFixed(2),
-      equipment_down_percent: (equipmentDownPercent / 5001).toFixed(2),
+      equipment_down_percent: (equipmentDownPercent / gpCount).toFixed(2),
       equipment_down_minutes: equipmentDownMinute.toFixed(2),
-      hrt_down_percent: (hrtDownPercent / 5001).toFixed(2),
+      hrt_down_percent: (hrtDownPercent / gpCount).toFixed(2),
       hrt_down_minutes: hrtDownMinute.toFixed(2),
-      dcn_down_percent: (dcnDownPercent / 5001).toFixed(2),
+      dcn_down_percent: (dcnDownPercent / gpCount).toFixed(2),
       dcn_down_minutes: dcnDownMinutes.toFixed(2),
-      planned_maintenance_percent: (plannedMaintenancePercent / 5001).toFixed(
+      planned_maintenance_percent: (plannedMaintenancePercent / gpCount).toFixed(
         2
       ),
       planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
-      unknown_downtime_in_percent: (unKnownDownPercent / 5001).toFixed(2),
+      unknown_downtime_in_percent: (unKnownDownPercent / gpCount).toFixed(2),
       unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
-      total_sla_exclusion_percent: (cumulativeRfoDownInPercent / 5001).toFixed(
+      total_sla_exclusion_percent: (cumulativeRfoDownInPercent / gpCount).toFixed(
         2
       ),
       total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
       total_down_minutes: totalDownMinutes.toFixed(2),
-      total_down_percent: (100 - +(upPercent / 5001)).toFixed(2),
+      total_down_percent: (100 - +(upPercent / gpCount)).toFixed(2),
       total_up_percent_exclusion: (
-        (upPercent + totalDownPercent) /
-        5001
+        (upPercent + cumulativeRfoDownInPercent) /
+        gpCount
       ).toFixed(2),
 
-      total_up_minutes_exclusion: (upMinutes + totalDownMinutes).toFixed(2),
+      total_up_minutes_exclusion: (
+        upMinutes + cumulativeRfoDownInMinutes
+      ).toFixed(2),
     };
   }
 
@@ -801,18 +915,35 @@ export class GpService {
           ? 0
           : row.power_downtime_in_percent +
             row.dcn_downtime_in_percent +
-            row.planned_maintenance_in_percent;
+            hrtDownPercent +
+            row.planned_maintenance_in_percent +
+            row.polling_time_in_percent;
       let totalExclusionMinutes: number =
         row.power_downtime_in_minutes +
         row.dcn_downtime_in_minutes +
-        row.planned_maintenance_in_minutes;
+        hrtDownMinutes +
+        row.planned_maintenance_in_minutes +
+        row.polling_time_in_minutes;
       let pollingTimePercent: number =
         upPercent == 100 ? 0 : row.polling_time_in_percent;
       let pollingTimeMinutes: number =
         upPercent == 100 ? 0 : row.polling_time_in_minutes;
 
-      let totalUpPercentSLAExclusion: number = upPercent + downPercent;
-      let totalUpMinutesSLAExclusion: number = upMinute + downMinute;
+      let totalUpPercentSLAExclusion: number =
+        upPercent +
+        row.power_downtime_in_percent +
+        row.dcn_downtime_in_percent +
+        hrtDownPercent +
+        row.planned_maintenance_in_percent +
+        row.polling_time_in_percent;
+
+      let totalUpMinutesSLAExclusion: number =
+        upMinute +
+        row.power_downtime_in_minutes +
+        row.dcn_downtime_in_minutes +
+        hrtDownMinutes +
+        row.planned_maintenance_in_minutes +
+        row.polling_time_in_minutes;
 
       const gpDeviceLevelRowValues = workSheet.addRow([
         reportType,
@@ -853,6 +984,12 @@ export class GpService {
         totalUpMinutesSLAExclusion.toFixed(2),
       ]);
 
+      const unknownPercentColumn = gpDeviceLevelRowValues.getCell(29);
+      unknownPercentColumn.style = UNKNOWN_COLUMN_COLOR;
+
+      const unknownMinuteColumn = gpDeviceLevelRowValues.getCell(30);
+      unknownMinuteColumn.style = UNKNOWN_COLUMN_COLOR;
+
       gpDeviceLevelRowValues.eachCell((cell) => {
         cell.border = BORDER_STYLE;
         cell.alignment = { horizontal: 'left' };
@@ -860,7 +997,6 @@ export class GpService {
     });
 
     //Generating TT co-relation report for GP
-
     const gpTtCoRelationWorkSheet = workbook.addWorksheet('GP TT co-relation');
     gpTtCoRelationWorkSheet.columns = GP_TT_CO_RELATION_COLUMN_WIDTHS;
     gpTtCoRelationWorkSheet

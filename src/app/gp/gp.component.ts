@@ -28,6 +28,7 @@ import {
   BlockDeviceLevelHeaders,
   TTCorelation,
 } from '../block-component/block-component.model';
+import * as lodash from 'lodash';
 
 @Component({
   selector: 'app-gp',
@@ -42,6 +43,8 @@ export class GpComponent {
   gpNMSData: GpNMSData[] = [];
   gpTTData: GpTTData[] = [];
   gpSlaSummary!: GpSLASummary;
+  gpSlaSummaryWithAlerts!: GpSLASummary;
+  gpSlaSummaryWithoutAlerts!: GpSLASummary;
   manipulatedNMSData: ManipulatedGpNMSData[] = [];
   blockFinalReport: BlockDeviceLevelHeaders[] = [];
   blockTTCorelationReport: TTCorelation[] = [];
@@ -547,6 +550,21 @@ export class GpComponent {
     this.manipulatedNMSData = manipulatedGpNMSData;
     this.gpSlaSummary = this.gpService.calculateGpSlaSummary(
       this.manipulatedNMSData
+    );
+    let gpNmsDataWithoutAlerts = this.manipulatedNMSData.filter(
+      (gpNmsData: ManipulatedGpNMSData) =>
+        gpNmsData.down_percent == 100 &&
+        gpNmsData.alert_downtime_in_minutes == 0 &&
+        gpNmsData.unknown_downtime_in_percent == 100
+    );
+    this.gpSlaSummaryWithoutAlerts = this.gpService.calculateGpSlaSummary(
+      gpNmsDataWithoutAlerts
+    );
+    this.gpSlaSummaryWithAlerts = this.gpService.calculateGpSlaSummary(
+      this.manipulatedNMSData.filter(
+        (gpNmsData: ManipulatedGpNMSData) =>
+          !lodash.some(gpNmsDataWithoutAlerts, gpNmsData)
+      )
     );
     this.generateFinalGpReport();
   }
