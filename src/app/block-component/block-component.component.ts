@@ -687,13 +687,15 @@ export class BlockComponentComponent {
       cumulativeRfoDownInPercent +=
         nmsData.power_downtime_in_percent +
         nmsData.dcn_downtime_in_percent +
+        hrtDownPercent +
         nmsData.maintenance_percent +
-        nmsData.unknown_downtime_in_percent;
+        nmsData.polling_time_in_percent;
       cumulativeRfoDownInMinutes +=
         nmsData.power_downtime_in_minutes +
         nmsData.dcn_downtime_in_minutes +
+        hrtDownMinute +
         nmsData.planned_maintenance_in_minutes +
-        nmsData.unknown_downtime_in_minutes;
+        nmsData.polling_time_in_minutes;
       totalExclusionPercent +=
         nmsData.power_downtime_in_percent +
         nmsData.dcn_downtime_in_percent +
@@ -734,10 +736,13 @@ export class BlockComponentComponent {
       total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
       total_down_minutes: totalDownMinutes.toFixed(2),
       total_down_percent: (100 - +(upPercent / 79)).toFixed(2),
-      total_up_percent_exclusion: ((upPercent + totalDownPercent) / 79).toFixed(
-        2
-      ),
-      total_up_minutes_exclusion: (upMinutes + totalDownMinutes).toFixed(2),
+      total_up_percent_exclusion: (
+        (upPercent + cumulativeRfoDownInPercent) /
+        79
+      ).toFixed(2),
+      total_up_minutes_exclusion: (
+        upMinutes + cumulativeRfoDownInMinutes
+      ).toFixed(2),
     };
   }
 
@@ -755,7 +760,7 @@ export class BlockComponentComponent {
 
     worksheet.mergeCells('C1:D1');
     let cellC1 = worksheet.getCell('C1');
-    cellC1.value = 'Report-Frequency- Daily';
+    cellC1.value = 'Report-Frequency: ';
     cellC1.style = {
       font: { bold: true },
       alignment: { horizontal: 'center' },
@@ -1127,15 +1132,31 @@ export class BlockComponentComponent {
           ? 0
           : row.power_downtime_in_percent +
             row.dcn_downtime_in_percent +
-            row.planned_maintenance_in_percent;
+            hrtDownPercent +
+            row.planned_maintenance_in_percent +
+            row.polling_time_in_percent;
       let totalExclusionMinutes: number =
         row.power_downtime_in_minutes +
         row.dcn_downtime_in_minutes +
-        row.planned_maintenance_in_minutes;
+        hrtDownMinutes +
+        row.planned_maintenance_in_minutes +
+        row.polling_time_in_minutes;
       let pollingTimePercent: number = row.polling_time_in_percent;
       let pollingTimeMinutes: number = row.polling_time_in_minutes;
-      let totalUpPercentSLAExclusion: number = upPercent + downPercent;
-      let totalUpMinutesSLAExclusion: number = upMinute + downMinute;
+      let totalUpPercentSLAExclusion: number =
+        upPercent +
+        row.power_downtime_in_percent +
+        row.dcn_downtime_in_percent +
+        hrtDownPercent +
+        row.planned_maintenance_in_percent +
+        row.polling_time_in_percent;
+      let totalUpMinutesSLAExclusion: number =
+        upMinute +
+        row.power_downtime_in_minutes +
+        row.dcn_downtime_in_minutes +
+        hrtDownMinutes +
+        row.planned_maintenance_in_minutes +
+        row.polling_time_in_minutes;
 
       const blockSummaryPercentRowValues = worksheet.addRow([
         reportType,
@@ -1170,7 +1191,9 @@ export class BlockComponentComponent {
         totalExclusionMinutes.toFixed(2),
         pollingTimePercent.toFixed(2),
         pollingTimeMinutes.toFixed(2),
-        totalUpPercentSLAExclusion.toFixed(2),
+        +totalUpPercentSLAExclusion.toFixed(2) > 100
+          ? '100.00'
+          : totalUpPercentSLAExclusion.toFixed(2),
         totalUpMinutesSLAExclusion.toFixed(2),
       ]);
 

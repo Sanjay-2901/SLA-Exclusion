@@ -38,6 +38,14 @@ export const MINUTE_STYLE = {
   fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'fff0f0f0' } },
 } as ExcelJS.Style;
 
+export const UNKNOWN_COLUMN_COLOR = {
+  fill: {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'ffe6e6fa' },
+  },
+} as ExcelJS.Style;
+
 export enum VALUES {
   PERCENT = '%',
   MINUTES = 'Min',
