@@ -305,10 +305,7 @@ export class GpComponent {
           slab_reach: data[20],
           resolution_method: data[21],
           rfo: data[22] ? data[22].trim() : data[22],
-          incident_start_on: moment(data[23])
-            .subtract(5, 'hours')
-            .subtract(30, 'minutes')
-            .format(),
+          incident_start_on: this.sharedService.setStandardTime(data[23]),
           incident_created_on: data[24],
           ageing: data[25],
           open_time: data[26],
@@ -343,19 +340,19 @@ export class GpComponent {
           type: data[4],
           severity: data[5] ? data[5].trim() : data[5],
           message: data[6] ? data[6].trim() : data[6],
-          alarm_start_time: moment(data[7]).format(),
+          alarm_start_time: this.sharedService.setStandardTime(data[7]),
           duration: this.sharedService.setDuration(
             this.timeSpanValue,
-            moment(data[7]).format(),
-            moment(data[9]).format(),
+            this.sharedService.setStandardTime(data[7]),
+            this.sharedService.setStandardTime(data[9]),
             data[8]
           ),
-          alarm_clear_time: moment(data[9]).format(),
+          alarm_clear_time: this.sharedService.setStandardTime(data[9]),
           total_duration_in_minutes: this.sharedService.calculateTimeInMinutes(
             this.sharedService.setDuration(
               this.timeSpanValue,
-              moment(data[7]).format(),
-              moment(data[9]).format(),
+              this.sharedService.setStandardTime(data[7]),
+              this.sharedService.setStandardTime(data[9]),
               data[8]
             )
           ),
@@ -416,19 +413,19 @@ export class GpComponent {
           type: data[4],
           severity: data[5] ? data[5].trim() : data[5],
           message: data[6] ? data[6].trim() : data[6],
-          alarm_start_time: moment(data[7]).format(),
+          alarm_start_time: this.sharedService.setStandardTime(data[7]),
           duration: this.sharedService.setDuration(
             this.timeSpanValue,
-            moment(data[7]).format(),
-            moment(data[9]).format(),
+            this.sharedService.setStandardTime(data[7]),
+            this.sharedService.setStandardTime(data[9]),
             data[8]
           ),
-          alarm_clear_time: moment(data[9]).format(),
+          alarm_clear_time: this.sharedService.setStandardTime(data[9]),
           total_duration_in_minutes: this.sharedService.calculateTimeInMinutes(
             this.sharedService.setDuration(
               this.timeSpanValue,
-              moment(data[7]).format(),
-              moment(data[9]).format(),
+              this.sharedService.setStandardTime(data[7]),
+              this.sharedService.setStandardTime(data[9]),
               data[8]
             )
           ),

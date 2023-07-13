@@ -308,7 +308,7 @@ export class BlockComponentComponent {
           slab_reach: data[20],
           resolution_method: data[21],
           rfo: data[22] ? data[22].trim() : data[22],
-          incident_start_on: moment(data[23]).format(),
+          incident_start_on: this.sharedService.setStandardTime(data[23]),
           incident_created_on: data[24],
           ageing: data[25],
           open_time: data[26],
@@ -343,19 +343,19 @@ export class BlockComponentComponent {
           type: data[4],
           severity: data[5] ? data[5].trim() : data[5],
           message: data[6] ? data[6].trim() : data[6],
-          alarm_start_time: moment(data[7]).format(),
+          alarm_start_time: this.sharedService.setStandardTime(data[7]),
           duration: this.sharedService.setDuration(
             this.timeSpanValue,
-            moment(data[7]).format(),
-            moment(data[9]).format(),
+            this.sharedService.setStandardTime(data[7]),
+            this.sharedService.setStandardTime(data[9]),
             data[8]
           ),
-          alarm_clear_time: moment(data[9]).format(),
-          total_duration_in_minutes: this.calculateTimeInMinutes(
+          alarm_clear_time: this.sharedService.setStandardTime(data[9]),
+          total_duration_in_minutes: this.sharedService.calculateTimeInMinutes(
             this.sharedService.setDuration(
               this.timeSpanValue,
-              moment(data[7]).format(),
-              moment(data[9]).format(),
+              this.sharedService.setStandardTime(data[7]),
+              this.sharedService.setStandardTime(data[9]),
               data[8]
             )
           ),
@@ -370,28 +370,6 @@ export class BlockComponentComponent {
       this.blockTTData = result;
     } else if (workSheetName === 'block_alert_report') {
       this.blockAlertData = result;
-    }
-  }
-
-  calculateTimeInMinutes(timePeriod: string): number {
-    if (timePeriod) {
-      let totalTimeinMinutes = timePeriod.trim().split(' ');
-      if (timePeriod.includes('days')) {
-        return +(
-          parseInt(totalTimeinMinutes[0]) * 1440 +
-          parseInt(totalTimeinMinutes[2]) * 60 +
-          parseInt(totalTimeinMinutes[4]) +
-          parseInt(totalTimeinMinutes[6]) / 60
-        ).toFixed(2);
-      } else {
-        return +(
-          parseInt(totalTimeinMinutes[0]) * 60 +
-          parseInt(totalTimeinMinutes[2]) +
-          parseInt(totalTimeinMinutes[4]) / 60
-        ).toFixed(2);
-      }
-    } else {
-      return 0;
     }
   }
 
@@ -552,15 +530,14 @@ export class BlockComponentComponent {
   manipulateBlockNMSData(): void {
     let manipulatedBlockNMSData: ManipulatedNMSData[] = [];
     this.blockNMSData.forEach((nmsData: BlockNMSData) => {
-      let totalUpTimeInMinutes = this.calculateTimeInMinutes(
+      let totalUpTimeInMinutes = this.sharedService.calculateTimeInMinutes(
         nmsData.total_up_time
       );
-      let totalDownTimeInMinutes = this.calculateTimeInMinutes(
+      let totalDownTimeInMinutes = this.sharedService.calculateTimeInMinutes(
         nmsData.down_time
       );
-      let plannedMaintenanceInMinutes = this.calculateTimeInMinutes(
-        nmsData.maintenance_time
-      );
+      let plannedMaintenanceInMinutes =
+        this.sharedService.calculateTimeInMinutes(nmsData.maintenance_time);
       let totalTimeExclusiveOfSLAExclusionInMinutes =
         totalUpTimeInMinutes + totalDownTimeInMinutes;
       let totalTimeExclusiveOfSLAExclusionInPercent =
