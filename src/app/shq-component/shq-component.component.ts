@@ -239,19 +239,19 @@ export class ShqComponentComponent {
           type: data[3],
           severity: data[4] ? data[4].trim() : data[4],
           message: data[5] ? data[5].trim() : data[5],
-          alarm_start_time: moment(data[6]).format(),
+          alarm_start_time: this.sharedService.setStandardTime(data[6]),
           duration: this.sharedService.setDuration(
             this.timeSpanValue,
-            moment(data[6]).format(),
-            moment(data[8]).format(),
+            this.sharedService.setStandardTime(data[6]),
+            this.sharedService.setStandardTime(data[8]),
             data[7]
           ),
-          alarm_clear_time: moment(data[8]).format(),
+          alarm_clear_time: this.sharedService.setStandardTime(data[8]),
           total_duration_in_minutes: this.sharedService.calculateTimeInMinutes(
             this.sharedService.setDuration(
               this.timeSpanValue,
-              moment(data[6]).format(),
-              moment(data[8]).format(),
+              this.sharedService.setStandardTime(data[6]),
+              this.sharedService.setStandardTime(data[8]),
               data[7]
             )
           ),
@@ -282,7 +282,7 @@ export class ShqComponentComponent {
           slab_reach: data[20],
           resolution_method: data[21],
           rfo: data[22] ? data[22].trim() : data[22],
-          incident_start_on: moment(data[23]).format(),
+          incident_start_on: this.sharedService.setStandardTime(data[23]),
           incident_created_on: data[24],
           ageing: data[25],
           open_time: data[26],

@@ -29,6 +29,12 @@ export class SharedService {
     }
   }
 
+  setStandardTime(time: any) {
+    return typeof time === 'object'
+      ? moment(time).subtract(5, 'hours').subtract(30, 'minutes').format()
+      : moment(time).format();
+  }
+
   setDuration(
     timeSpan: string,
     alarmStartTime: any,
