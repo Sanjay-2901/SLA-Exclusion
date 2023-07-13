@@ -326,9 +326,11 @@ export class ShqService {
         cumulativeRfoDownInMinutes
       ),
       total_up_percent: this.calculateCumulativePercentage(
-        upPercent + downPercent
+        upPercent + cumulativeRfoDownInPercent
       ),
-      total_up_minute: this.calculateCumulativeMinutes(upMinutes + downMinutes),
+      total_up_minute: this.calculateCumulativeMinutes(
+        upMinutes + cumulativeRfoDownInMinutes
+      ),
     };
   }
 
@@ -728,19 +730,35 @@ export class ShqService {
       let totalSlaExclusionInPercent: number =
         upPercent == 100
           ? 0
-          : nmsData.power_downtime_in_percent + nmsData.dcn_downtime_in_percent;
+          : nmsData.power_downtime_in_percent +
+            nmsData.dcn_downtime_in_percent +
+            hrtDownPercent +
+            nmsData.polling_time_in_percent;
       let totalSlaExclusionInMinute: number =
         upPercent == 100
           ? 0
-          : nmsData.power_downtime_in_minutes + nmsData.dcn_downtime_in_minutes;
+          : nmsData.power_downtime_in_minutes +
+            nmsData.dcn_downtime_in_minutes +
+            hrtDownMinutes +
+            nmsData.polling_time_in_minutes;
       let pollingTimeInPercent: number =
         upPercent == 100 ? 0 : nmsData.polling_time_in_percent;
       let pollingTimeInMinute: number =
         upPercent == 100 ? 0 : nmsData.polling_time_in_minutes;
       let totalUpInPercent: number =
-        upPercent == 100 ? 100 : upPercent + nmsData.down_percent;
+        upPercent == 100
+          ? 100
+          : upPercent +
+            nmsData.power_downtime_in_percent +
+            nmsData.dcn_downtime_in_percent +
+            hrtDownPercent +
+            nmsData.polling_time_in_percent;
       let totalUpInMinutes: number =
-        upMinute + nmsData.total_downtime_in_minutes;
+        upMinute +
+        nmsData.power_downtime_in_minutes +
+        nmsData.dcn_downtime_in_minutes +
+        hrtDownMinutes +
+        nmsData.polling_time_in_minutes;
 
       const ShqDeviceLevelRowValues = workSheet.addRow([
         reportType,
@@ -770,7 +788,9 @@ export class ShqService {
         totalSlaExclusionInMinute.toFixed(2),
         pollingTimeInPercent.toFixed(2),
         pollingTimeInMinute.toFixed(2),
-        totalUpInPercent.toFixed(2),
+        +totalUpInPercent.toFixed(2) > 100
+          ? '100.00'
+          : totalUpInPercent.toFixed(2),
         totalUpInMinutes.toFixed(2),
       ]);
 

@@ -939,7 +939,6 @@ export class GpService {
         upPercent == 100 ? 0 : row.polling_time_in_percent;
       let pollingTimeMinutes: number =
         upPercent == 100 ? 0 : row.polling_time_in_minutes;
-
       let totalUpPercentSLAExclusion: number =
         upPercent +
         row.power_downtime_in_percent +
@@ -947,7 +946,6 @@ export class GpService {
         hrtDownPercent +
         row.planned_maintenance_in_percent +
         row.polling_time_in_percent;
-
       let totalUpMinutesSLAExclusion: number =
         upMinute +
         row.power_downtime_in_minutes +
@@ -991,7 +989,9 @@ export class GpService {
         totalExclusionMinutes.toFixed(2),
         pollingTimePercent.toFixed(2),
         pollingTimeMinutes.toFixed(2),
-        totalUpPercentSLAExclusion.toFixed(2),
+        +totalUpPercentSLAExclusion.toFixed(2) > 100
+          ? '100.00'
+          : totalUpPercentSLAExclusion.toFixed(2),
         totalUpMinutesSLAExclusion.toFixed(2),
       ]);
 
