@@ -15,7 +15,6 @@ import { AOA } from '../shared/shared-model';
 import { ToastrService } from 'ngx-toastr';
 import {
   GpAlertData,
-  GpCount,
   GpNMSData,
   GpSLASummary,
   GpTTData,
@@ -51,7 +50,6 @@ export class GpComponent {
   blockTTCorelationReport: TTCorelation[] = [];
   blockAlertData: BlockAlertData[] = [];
   timeSpanValue: string = '';
-  gpCount!: GpCount;
   isAllFilesValid: boolean = true;
   @Output() isGpLoading = new EventEmitter<boolean>();
   @Input() shouldDisable!: boolean;
@@ -547,8 +545,10 @@ export class GpComponent {
       manipulatedGpNMSData.push(newNMSData);
     });
     this.manipulatedNMSData = manipulatedGpNMSData;
+
     this.gpSlaSummary = this.gpService.calculateGpSlaSummary(
-      this.manipulatedNMSData
+      this.manipulatedNMSData,
+      this.timeSpanValue
     );
     let gpNmsDataWithoutAlerts = this.manipulatedNMSData.filter(
       (gpNmsData: ManipulatedGpNMSData) =>
@@ -556,21 +556,21 @@ export class GpComponent {
         gpNmsData.alert_downtime_in_minutes == 0 &&
         gpNmsData.unknown_downtime_in_percent == 100
     );
+
+    let gpNmsDataWithAlerts = this.manipulatedNMSData.filter(
+      (gpNmsData: ManipulatedGpNMSData) =>
+        !lodash.some(gpNmsDataWithoutAlerts, gpNmsData)
+    );
+
     this.gpSlaSummaryWithoutAlerts = this.gpService.calculateGpSlaSummary(
-      gpNmsDataWithoutAlerts
+      gpNmsDataWithoutAlerts,
+      this.timeSpanValue
     );
     this.gpSlaSummaryWithAlerts = this.gpService.calculateGpSlaSummary(
-      this.manipulatedNMSData.filter(
-        (gpNmsData: ManipulatedGpNMSData) =>
-          !lodash.some(gpNmsDataWithoutAlerts, gpNmsData)
-      )
+      gpNmsDataWithAlerts,
+      this.timeSpanValue
     );
-    this.gpCount = {
-      no_of_total_gp: this.manipulatedNMSData.length,
-      no_of_gp_without_alerts: gpNmsDataWithoutAlerts.length,
-      no_of_gp_with_alerts:
-        this.manipulatedNMSData.length - gpNmsDataWithoutAlerts.length,
-    };
+
     this.generateFinalGpReport();
   }
 
@@ -597,11 +597,9 @@ export class GpComponent {
     this.gpService.FrameGpFinalSlaReportWorkbook(
       workbook,
       worksheet,
-      this.timeSpanValue,
       this.gpSlaSummary,
       this.gpSlaSummaryWithAlerts,
       this.gpSlaSummaryWithoutAlerts,
-      this.gpCount,
       this.manipulatedNMSData,
       this.blockFinalReport,
       this.blockTTCorelationReport

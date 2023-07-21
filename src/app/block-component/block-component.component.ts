@@ -16,31 +16,19 @@ import {
   ALERT_DOWN_MESSAGE,
   SEVERITY_WARNING,
   RFO_CATEGORIZATION,
-  SHEET_HEADING,
-  TABLE_HEADING,
-  BORDER_STYLE,
-  BlockSLAFinalReportHeaders,
-  TABLE_HEADERS,
-  PERCENT_STYLE,
-  MINUTE_STYLE,
-  VALUES,
-  BLOCK_DEVICE_DETAILS,
-  BlockDeviceDetail,
   BLOCK_SLA_REPORT_HEADERS,
   TT_REPORT_HEADERS,
   BLOCK_ALERT_REPORT_HEADERS,
   BLOCK_INPUT_FILE_NAMES,
-  BlockSLASummarytHeaders,
   IP_ADDRESS_PATTERN,
-  BLOCK_SLA_FINAL_REPORT_COLUMN_WIDTHS,
-  BLOCK_TT_CO_RELATION_HEADERS,
-  BLOCK_TT_CO_RELATION_COLUMNS_WIDTHS,
   DEVICES_COUNT,
   TIME_SPAN_REGEX_PATTERN,
 } from '../constants/constants';
 import { ToastrService } from 'ngx-toastr';
 import { AOA } from '../shared/shared-model';
 import { SharedService } from '../shared/shared.service';
+
+import { BlockService } from './block.service';
 
 @Component({
   selector: 'app-block-component',
@@ -54,6 +42,8 @@ export class BlockComponentComponent {
 
   manipulatedNMSData: ManipulatedNMSData[] = [];
   blockSLASummary!: BlockSLASummary;
+  blockSLASummaryWithoutAlerts!: BlockSLASummary;
+  blockSLASummaryWithAlerts!: BlockSLASummary;
 
   ttCorelation: TTCorelation[] = [];
 
@@ -69,7 +59,8 @@ export class BlockComponentComponent {
 
   constructor(
     private toastrService: ToastrService,
-    private sharedService: SharedService
+    private sharedService: SharedService,
+    private blockService: BlockService
   ) {}
 
   // Getting the input file (excel workbook containing the required sheets)
@@ -618,600 +609,52 @@ export class BlockComponentComponent {
       manipulatedBlockNMSData.push(newNMSData);
     });
     this.manipulatedNMSData = manipulatedBlockNMSData;
-    this.calcluateBlockSLASummary();
+
+    this.blockSLASummary = this.blockService.calculateBlockSlaSummary(
+      this.manipulatedNMSData,
+      this.timeSpanValue
+    );
+
+    let blockNMSDataWithoutAlerts = this.manipulatedNMSData.filter(
+      (blockNmsData: ManipulatedNMSData) =>
+        blockNmsData.down_percent == 100 &&
+        blockNmsData.alert_downtime_in_minutes == 0 &&
+        blockNmsData.unknown_downtime_in_percent == 100
+    );
+
+    let blockNMSDataWithAlerts = this.manipulatedNMSData.filter(
+      (blockNmsData: ManipulatedNMSData) =>
+        !lodash.some(blockNMSDataWithoutAlerts, blockNmsData)
+    );
+
+    this.blockSLASummaryWithoutAlerts =
+      this.blockService.calculateBlockSlaSummary(
+        blockNMSDataWithoutAlerts,
+        this.timeSpanValue
+      );
+
+    this.blockSLASummaryWithAlerts = this.blockService.calculateBlockSlaSummary(
+      blockNMSDataWithAlerts,
+      this.timeSpanValue
+    );
+
     this.generateFinalBlockReport();
   }
 
-  calcluateBlockSLASummary() {
-    let upPercent = 0;
-    let upMinutes = 0;
-    let totalDownMinutes = 0;
-    let totalDownPercent = 0;
-    let powerDownPercent = 0;
-    let powerDownMinutes = 0;
-    let fiberDownPercent = 0;
-    let fiberDownMinute = 0;
-    let equipmentDownPercent = 0;
-    let equipmentDownMinute = 0;
-    let hrtDownPercent = 0;
-    let hrtDownMinute = 0;
-    let dcnDownPercent = 0;
-    let dcnDownMinutes = 0;
-    let plannedMaintenancePercent = 0;
-    let plannedMaintenanceMinutes = 0;
-    let unKnownDownMinutes = 0;
-    let unKnownDownPercent = 0;
-    let cumulativeRfoDownInPercent = 0;
-    let cumulativeRfoDownInMinutes = 0;
-    let totalExclusionPercent = 0;
-    let totalExclusionMinutes = 0;
-    let pollingTimePercent = 0;
-    let pollingTimeMinutes = 0;
-
-    this.manipulatedNMSData.forEach((nmsData: ManipulatedNMSData) => {
-      upPercent += nmsData.up_percent;
-      upMinutes += nmsData.total_uptime_in_minutes;
-      totalDownMinutes += nmsData.total_downtime_in_minutes;
-      totalDownPercent += nmsData.down_percent;
-      powerDownPercent += nmsData.power_downtime_in_percent;
-      powerDownMinutes += nmsData.power_downtime_in_minutes;
-      dcnDownPercent += nmsData.dcn_downtime_in_percent;
-      dcnDownMinutes += nmsData.dcn_downtime_in_minutes;
-      plannedMaintenancePercent += nmsData.maintenance_percent;
-      plannedMaintenanceMinutes += nmsData.planned_maintenance_in_minutes;
-      unKnownDownMinutes += nmsData.unknown_downtime_in_minutes;
-      unKnownDownPercent += nmsData.unknown_downtime_in_percent;
-      cumulativeRfoDownInPercent +=
-        nmsData.power_downtime_in_percent +
-        nmsData.dcn_downtime_in_percent +
-        hrtDownPercent +
-        nmsData.maintenance_percent +
-        nmsData.polling_time_in_percent;
-      cumulativeRfoDownInMinutes +=
-        nmsData.power_downtime_in_minutes +
-        nmsData.dcn_downtime_in_minutes +
-        hrtDownMinute +
-        nmsData.planned_maintenance_in_minutes +
-        nmsData.polling_time_in_minutes;
-      totalExclusionPercent +=
-        nmsData.power_downtime_in_percent +
-        nmsData.dcn_downtime_in_percent +
-        nmsData.planned_maintenance_in_percent +
-        nmsData.unknown_downtime_in_percent;
-      totalExclusionMinutes +=
-        nmsData.power_downtime_in_minutes +
-        nmsData.dcn_downtime_in_minutes +
-        nmsData.planned_maintenance_in_minutes +
-        nmsData.unknown_downtime_in_minutes;
-      pollingTimePercent += nmsData.polling_time_in_percent;
-      pollingTimeMinutes += nmsData.polling_time_in_minutes;
-    });
-
-    this.blockSLASummary = {
-      report_type: 'BLOCK-SLA',
-      time_span: '',
-      no_of_blocks: 79,
-      up_percent: (upPercent / 79).toFixed(2),
-      up_minutes: upMinutes.toFixed(2),
-      no_of_up_blocks: '',
-      down_percent_exclusive_of_sla: (100 - upPercent / 79).toFixed(2),
-      power_down_percent: (powerDownPercent / 79).toFixed(2),
-      power_down_minutes: powerDownMinutes.toFixed(2),
-      fibre_down_percent: (fiberDownPercent / 79).toFixed(2),
-      fibre_down_minutes: fiberDownMinute.toFixed(2),
-      equipment_down_percent: (equipmentDownPercent / 79).toFixed(2),
-      equipment_down_minutes: equipmentDownMinute.toFixed(2),
-      hrt_down_percent: (hrtDownPercent / 79).toFixed(2),
-      hrt_down_minutes: hrtDownMinute.toFixed(2),
-      dcn_down_percent: (dcnDownPercent / 79).toFixed(2),
-      dcn_down_minutes: dcnDownMinutes.toFixed(2),
-      planned_maintenance_percent: (plannedMaintenancePercent / 79).toFixed(2),
-      planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
-      unknown_downtime_in_percent: (unKnownDownPercent / 79).toFixed(2),
-      unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
-      total_sla_exclusion_percent: (cumulativeRfoDownInPercent / 79).toFixed(2),
-      total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
-      total_down_minutes: totalDownMinutes.toFixed(2),
-      total_down_percent: (100 - +(upPercent / 79)).toFixed(2),
-      total_up_percent_exclusion: (
-        (upPercent + cumulativeRfoDownInPercent) /
-        79
-      ).toFixed(2),
-      total_up_minutes_exclusion: (
-        upMinutes + cumulativeRfoDownInMinutes
-      ).toFixed(2),
-    };
-  }
-
   // Generating the final report as excel-workbook using the calculated data.
-  generateFinalBlockReport(): void {
+
+  generateFinalBlockReport() {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Block-SLA-Exclusion-Report');
-    worksheet.columns = BLOCK_SLA_FINAL_REPORT_COLUMN_WIDTHS;
-    // worksheet.views = [{ state: 'frozen', xSplit: 10, ySplit: 0 }];
-
-    worksheet.mergeCells('A1:B1');
-    let cellA1 = worksheet.getCell('A1');
-    cellA1.value = '1. Daily Network availability report';
-    cellA1.style = SHEET_HEADING;
-
-    worksheet.mergeCells('C1:D1');
-    let cellC1 = worksheet.getCell('C1');
-    cellC1.value = 'Report-Frequency: ';
-    cellC1.style = {
-      font: { bold: true },
-      alignment: { horizontal: 'center' },
-    };
-
-    worksheet.mergeCells('A3:B3');
-    let cellA3 = worksheet.getCell('A3');
-    cellA3.value = 'Block - SLA Summary (%) & (Min)';
-    cellA3.style = TABLE_HEADING;
-    worksheet.getCell('B3').style = TABLE_HEADING;
-
-    worksheet.mergeCells('C4:G4');
-    worksheet.mergeCells('I4:J4');
-    worksheet.mergeCells('K4:L4');
-    worksheet.mergeCells('M4:N4');
-    worksheet.mergeCells('O4:P4');
-    worksheet.mergeCells('Q4:R4');
-    worksheet.mergeCells('S4:T4');
-    worksheet.mergeCells('U4:V4');
-    worksheet.mergeCells('W4:X4');
-    worksheet.mergeCells('Y4:Z4');
-    worksheet.mergeCells('AA4:AB4');
-    worksheet.mergeCells('AC4:AD4');
-    worksheet.mergeCells('AE4:AF4');
-
-    worksheet.getCell('A4').value = BlockSLASummarytHeaders[0];
-    worksheet.getCell('B4').value = BlockSLASummarytHeaders[1];
-    worksheet.getCell('C4').value = BlockSLASummarytHeaders[2];
-    worksheet.getCell('H4').value = BlockSLASummarytHeaders[3];
-    worksheet.getCell('I4').value = BlockSLASummarytHeaders[4];
-    worksheet.getCell('K4').value = BlockSLASummarytHeaders[5];
-    worksheet.getCell('M4').value = BlockSLASummarytHeaders[6];
-    worksheet.getCell('O4').value = BlockSLASummarytHeaders[7];
-    worksheet.getCell('Q4').value = BlockSLASummarytHeaders[8];
-    worksheet.getCell('S4').value = BlockSLASummarytHeaders[9];
-    worksheet.getCell('U4').value = BlockSLASummarytHeaders[10];
-    worksheet.getCell('W4').value = BlockSLASummarytHeaders[11];
-    worksheet.getCell('Y4').value = BlockSLASummarytHeaders[12];
-    worksheet.getCell('AA4').value = BlockSLASummarytHeaders[13];
-    worksheet.getCell('AC4').value = BlockSLASummarytHeaders[14];
-    worksheet.getCell('AE4').value = BlockSLASummarytHeaders[15];
-
-    let blockSummaryHeadersRow = worksheet.getRow(4);
-    blockSummaryHeadersRow.eachCell((cell) => {
-      cell.style = TABLE_HEADERS;
-    });
-
-    worksheet.mergeCells('A5:A6');
-    worksheet.mergeCells('B5:B6');
-    worksheet.mergeCells('C5:G6');
-    worksheet.mergeCells('H5:H6');
-    worksheet.mergeCells('I5:J6');
-
-    worksheet.getCell('A5').value = 'Block - SLA';
-    worksheet.getCell('B5').value = 'Q&M Block';
-    worksheet.getCell('H5').value = '79';
-    worksheet.getCell('C5').value = this.timeSpanValue.replace(
-      /Time Span: /,
-      ''
+    this.blockService.generateFinalBlockReport(
+      workbook,
+      worksheet,
+      this.blockSLASummary,
+      this.blockSLASummaryWithAlerts,
+      this.blockSLASummaryWithoutAlerts,
+      this.manipulatedNMSData,
+      this.ttCorelation
     );
-    worksheet.getCell('I5').value = '5001';
-    let k5 = worksheet.getCell('K5');
-    k5.value = VALUES.PERCENT;
-    k5.style = PERCENT_STYLE;
-    let l5 = worksheet.getCell('L5');
-    l5.value = VALUES.MINUTES;
-    l5.style = MINUTE_STYLE;
-    let m5 = worksheet.getCell('M5');
-    m5.value = VALUES.PERCENT;
-    m5.style = PERCENT_STYLE;
-    let n5 = worksheet.getCell('N5');
-    n5.value = VALUES.MINUTES;
-    n5.style = MINUTE_STYLE;
-    let o5 = worksheet.getCell('O5');
-    o5.value = VALUES.PERCENT;
-    o5.style = PERCENT_STYLE;
-    let p5 = worksheet.getCell('P5');
-    p5.value = VALUES.MINUTES;
-    p5.style = MINUTE_STYLE;
-    let q5 = worksheet.getCell('Q5');
-    q5.value = VALUES.PERCENT;
-    q5.style = PERCENT_STYLE;
-    let r5 = worksheet.getCell('R5');
-    r5.value = VALUES.MINUTES;
-    r5.style = MINUTE_STYLE;
-    let s5 = worksheet.getCell('S5');
-    s5.value = VALUES.PERCENT;
-    s5.style = PERCENT_STYLE;
-    let t5 = worksheet.getCell('T5');
-    t5.value = VALUES.MINUTES;
-    t5.style = MINUTE_STYLE;
-    let u5 = worksheet.getCell('U5');
-    u5.value = VALUES.PERCENT;
-    u5.style = PERCENT_STYLE;
-    let v5 = worksheet.getCell('V5');
-    v5.value = VALUES.MINUTES;
-    v5.style = MINUTE_STYLE;
-    let w5 = worksheet.getCell('W5');
-    w5.value = VALUES.PERCENT;
-    w5.style = PERCENT_STYLE;
-    let x5 = worksheet.getCell('X5');
-    x5.value = VALUES.MINUTES;
-    x5.style = MINUTE_STYLE;
-    let y5 = worksheet.getCell('Y5');
-    y5.value = VALUES.PERCENT;
-    y5.style = PERCENT_STYLE;
-    let z5 = worksheet.getCell('Z5');
-    z5.value = VALUES.MINUTES;
-    z5.style = MINUTE_STYLE;
-    let aa5 = worksheet.getCell('AA5');
-    aa5.value = VALUES.PERCENT;
-    aa5.style = PERCENT_STYLE;
-    let ab5 = worksheet.getCell('AB5');
-    ab5.value = VALUES.MINUTES;
-    ab5.style = MINUTE_STYLE;
-    let ac5 = worksheet.getCell('AC5');
-    ac5.value = VALUES.PERCENT;
-    ac5.style = PERCENT_STYLE;
-    let ad5 = worksheet.getCell('AD5');
-    ad5.value = VALUES.MINUTES;
-    ad5.style = MINUTE_STYLE;
-    let ae5 = worksheet.getCell('AE5');
-    ae5.value = VALUES.PERCENT;
-    ae5.style = PERCENT_STYLE;
-    let af5 = worksheet.getCell('AF5');
-    af5.value = VALUES.MINUTES;
-    af5.style = MINUTE_STYLE;
-
-    worksheet.getCell('K6').value = this.blockSLASummary.up_percent;
-    worksheet.getCell('L6').value = this.blockSLASummary.up_minutes;
-    worksheet.getCell('M6').value = this.blockSLASummary.total_down_percent;
-    worksheet.getCell('N6').value = this.blockSLASummary.total_down_minutes;
-    worksheet.getCell('O6').value = this.blockSLASummary.power_down_percent;
-    worksheet.getCell('P6').value = this.blockSLASummary.power_down_minutes;
-    worksheet.getCell('Q6').value = this.blockSLASummary.fibre_down_percent;
-    worksheet.getCell('R6').value = this.blockSLASummary.fibre_down_minutes;
-    worksheet.getCell('S6').value = this.blockSLASummary.equipment_down_percent;
-    worksheet.getCell('T6').value = this.blockSLASummary.equipment_down_minutes;
-    worksheet.getCell('U6').value = this.blockSLASummary.hrt_down_percent;
-    worksheet.getCell('V6').value = this.blockSLASummary.hrt_down_minutes;
-    worksheet.getCell('W6').value = this.blockSLASummary.dcn_down_percent;
-    worksheet.getCell('X6').value = this.blockSLASummary.dcn_down_minutes;
-    worksheet.getCell('Y6').value =
-      this.blockSLASummary.planned_maintenance_percent;
-    worksheet.getCell('Z6').value =
-      this.blockSLASummary.planned_maintenance_minutes;
-    worksheet.getCell('AA6').value =
-      this.blockSLASummary.unknown_downtime_in_percent;
-    worksheet.getCell('AB6').value =
-      this.blockSLASummary.unknown_downtime_in_minutes;
-    worksheet.getCell('AC6').value =
-      this.blockSLASummary.total_sla_exclusion_percent;
-    worksheet.getCell('AD6').value =
-      this.blockSLASummary.total_sla_exclusion_minutes;
-    worksheet.getCell('AE6').value =
-      this.blockSLASummary.total_up_percent_exclusion;
-    worksheet.getCell('AF6').value =
-      this.blockSLASummary.total_up_minutes_exclusion;
-
-    let row5 = worksheet.getRow(5);
-    row5.eachCell((cell) => {
-      cell.border = BORDER_STYLE;
-      cell.alignment = { horizontal: 'center' };
-      cell.font = { bold: true };
-    });
-
-    let row6 = worksheet.getRow(6);
-    row6.eachCell((cell) => {
-      cell.border = BORDER_STYLE;
-      cell.alignment = { horizontal: 'center' };
-    });
-
-    worksheet.addRow('');
-
-    worksheet.mergeCells('A9:B9');
-    let cellA11 = worksheet.getCell('A9');
-    cellA11.value = 'Block - SLA Device Level (%) & (Min)';
-    cellA11.style = TABLE_HEADING;
-    worksheet.getCell('B9').style = TABLE_HEADERS;
-
-    worksheet.mergeCells('A10:A11');
-    worksheet.mergeCells('B10:B11');
-    worksheet.mergeCells('C10:C11');
-    worksheet.mergeCells('D10:D11');
-    worksheet.mergeCells('E10:E11');
-    worksheet.mergeCells('F10:F11');
-    worksheet.mergeCells('G10:G11');
-    worksheet.mergeCells('H10:H11');
-    worksheet.mergeCells('I10:I11');
-    worksheet.mergeCells('J10:J11');
-
-    worksheet.mergeCells('K10:L10');
-    worksheet.mergeCells('M10:N10');
-    worksheet.mergeCells('O10:P10');
-    worksheet.mergeCells('Q10:R10');
-    worksheet.mergeCells('S10:T10');
-    worksheet.mergeCells('U10:V10');
-    worksheet.mergeCells('W10:X10');
-    worksheet.mergeCells('Y10:Z10');
-    worksheet.mergeCells('AA10:AB10');
-    worksheet.mergeCells('AC10:AD10');
-    worksheet.mergeCells('AE10:AF10');
-    worksheet.mergeCells('AG10:AH10');
-
-    worksheet.getCell('A10').value = BlockSLAFinalReportHeaders[0];
-    worksheet.getCell('B10').value = BlockSLAFinalReportHeaders[1];
-    worksheet.getCell('C10').value = BlockSLAFinalReportHeaders[2];
-    worksheet.getCell('D10').value = BlockSLAFinalReportHeaders[3];
-    worksheet.getCell('E10').value = BlockSLAFinalReportHeaders[4];
-    worksheet.getCell('F10').value = BlockSLAFinalReportHeaders[5];
-    worksheet.getCell('G10').value = BlockSLAFinalReportHeaders[6];
-    worksheet.getCell('H10').value = BlockSLAFinalReportHeaders[7];
-    worksheet.getCell('I10').value = BlockSLAFinalReportHeaders[8];
-    worksheet.getCell('J10').value = BlockSLAFinalReportHeaders[9];
-    worksheet.getCell('K10').value = BlockSLAFinalReportHeaders[10];
-    worksheet.getCell('M10').value = BlockSLAFinalReportHeaders[11];
-    worksheet.getCell('O10').value = BlockSLAFinalReportHeaders[12];
-    worksheet.getCell('Q10').value = BlockSLAFinalReportHeaders[13];
-    worksheet.getCell('S10').value = BlockSLAFinalReportHeaders[14];
-    worksheet.getCell('U10').value = BlockSLAFinalReportHeaders[15];
-    worksheet.getCell('W10').value = BlockSLAFinalReportHeaders[16];
-    worksheet.getCell('Y10').value = BlockSLAFinalReportHeaders[17];
-    worksheet.getCell('AA10').value = BlockSLAFinalReportHeaders[18];
-    worksheet.getCell('AC10').value = BlockSLAFinalReportHeaders[19];
-    worksheet.getCell('AE10').value = BlockSLAFinalReportHeaders[20];
-    worksheet.getCell('AG10').value = BlockSLAFinalReportHeaders[21];
-
-    let finalReportHeaders = worksheet.getRow(10);
-
-    finalReportHeaders.eachCell((cell) => {
-      cell.style = TABLE_HEADERS;
-    });
-
-    let k11 = worksheet.getCell('K11');
-    k11.value = VALUES.PERCENT;
-    k11.style = PERCENT_STYLE;
-    let l11 = worksheet.getCell('L11');
-    l11.value = VALUES.MINUTES;
-    l11.style = MINUTE_STYLE;
-
-    let m11 = worksheet.getCell('M11');
-    m11.value = VALUES.PERCENT;
-    m11.style = PERCENT_STYLE;
-    let n11 = worksheet.getCell('N11');
-    n11.value = VALUES.MINUTES;
-    n11.style = MINUTE_STYLE;
-
-    let o11 = worksheet.getCell('O11');
-    o11.value = VALUES.PERCENT;
-    o11.style = PERCENT_STYLE;
-    let p11 = worksheet.getCell('P11');
-    p11.value = VALUES.MINUTES;
-    p11.style = MINUTE_STYLE;
-
-    let q11 = worksheet.getCell('Q11');
-    q11.value = VALUES.PERCENT;
-    q11.style = PERCENT_STYLE;
-    let r11 = worksheet.getCell('R11');
-    r11.value = VALUES.MINUTES;
-    r11.style = MINUTE_STYLE;
-
-    let s11 = worksheet.getCell('S11');
-    s11.value = VALUES.PERCENT;
-    s11.style = PERCENT_STYLE;
-    let t11 = worksheet.getCell('T11');
-    t11.value = VALUES.MINUTES;
-    t11.style = MINUTE_STYLE;
-
-    let u11 = worksheet.getCell('U11');
-    u11.value = VALUES.PERCENT;
-    u11.style = PERCENT_STYLE;
-    let v11 = worksheet.getCell('V11');
-    v11.value = VALUES.MINUTES;
-    v11.style = MINUTE_STYLE;
-
-    let w11 = worksheet.getCell('W11');
-    w11.value = VALUES.PERCENT;
-    w11.style = PERCENT_STYLE;
-    let x11 = worksheet.getCell('X11');
-    x11.value = VALUES.MINUTES;
-    x11.style = MINUTE_STYLE;
-
-    let y11 = worksheet.getCell('Y11');
-    y11.value = VALUES.PERCENT;
-    y11.style = PERCENT_STYLE;
-    let z11 = worksheet.getCell('Z11');
-    z11.value = VALUES.MINUTES;
-    z11.style = MINUTE_STYLE;
-
-    let aa11 = worksheet.getCell('AA11');
-    aa11.value = VALUES.PERCENT;
-    aa11.style = PERCENT_STYLE;
-    let ab11 = worksheet.getCell('AB11');
-    ab11.value = VALUES.MINUTES;
-    ab11.style = MINUTE_STYLE;
-
-    let ac11 = worksheet.getCell('AC11');
-    ac11.value = VALUES.PERCENT;
-    ac11.style = PERCENT_STYLE;
-    let ad11 = worksheet.getCell('AD11');
-    ad11.value = VALUES.MINUTES;
-    ad11.style = MINUTE_STYLE;
-
-    let ae11 = worksheet.getCell('AE11');
-    ae11.value = VALUES.PERCENT;
-    ae11.style = PERCENT_STYLE;
-    let af11 = worksheet.getCell('AF11');
-    af11.value = VALUES.MINUTES;
-    af11.style = MINUTE_STYLE;
-
-    let AG11 = worksheet.getCell('AG11');
-    AG11.value = VALUES.PERCENT;
-    AG11.style = PERCENT_STYLE;
-    let AH11 = worksheet.getCell('AH11');
-    AH11.value = VALUES.MINUTES;
-    AH11.style = MINUTE_STYLE;
-
-    let row11 = worksheet.getRow(11);
-    row11.eachCell((cell) => {
-      cell.border = BORDER_STYLE;
-      cell.font = { bold: true };
-      cell.alignment = { horizontal: 'center' };
-    });
-
-    this.manipulatedNMSData.forEach((row: any) => {
-      let block_device_detail = BLOCK_DEVICE_DETAILS.filter(
-        (device: BlockDeviceDetail) => {
-          return device.ip_address == row.ip_address;
-        }
-      );
-      let [blockDeviceDetail] = block_device_detail;
-      let reportType: string = blockDeviceDetail.report_type;
-      let hostName: string = blockDeviceDetail.host_name;
-      let ipAddress: string = blockDeviceDetail.ip_address;
-      let state: string = blockDeviceDetail.state;
-      let cluster: string = blockDeviceDetail.cluster;
-      let district: string = blockDeviceDetail.district;
-      let districtLGDCode: number = blockDeviceDetail.district_lgd_code;
-      let blockName: string = blockDeviceDetail.block_name;
-      let blockLGDCode: string = blockDeviceDetail.block_lgd_code;
-      let noOfGPinBlock: number = blockDeviceDetail.no_of_gp_in_block;
-
-      let upPercent: number = row.up_percent;
-      let upMinute: number = row.total_uptime_in_minutes;
-      let downPercent: number = upPercent == 100 ? 0 : row.down_percent;
-      let downMinute: number = row.total_downtime_in_minutes;
-      let powerDownPercent: number =
-        upPercent == 100 ? 0 : row.power_downtime_in_percent;
-      let powerDownMinutes = row.power_downtime_in_minutes;
-      let fiberDownPercent: number = upPercent == 100 ? 0 : 0;
-      let fiberDownMinutes: number = upPercent == 100 ? 0 : 0;
-      let equipmentDownPercent: number = upPercent == 100 ? 0 : 0;
-      let equipmentDownMinutes: number = upPercent == 100 ? 0 : 0;
-      let hrtDownPercent: number = upPercent == 100 ? 0 : 0;
-      let hrtDownMinutes: number = upPercent == 100 ? 0 : 0;
-      let dcnDownPercent: number =
-        upPercent == 100 ? 0 : row.dcn_downtime_in_percent;
-      let dcnDownMinutes: number = row.dcn_downtime_in_minutes;
-      let plannedMaintanancePercent: number =
-        upPercent == 100 ? 0 : row.planned_maintenance_in_percent;
-      let plannedMaintananceMinutes: number =
-        upPercent == 100 ? 0 : row.planned_maintenance_in_minutes;
-      let unKnownDownPercent: number =
-        upPercent == 100 ? 0 : row.unknown_downtime_in_percent;
-      let unKnownDownMinutes: number =
-        upPercent == 100 ? 0 : row.unknown_downtime_in_minutes;
-      let totalExclusionPercent: number =
-        upPercent == 100
-          ? 0
-          : row.power_downtime_in_percent +
-            row.dcn_downtime_in_percent +
-            hrtDownPercent +
-            row.planned_maintenance_in_percent +
-            row.polling_time_in_percent;
-      let totalExclusionMinutes: number =
-        row.power_downtime_in_minutes +
-        row.dcn_downtime_in_minutes +
-        hrtDownMinutes +
-        row.planned_maintenance_in_minutes +
-        row.polling_time_in_minutes;
-      let pollingTimePercent: number = row.polling_time_in_percent;
-      let pollingTimeMinutes: number = row.polling_time_in_minutes;
-      let totalUpPercentSLAExclusion: number =
-        upPercent +
-        row.power_downtime_in_percent +
-        row.dcn_downtime_in_percent +
-        hrtDownPercent +
-        row.planned_maintenance_in_percent +
-        row.polling_time_in_percent;
-      let totalUpMinutesSLAExclusion: number =
-        upMinute +
-        row.power_downtime_in_minutes +
-        row.dcn_downtime_in_minutes +
-        hrtDownMinutes +
-        row.planned_maintenance_in_minutes +
-        row.polling_time_in_minutes;
-
-      const blockSummaryPercentRowValues = worksheet.addRow([
-        reportType,
-        hostName,
-        ipAddress,
-        state,
-        cluster,
-        district,
-        districtLGDCode,
-        blockName,
-        blockLGDCode,
-        noOfGPinBlock,
-        upPercent.toFixed(2),
-        upMinute.toFixed(2),
-        downPercent.toFixed(2),
-        downMinute.toFixed(2),
-        powerDownPercent.toFixed(2),
-        powerDownMinutes.toFixed(2),
-        fiberDownPercent.toFixed(2),
-        fiberDownMinutes.toFixed(2),
-        equipmentDownPercent.toFixed(2),
-        equipmentDownMinutes.toFixed(2),
-        hrtDownPercent.toFixed(2),
-        hrtDownMinutes.toFixed(2),
-        dcnDownPercent.toFixed(2),
-        dcnDownMinutes.toFixed(2),
-        plannedMaintanancePercent.toFixed(2),
-        plannedMaintananceMinutes.toFixed(2),
-        unKnownDownPercent.toFixed(2),
-        unKnownDownMinutes.toFixed(2),
-        totalExclusionPercent.toFixed(2),
-        totalExclusionMinutes.toFixed(2),
-        pollingTimePercent.toFixed(2),
-        pollingTimeMinutes.toFixed(2),
-        +totalUpPercentSLAExclusion.toFixed(2) > 100
-          ? '100.00'
-          : totalUpPercentSLAExclusion.toFixed(2),
-        totalUpMinutesSLAExclusion.toFixed(2),
-      ]);
-
-      blockSummaryPercentRowValues.eachCell((cell) => {
-        cell.border = BORDER_STYLE;
-        cell.alignment = { horizontal: 'left' };
-      });
-    });
-
-    // Generating Sheet 2
-    const ttCorelationWorkSheet = workbook.addWorksheet('Block-TT co-relation');
-    ttCorelationWorkSheet.columns = BLOCK_TT_CO_RELATION_COLUMNS_WIDTHS;
-    ttCorelationWorkSheet
-      .addRow(BLOCK_TT_CO_RELATION_HEADERS)
-      .eachCell((cell) => {
-        cell.style = TABLE_HEADERS;
-      });
-    this.ttCorelation.forEach(
-      (ttCorelationData: TTCorelation, index: number) => {
-        let block_device_detail = BLOCK_DEVICE_DETAILS.filter(
-          (device: BlockDeviceDetail) => {
-            return device.ip_address == ttCorelationData.ip;
-          }
-        );
-        let [blockDeviceDetail] = block_device_detail;
-        ttCorelationWorkSheet
-          .addRow([
-            index + 1,
-            ttCorelationData.ip,
-            blockDeviceDetail.block_name,
-            ttCorelationData.powerIssueTT.toString().split(',').join(', '),
-            ttCorelationData.linkIssueTT.toString().split(',').join(', '),
-            ttCorelationData.otherTT.toString().split(',').join(', '),
-          ])
-          .eachCell({ includeEmpty: true }, (cell) => {
-            cell.border = BORDER_STYLE;
-            cell.alignment = { horizontal: 'left' };
-          });
-      }
-    );
-
     workbook.xlsx.writeBuffer().then((buffer) => {
       this.sharedService.downloadFinalReport(
         buffer,
