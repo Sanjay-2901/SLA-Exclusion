@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
   GpAlertData,
-  GpCount,
   GpDeviceDetails,
   GpNMSData,
   GpSLASummary,
@@ -82,6 +81,17 @@ export class GpService {
     } else {
       return false;
     }
+  }
+
+  GpSummaryPercentvalueCalculation(
+    gpCount: number,
+    percentValue: number
+  ): string {
+    return gpCount !== 0
+      ? +(percentValue / gpCount).toFixed(2) > 100
+        ? '100.00'
+        : (percentValue / gpCount).toFixed(2)
+      : (0).toFixed(2);
   }
 
   categorizeRFO(
@@ -302,7 +312,8 @@ export class GpService {
   }
 
   calculateGpSlaSummary(
-    manipulatedGpNMSData: ManipulatedGpNMSData[]
+    manipulatedGpNMSData: ManipulatedGpNMSData[],
+    timeSpan: string
   ): GpSLASummary {
     let upPercent = 0;
     let upMinutes = 0;
@@ -371,39 +382,63 @@ export class GpService {
 
     return {
       report_type: 'GP-SLA',
-      time_span: '',
-      no_of_blocks: 79,
-      up_percent: (upPercent / gpCount).toFixed(2),
+      tag: 'Q&M GP',
+      time_span: timeSpan.replace(/Time Span: /, ''),
+      no_of_gp_devices: gpCount,
+      up_percent: this.GpSummaryPercentvalueCalculation(gpCount, upPercent),
       up_minutes: upMinutes.toFixed(2),
-      no_of_up_blocks: '',
-      down_percent_exclusive_of_sla: (100 - upPercent / gpCount).toFixed(2),
-      power_down_percent: (powerDownPercent / gpCount).toFixed(2),
-      power_down_minutes: powerDownMinutes.toFixed(2),
-      fibre_down_percent: (fiberDownPercent / gpCount).toFixed(2),
-      fibre_down_minutes: fiberDownMinute.toFixed(2),
-      equipment_down_percent: (equipmentDownPercent / gpCount).toFixed(2),
-      equipment_down_minutes: equipmentDownMinute.toFixed(2),
-      hrt_down_percent: (hrtDownPercent / gpCount).toFixed(2),
-      hrt_down_minutes: hrtDownMinute.toFixed(2),
-      dcn_down_percent: (dcnDownPercent / gpCount).toFixed(2),
-      dcn_down_minutes: dcnDownMinutes.toFixed(2),
-      planned_maintenance_percent: (
-        plannedMaintenancePercent / gpCount
-      ).toFixed(2),
-      planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
-      unknown_downtime_in_percent: (unKnownDownPercent / gpCount).toFixed(2),
-      unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
-      total_sla_exclusion_percent: (
-        cumulativeRfoDownInPercent / gpCount
-      ).toFixed(2),
-      total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
+      total_down_percent:
+        gpCount !== 0
+          ? +(100 - +(upPercent / gpCount)).toFixed(2) > 100
+            ? '100.00'
+            : (100 - +(upPercent / gpCount)).toFixed(2)
+          : '0.00',
       total_down_minutes: totalDownMinutes.toFixed(2),
-      total_down_percent: (100 - +(upPercent / gpCount)).toFixed(2),
-      total_up_percent_exclusion: (
-        (upPercent + cumulativeRfoDownInPercent) /
-        gpCount
-      ).toFixed(2),
+      power_down_percent: this.GpSummaryPercentvalueCalculation(
+        gpCount,
+        powerDownPercent
+      ),
+      power_down_minutes: powerDownMinutes.toFixed(2),
+      fibre_down_percent: this.GpSummaryPercentvalueCalculation(
+        gpCount,
+        fiberDownPercent
+      ),
+      fibre_down_minutes: fiberDownMinute.toFixed(2),
+      equipment_down_percent: this.GpSummaryPercentvalueCalculation(
+        gpCount,
+        equipmentDownPercent
+      ),
+      equipment_down_minutes: equipmentDownMinute.toFixed(2),
+      hrt_down_percent: this.GpSummaryPercentvalueCalculation(
+        gpCount,
+        hrtDownPercent
+      ),
+      hrt_down_minutes: hrtDownMinute.toFixed(2),
+      dcn_down_percent: this.GpSummaryPercentvalueCalculation(
+        gpCount,
+        dcnDownPercent
+      ),
+      dcn_down_minutes: dcnDownMinutes.toFixed(2),
+      planned_maintenance_percent: this.GpSummaryPercentvalueCalculation(
+        gpCount,
+        plannedMaintenancePercent
+      ),
+      planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
+      unknown_downtime_in_percent: this.GpSummaryPercentvalueCalculation(
+        gpCount,
+        unKnownDownPercent
+      ),
+      unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
+      total_sla_exclusion_percent: this.GpSummaryPercentvalueCalculation(
+        gpCount,
+        cumulativeRfoDownInPercent
+      ),
+      total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
 
+      total_up_percent_exclusion: this.GpSummaryPercentvalueCalculation(
+        gpCount,
+        upPercent + cumulativeRfoDownInPercent
+      ),
       total_up_minutes_exclusion: (
         upMinutes + cumulativeRfoDownInMinutes
       ).toFixed(2),
@@ -413,11 +448,9 @@ export class GpService {
   FrameGpFinalSlaReportWorkbook(
     workbook: ExcelJS.Workbook,
     workSheet: ExcelJS.Worksheet,
-    timeSpan: string,
     gpSlaSummary: GpSLASummary,
     gpSlaSummaryWithAlerts: GpSLASummary,
     gpSlaSummaryWithoutAlerts: GpSLASummary,
-    gpCount: GpCount,
     manipulatedGpNmsData: ManipulatedGpNMSData[],
     blockFinalreport: BlockDeviceLevelHeaders[],
     blockTTCorelationReport: TTCorelation[]
@@ -479,15 +512,20 @@ export class GpService {
       cell.style = TABLE_HEADERS;
     });
 
+    // GP SLA Summary Sections Common Columns
+
     workSheet.mergeCells('A5:A6');
     workSheet.mergeCells('B5:B6');
     workSheet.mergeCells('C5:J6');
-    workSheet.mergeCells('K5:L6');
 
-    workSheet.getCell('A5').value = 'GP - SLA';
-    workSheet.getCell('B5').value = 'O&M GP';
-    workSheet.getCell('C5').value = timeSpan.replace(/Time Span: /, '');
-    workSheet.getCell('K5').value = '5001';
+    workSheet.getCell('A5').value = gpSlaSummary.report_type;
+    workSheet.getCell('B5').value = gpSlaSummary.tag;
+    workSheet.getCell('C5').value = gpSlaSummary.time_span;
+
+    // Overall GP SLA Summary
+
+    workSheet.mergeCells('K5:L6');
+    workSheet.getCell('K5').value = gpSlaSummary.no_of_gp_devices;
 
     let M5 = workSheet.getCell('M5');
     M5.value = VALUES.PERCENT;
@@ -603,17 +641,15 @@ export class GpService {
       cell.alignment = { horizontal: 'center' };
     });
 
+    // GP's With Alerts Section in GP SLA Summary
+
     workSheet.mergeCells('I7:J7');
     let cellI7 = workSheet.getCell('I7');
     cellI7.value = "GP's with Alerts";
 
-    workSheet.mergeCells('I8:J8');
-    let cellI8 = workSheet.getCell('I8');
-    cellI8.value = "GP's without Alerts";
-
     workSheet.mergeCells('K7:L7');
     let cellK7 = workSheet.getCell('K7');
-    cellK7.value = gpCount.no_of_gp_with_alerts;
+    cellK7.value = gpSlaSummaryWithAlerts.no_of_gp_devices;
 
     workSheet.getCell('M7').value = gpSlaSummaryWithAlerts.up_percent;
     workSheet.getCell('N7').value = gpSlaSummaryWithAlerts.up_minutes;
@@ -657,9 +693,15 @@ export class GpService {
     });
     cellK7.font = { bold: true };
 
+    // GP's without Alerts Section in Summary
+
+    workSheet.mergeCells('I8:J8');
+    let cellI8 = workSheet.getCell('I8');
+    cellI8.value = "GP's without Alerts";
+
     workSheet.mergeCells('K8:L8');
     let cellK8 = workSheet.getCell('K8');
-    cellK8.value = gpCount.no_of_gp_without_alerts;
+    cellK8.value = gpSlaSummaryWithoutAlerts.no_of_gp_devices;
 
     workSheet.getCell('M8').value = gpSlaSummaryWithoutAlerts.up_percent;
     workSheet.getCell('N8').value = gpSlaSummaryWithoutAlerts.up_minutes;
@@ -723,6 +765,8 @@ export class GpService {
     cellA11.value = 'GP - SLA Device Level (%) & (Min)';
     cellA11.style = TABLE_HEADING;
     workSheet.getCell('B9').style = TABLE_HEADERS;
+
+    // GP Device Level Section Framing
 
     workSheet.mergeCells('A10:A11');
     workSheet.mergeCells('B10:B11');

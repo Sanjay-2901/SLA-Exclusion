@@ -101,30 +101,30 @@ export interface BlockAlertData {
 
 export interface BlockSLASummary {
   report_type: string;
+  tag: string;
   time_span: string;
   no_of_blocks: number;
+  no_of_gps: number;
   up_percent: string;
-  no_of_up_blocks: number | string;
-  power_down_percent: string;
-  fibre_down_percent: string;
-  equipment_down_percent: string;
-  hrt_down_percent: string;
-  dcn_down_percent: string;
-  planned_maintenance_percent: string;
-  down_percent_exclusive_of_sla: string;
-  total_sla_exclusion_percent: string;
-  total_sla_exclusion_minutes: string;
   up_minutes: string;
+  total_down_percent: string;
+  total_down_minutes: string;
+  power_down_percent: string;
   power_down_minutes: string;
-  dcn_down_minutes: string;
+  fibre_down_percent: string;
   fibre_down_minutes: string;
+  equipment_down_percent: string;
   equipment_down_minutes: string;
+  hrt_down_percent: string;
   hrt_down_minutes: string;
+  dcn_down_percent: string;
+  dcn_down_minutes: string;
+  planned_maintenance_percent: string;
   planned_maintenance_minutes: string;
   unknown_downtime_in_percent: string;
   unknown_downtime_in_minutes: string;
-  total_down_percent: string;
-  total_down_minutes: string;
+  total_sla_exclusion_percent: string;
+  total_sla_exclusion_minutes: string;
   total_up_percent_exclusion: string;
   total_up_minutes_exclusion: string;
 }
