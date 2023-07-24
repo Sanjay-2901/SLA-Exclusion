@@ -11,7 +11,7 @@ export interface BlockNMSData {
   total_up_time: string;
   type: string;
   up_percent: number;
-  up_time: number;
+  up_time: string;
   total_uptime_in_minutes?: number;
   total_downtime_in_minutes?: number;
 }

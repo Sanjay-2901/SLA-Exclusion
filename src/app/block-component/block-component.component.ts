@@ -264,13 +264,13 @@ export class BlockComponentComponent {
           departments: data[2],
           type: data[3],
           up_percent: data[4],
-          up_time: data[5],
+          up_time: this.sharedService.formatTimeInSlaReport(data[5]),
           down_percent: data[6],
-          down_time: data[7],
+          down_time: this.sharedService.formatTimeInSlaReport(data[7]),
           maintenance_percent: data[8],
-          maintenance_time: data[9],
+          maintenance_time: this.sharedService.formatTimeInSlaReport(data[9]),
           total_up_percent: data[10],
-          total_up_time: data[11],
+          total_up_time: this.sharedService.formatTimeInSlaReport(data[11]),
           created_date: data[12],
         };
         result.push(obj);
