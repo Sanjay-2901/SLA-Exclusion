@@ -225,9 +225,9 @@ export class ShqComponentComponent {
           departments: data[2],
           type: data[3],
           up_percent: data[4],
-          up_time: data[5],
+          up_time: this.sharedService.formatTimeInSlaReport(data[5]),
           down_percent: data[6],
-          down_time: data[7],
+          down_time: this.sharedService.formatTimeInSlaReport(data[7]),
           created_date: data[8],
         };
         result.push(obj);

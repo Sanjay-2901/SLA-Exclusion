@@ -57,6 +57,9 @@ export const IP_ADDRESS_PATTERN =
 export const TIME_SPAN_REGEX_PATTERN =
   /^Time Span: From \d{2} \w{3}  \d{4} \d{2}:\d{2}:\d{2} (AM|PM) To \d{2} \w{3}  \d{4} \d{2}:\d{2}:\d{2} (AM|PM)$/;
 
+export const FROM_DATE_REGEX = /From\s(\d{2}\s\w+\s\s\d{4}\s\d{2}:\d{2}:\d{2}\s(?:AM|PM))/;
+export const TO_DATE_REGEX = /To\s(\d{2}\s\w+\s\s\d{4}\s\d{2}:\d{2}:\d{2}\s(?:AM|PM))/;
+
 export const BlockSLASummarytHeaders = [
   'Report type',
   'TAG',

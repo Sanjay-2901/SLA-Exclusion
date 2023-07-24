@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import * as moment from 'moment';
+import { FROM_DATE_REGEX, TO_DATE_REGEX } from '../constants/constants';
 
 @Injectable({
   providedIn: 'root',
@@ -10,20 +11,18 @@ export class SharedService {
   calculateTimeInMinutes(timePeriod: string): number {
     if (timePeriod) {
       let totalTimeinMinutes = timePeriod.trim().split(' ');
-      if (timePeriod.includes('day')) {
-        return +(
-          parseInt(totalTimeinMinutes[0]) * 1440 +
-          parseInt(totalTimeinMinutes[2]) * 60 +
-          parseInt(totalTimeinMinutes[4]) +
-          parseInt(totalTimeinMinutes[6]) / 60
-        ).toFixed(2);
-      } else {
-        return +(
-          parseInt(totalTimeinMinutes[0]) * 60 +
-          parseInt(totalTimeinMinutes[2]) +
-          parseInt(totalTimeinMinutes[4]) / 60
-        ).toFixed(2);
-      }
+
+      let averageDaysPerYear = 365.25;
+      let averageDaysPerMonth = 30.44;
+
+      return +(
+        +parseInt(totalTimeinMinutes[0]) * averageDaysPerYear * 24 * 60 +
+        +parseInt(totalTimeinMinutes[2]) * averageDaysPerMonth * 24 * 60 +
+        +parseInt(totalTimeinMinutes[4]) * 1440 +
+        +parseInt(totalTimeinMinutes[6]) * 60 +
+        +parseInt(totalTimeinMinutes[8]) +
+        +parseInt(totalTimeinMinutes[10]) / 60
+      ).toFixed(2);
     } else {
       return 0;
     }
@@ -35,25 +34,111 @@ export class SharedService {
       : moment(time).format();
   }
 
+  extractFromDateFromTimeSpan(timeSpan: string) {
+    const matches = timeSpan.match(FROM_DATE_REGEX);
+    return matches ? matches[1] : null;
+  }
+
+  extractToDateFromTimeSpan(timeSpan: string) {
+    const matches = timeSpan.match(TO_DATE_REGEX);
+    return matches ? matches[1] : null;
+  }
+
+  extractYearFromTime(time: string) {
+    const matches = time.match(/(\d+)\s+year/);
+    return matches ? matches[1] : null;
+  }
+
+  extractMonthFromTime(time: string) {
+    const matches = time.match(/(\d+)\s+month/);
+    return matches ? matches[1] : null;
+  }
+
+  extractDayFromTime(time: string) {
+    const matches = time.match(/(\d+)\s+day/);
+    return matches ? matches[1] : null;
+  }
+
+  extractHourFromTime(time: string) {
+    const matches = time.match(/(\d+)\s+hour/);
+    return matches ? matches[1] : null;
+  }
+
+  extractMinuteFromTime(time: string) {
+    const matches = time.match(/(\d+)\s+minute/);
+    return matches ? matches[1] : null;
+  }
+
+  extractSecondFromTime(time: string) {
+    const matches = time.match(/(\d+)\s+second/);
+    return matches ? matches[1] : null;
+  }
+
+  formatTimeInSlaReport(timeFromSlaReport: string): string {
+    let years = timeFromSlaReport.includes('year')
+      ? this.extractYearFromTime(timeFromSlaReport)
+      : 0;
+    let months = timeFromSlaReport.includes('month')
+      ? this.extractMonthFromTime(timeFromSlaReport)
+      : 0;
+    let days = timeFromSlaReport.includes('day')
+      ? this.extractDayFromTime(timeFromSlaReport)
+      : 0;
+    let hours = timeFromSlaReport.includes('hour')
+      ? this.extractHourFromTime(timeFromSlaReport)
+      : 0;
+    let minutes = timeFromSlaReport.includes('minute')
+      ? this.extractMinuteFromTime(timeFromSlaReport)
+      : 0;
+    let seconds = timeFromSlaReport.includes('second')
+      ? this.extractSecondFromTime(timeFromSlaReport)
+      : 0;
+    return `${years} year(s) ${months} month(s) ${days} day(s) ${hours} hour(s) ${minutes} minute(s) ${seconds} second(s)`;
+  }
+
+  foramatDuration(diffInMilliSeconds: number): string {
+    let years = moment.duration(diffInMilliSeconds).years();
+    let months = moment.duration(diffInMilliSeconds).months();
+    let days = moment.duration(diffInMilliSeconds).days();
+    let hours = moment.duration(diffInMilliSeconds).hours();
+    let minutes = moment.duration(diffInMilliSeconds).minutes();
+    let seconds = moment.duration(diffInMilliSeconds).seconds();
+
+    return `${years} year(s) ${months} month(s) ${days} day(s) ${hours} hour(s) ${minutes} minute(s) ${seconds} second(s)`;
+  }
+
   setDuration(
     timeSpan: string,
     alarmStartTime: any,
     alarmClearTime: any,
     duration: string
   ): string {
-    let toDate = moment(
-      timeSpan.substring(timeSpan.indexOf('To ') + 3)
-    ).format();
+    let fromDate = this.extractFromDateFromTimeSpan(timeSpan);
+    let toDate = this.extractToDateFromTimeSpan(timeSpan);
 
-    if (moment(alarmClearTime).isAfter(moment(toDate))) {
+    if (
+      moment(alarmStartTime).isAfter(moment(fromDate)) &&
+      moment(alarmClearTime).isBefore(moment(toDate))
+    ) {
+      let diffInMilliSeconds = moment(alarmClearTime).diff(
+        moment(alarmStartTime)
+      );
+      return this.foramatDuration(diffInMilliSeconds);
+    } else if (
+      moment(alarmStartTime).isBefore(moment(fromDate)) &&
+      moment(alarmClearTime).isBefore(moment(toDate))
+    ) {
+      let diffInMilliSeconds = moment(alarmClearTime).diff(moment(fromDate));
+      return this.foramatDuration(diffInMilliSeconds);
+    } else if (
+      moment(alarmStartTime).isAfter(fromDate) &&
+      moment(alarmClearTime).isAfter(toDate)
+    ) {
       let diffInMilliSeconds = moment(toDate).diff(moment(alarmStartTime));
-      let days = moment.duration(diffInMilliSeconds).days();
-      let hours = moment.duration(diffInMilliSeconds).hours();
-      let minutes = moment.duration(diffInMilliSeconds).minutes();
-      let seconds = moment.duration(diffInMilliSeconds).seconds();
-      return `${days} day(s) ${hours} hour(s) ${minutes} minute(s) ${seconds} second(s)`;
+      return this.foramatDuration(diffInMilliSeconds);
     } else {
-      return duration;
+      let diffInMilliSeconds = moment(toDate).diff(moment(fromDate));
+      return this.foramatDuration(diffInMilliSeconds);
     }
   }
 
