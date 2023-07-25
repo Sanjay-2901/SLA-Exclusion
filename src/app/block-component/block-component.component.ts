@@ -433,14 +433,24 @@ export class BlockComponentComponent {
                 )
               ) {
                 if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
-                  powerDownArray.push(alertCriticalData);
-                  powerIssueTT.push(ttData.incident_id);
+                  if (
+                    !lodash.some(powerDownArray, alertCriticalData) &&
+                    !lodash.some(DCNDownArray, alertCriticalData)
+                  ) {
+                    powerDownArray.push(alertCriticalData);
+                    powerIssueTT.push(ttData.incident_id);
+                  }
                 } else if (
                   ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
                   ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
                 ) {
-                  DCNDownArray.push(alertCriticalData);
-                  linkIssueTT.push(ttData.incident_id);
+                  if (
+                    !lodash.some(powerDownArray, alertCriticalData) &&
+                    !lodash.some(DCNDownArray, alertCriticalData)
+                  ) {
+                    DCNDownArray.push(alertCriticalData);
+                    linkIssueTT.push(ttData.incident_id);
+                  }
                 } else {
                   otherTT.push(ttData.incident_id);
                 }

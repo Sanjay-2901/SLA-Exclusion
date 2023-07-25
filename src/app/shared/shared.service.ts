@@ -128,6 +128,15 @@ export class SharedService {
       moment(alarmStartTime).isBefore(moment(fromDate)) &&
       moment(alarmClearTime).isBefore(moment(toDate))
     ) {
+      // let diffInMilliSeconds = 0;
+      // if (moment(alarmClearTime).isBefore(fromDate)) {
+      //   diffInMilliSeconds = moment(alarmClearTime).diff(
+      //     moment(alarmStartTime)
+      //   );
+      //   diffInMilliSeconds = 0;
+      // } else {
+      //   diffInMilliSeconds = moment(alarmClearTime).diff(moment(fromDate));
+      // }
       let diffInMilliSeconds = moment(alarmClearTime).diff(moment(fromDate));
       return this.foramatDuration(diffInMilliSeconds);
     } else if (

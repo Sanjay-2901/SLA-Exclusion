@@ -120,14 +120,24 @@ export class ShqService {
               )
             ) {
               if (ttData.rfo == RFO_CATEGORIZATION.POWER_ISSUE) {
-                powerDownArray.push(alertCriticalData);
-                powerIssueTT.push(ttData.incident_id);
+                if (
+                  !lodash.some(DCNDownArray, alertCriticalData) &&
+                  !lodash.some(powerDownArray, alertCriticalData)
+                ) {
+                  powerIssueTT.push(ttData.incident_id);
+                  powerDownArray.push(alertCriticalData);
+                }
               } else if (
                 ttData.rfo == RFO_CATEGORIZATION.JIO_LINK_ISSUE ||
                 ttData.rfo == RFO_CATEGORIZATION.SWAN_ISSUE
               ) {
-                DCNDownArray.push(alertCriticalData);
-                linkIssueTT.push(ttData.incident_id);
+                if (
+                  !lodash.some(DCNDownArray, alertCriticalData) &&
+                  !lodash.some(powerDownArray, alertCriticalData)
+                ) {
+                  DCNDownArray.push(alertCriticalData);
+                  linkIssueTT.push(ttData.incident_id);
+                }
               } else {
                 otherTT.push(ttData.incident_id);
               }
@@ -237,8 +247,6 @@ export class ShqService {
     let unKnownDownPercent = 0;
     let cumulativeRfoDownInPercent = 0;
     let cumulativeRfoDownInMinutes = 0;
-    let totalSlaExclusionPercent = 0;
-    let totalSlaExclusionMinute = 0;
     let pollingTimePercent = 0;
     let pollingTimeMinutes = 0;
 
@@ -258,19 +266,11 @@ export class ShqService {
       cumulativeRfoDownInPercent +=
         nmsData.power_downtime_in_percent +
         nmsData.dcn_downtime_in_percent +
-        nmsData.unknown_downtime_in_percent;
+        nmsData.polling_time_in_percent;
       cumulativeRfoDownInMinutes +=
         nmsData.power_downtime_in_minutes +
         nmsData.dcn_downtime_in_minutes +
-        nmsData.unknown_downtime_in_minutes;
-      totalSlaExclusionPercent +=
-        nmsData.power_downtime_in_percent +
-        nmsData.dcn_downtime_in_percent +
-        nmsData.unknown_downtime_in_percent;
-      totalSlaExclusionMinute +=
-        nmsData.power_downtime_in_minutes +
-        nmsData.dcn_downtime_in_minutes +
-        nmsData.unknown_downtime_in_minutes;
+        nmsData.polling_time_in_minutes;
       pollingTimePercent +=
         nmsData.down_percent -
         (nmsData.power_downtime_in_percent +
@@ -320,10 +320,10 @@ export class ShqService {
       unknown_downtime_in_minutes:
         this.calculateCumulativeMinutes(unKnownDownMinutes),
       total_sla_exclusion_percent: this.calculateCumulativePercentage(
-        cumulativeRfoDownInPercent
+        cumulativeRfoDownInPercent - pollingTimePercent
       ),
       total_sla_exclusion_minute: this.calculateCumulativeMinutes(
-        cumulativeRfoDownInMinutes
+        cumulativeRfoDownInMinutes - pollingTimeMinutes
       ),
       total_up_percent: this.calculateCumulativePercentage(
         upPercent + cumulativeRfoDownInPercent
@@ -732,15 +732,13 @@ export class ShqService {
           ? 0
           : nmsData.power_downtime_in_percent +
             nmsData.dcn_downtime_in_percent +
-            hrtDownPercent +
-            nmsData.polling_time_in_percent;
+            hrtDownPercent;
       let totalSlaExclusionInMinute: number =
         upPercent == 100
           ? 0
           : nmsData.power_downtime_in_minutes +
             nmsData.dcn_downtime_in_minutes +
-            hrtDownMinutes +
-            nmsData.polling_time_in_minutes;
+            hrtDownMinutes;
       let pollingTimeInPercent: number =
         upPercent == 100 ? 0 : nmsData.polling_time_in_percent;
       let pollingTimeInMinute: number =
