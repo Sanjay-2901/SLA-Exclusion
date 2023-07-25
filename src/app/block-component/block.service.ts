@@ -66,8 +66,6 @@ export class BlockService {
     let unKnownDownPercent = 0;
     let cumulativeRfoDownInPercent = 0;
     let cumulativeRfoDownInMinutes = 0;
-    let totalExclusionPercent = 0;
-    let totalExclusionMinutes = 0;
     let pollingTimePercent = 0;
     let pollingTimeMinutes = 0;
     const blockCount = manipulatedNMSData.length;
@@ -107,16 +105,6 @@ export class BlockService {
         hrtDownMinute +
         nmsData.planned_maintenance_in_minutes +
         nmsData.polling_time_in_minutes;
-      totalExclusionPercent +=
-        nmsData.power_downtime_in_percent +
-        nmsData.dcn_downtime_in_percent +
-        nmsData.planned_maintenance_in_percent +
-        nmsData.unknown_downtime_in_percent;
-      totalExclusionMinutes +=
-        nmsData.power_downtime_in_minutes +
-        nmsData.dcn_downtime_in_minutes +
-        nmsData.planned_maintenance_in_minutes +
-        nmsData.unknown_downtime_in_minutes;
       pollingTimePercent += nmsData.polling_time_in_percent;
       pollingTimeMinutes += nmsData.polling_time_in_minutes;
     });
@@ -176,9 +164,11 @@ export class BlockService {
       unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
       total_sla_exclusion_percent: this.blockSummaryPercentValueCalculation(
         blockCount,
-        cumulativeRfoDownInPercent
+        cumulativeRfoDownInPercent - pollingTimePercent
       ),
-      total_sla_exclusion_minutes: cumulativeRfoDownInMinutes.toFixed(2),
+      total_sla_exclusion_minutes: (
+        cumulativeRfoDownInMinutes - pollingTimeMinutes
+      ).toFixed(2),
       total_up_percent_exclusion: this.blockSummaryPercentValueCalculation(
         blockCount,
         upPercent + cumulativeRfoDownInPercent
@@ -714,14 +704,12 @@ export class BlockService {
           : row.power_downtime_in_percent +
             row.dcn_downtime_in_percent +
             hrtDownPercent +
-            row.planned_maintenance_in_percent +
-            row.polling_time_in_percent;
+            row.planned_maintenance_in_percent;
       let totalExclusionMinutes: number =
         row.power_downtime_in_minutes +
         row.dcn_downtime_in_minutes +
         hrtDownMinutes +
-        row.planned_maintenance_in_minutes +
-        row.polling_time_in_minutes;
+        row.planned_maintenance_in_minutes;
       let pollingTimePercent: number = row.polling_time_in_percent;
       let pollingTimeMinutes: number = row.polling_time_in_minutes;
       let totalUpPercentSLAExclusion: number =
