@@ -22,7 +22,7 @@ export class SharedService {
         +parseInt(totalTimeinMinutes[6]) * 60 +
         +parseInt(totalTimeinMinutes[8]) +
         +parseInt(totalTimeinMinutes[10]) / 60
-      ).toFixed(2);
+      );
     } else {
       return 0;
     }
@@ -120,10 +120,7 @@ export class SharedService {
       moment(alarmStartTime).isAfter(moment(fromDate)) &&
       moment(alarmClearTime).isBefore(moment(toDate))
     ) {
-      let diffInMilliSeconds = moment(alarmClearTime).diff(
-        moment(alarmStartTime)
-      );
-      return this.foramatDuration(diffInMilliSeconds);
+      return this.formatTimeInSlaReport(duration);
     } else if (
       moment(alarmStartTime).isBefore(moment(fromDate)) &&
       moment(alarmClearTime).isBefore(moment(toDate))
