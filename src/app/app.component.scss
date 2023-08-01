@@ -1,3 +1,10 @@
-.card{
-    min-height: 200px;
+.card {
+  min-height: 200px;
+}
+
+a {
+  cursor: pointer;
+  text-decoration: underline !important;
+  font-style: italic;
+  font-size: 14px;
 }
