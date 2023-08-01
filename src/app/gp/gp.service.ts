@@ -9,10 +9,14 @@ import {
 } from './gp.model';
 import {
   ALERT_DOWN_MESSAGE,
+  BLOCK_ALERT_REPORT_HEADERS,
   BORDER_STYLE,
+  GP_ALERT_REPORT_HEADERS,
   GP_DEVICE_DETAILS,
   GP_FINAL_REPORT_DEVICE_LEVEL_HEADERS,
+  GP_INPUT_FILE_NAMES,
   GP_SLA_FINAL_REPORT_COLUMN_WIDTHS,
+  GP_SLA_REPORT_HEADERS,
   GP_SUMMARY_HEADERS,
   GP_TT_CO_RELATION_COLUMN_WIDTHS,
   GP_TT_CO_RELATION_HEADERS,
@@ -24,6 +28,7 @@ import {
   SHEET_HEADING,
   TABLE_HEADERS,
   TABLE_HEADING,
+  TT_REPORT_HEADERS,
   UNKNOWN_COLUMN_COLOR,
   VALUES,
 } from '../constants/constants';
@@ -374,7 +379,7 @@ export class GpService {
       tag: 'Q&M GP',
       time_span: timeSpan.replace(/Time Span: /, ''),
       no_of_gp_devices: gpCount,
-      up_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      up_percent: this.sharedService.CalculateSummaryPercentageValue(
         gpCount,
         upPercent
       ),
@@ -386,46 +391,46 @@ export class GpService {
             : 100 - upPercent / gpCount
           : 0,
       total_down_minutes: totalDownMinutes,
-      power_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      power_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         gpCount,
         powerDownPercent
       ),
       power_down_minutes: powerDownMinutes,
-      fibre_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      fibre_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         gpCount,
         fiberDownPercent
       ),
       fibre_down_minutes: fiberDownMinute,
       equipment_down_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           gpCount,
           equipmentDownPercent
         ),
       equipment_down_minutes: equipmentDownMinute,
-      hrt_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      hrt_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         gpCount,
         hrtDownPercent
       ),
       hrt_down_minutes: hrtDownMinute,
-      dcn_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      dcn_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         gpCount,
         dcnDownPercent
       ),
       dcn_down_minutes: dcnDownMinutes,
       planned_maintenance_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           gpCount,
           plannedMaintenancePercent
         ),
       planned_maintenance_minutes: plannedMaintenanceMinutes,
       unknown_downtime_in_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           gpCount,
           unKnownDownPercent
         ),
       unknown_downtime_in_minutes: unKnownDownMinutes,
       total_sla_exclusion_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           gpCount,
           cumulativeRfoDownInPercent - pollingTimePercent
         ),
@@ -433,7 +438,7 @@ export class GpService {
         cumulativeRfoDownInMinutes - pollingTimeMinutes,
 
       total_up_percent_exclusion:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           gpCount,
           upPercent + cumulativeRfoDownInPercent
         ),
@@ -1105,5 +1110,55 @@ export class GpService {
           });
       }
     );
+  }
+
+  downloadGpInputTemplate(): void {
+    const workbook = new ExcelJS.Workbook();
+    const slaWorksheet = workbook.addWorksheet(GP_INPUT_FILE_NAMES[0]);
+    GP_SLA_REPORT_HEADERS.forEach((_, index) => {
+      slaWorksheet.getColumn(index + 1).width = 40;
+    });
+    slaWorksheet.getColumn(1).width = 80;
+    slaWorksheet.getCell('A1').value =
+      'Time Span: From 01 May  2023 12:00:00 AM To 01 May  2023 11:59:59 PM (Example)';
+    slaWorksheet.addRow(GP_SLA_REPORT_HEADERS);
+
+    const gpAlertWorksheet = workbook.addWorksheet(GP_INPUT_FILE_NAMES[2]);
+
+    GP_ALERT_REPORT_HEADERS.forEach((_, index) => {
+      gpAlertWorksheet.getColumn(index + 1).width = 40;
+    });
+
+    gpAlertWorksheet.addRow(GP_ALERT_REPORT_HEADERS);
+
+    const gpNocTTWorksheet = workbook.addWorksheet(GP_INPUT_FILE_NAMES[1]);
+    gpNocTTWorksheet.addRow(TT_REPORT_HEADERS);
+    TT_REPORT_HEADERS.forEach((_, index) => {
+      gpNocTTWorksheet.getColumn(index + 1).width = 30;
+    });
+
+    const blockSLAExclusionReportSheet = workbook.addWorksheet(
+      GP_INPUT_FILE_NAMES[3]
+    );
+    blockSLAExclusionReportSheet.getColumn(1).width = 90;
+    blockSLAExclusionReportSheet.getCell('A1').value =
+      'Kindly upload the Block SLA Exclusion Report in this sheet';
+
+    const blockCoRelationReportSheet = workbook.addWorksheet(
+      GP_INPUT_FILE_NAMES[4]
+    );
+    blockCoRelationReportSheet.getColumn(1).width = 80;
+    blockCoRelationReportSheet.getCell('A1').value =
+      'Kindly upload the Block-TT co-relation Report in this sheet';
+
+    const blockAlertReportSheet = workbook.addWorksheet(GP_INPUT_FILE_NAMES[5]);
+    blockAlertReportSheet.addRow(BLOCK_ALERT_REPORT_HEADERS);
+    BLOCK_ALERT_REPORT_HEADERS.forEach((_, index) => {
+      blockAlertReportSheet.getColumn(index + 1).width = 30;
+    });
+
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      this.sharedService.downloadFinalReport(buffer, 'gp_input_template', true);
+    });
   }
 }

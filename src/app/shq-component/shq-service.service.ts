@@ -283,63 +283,63 @@ export class ShqService {
       tag: 'SHQ Core Device',
       time_span: timeSpan.replace(/Time Span: /, ''),
       no_of_shq_devices: shqCount,
-      up_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      up_percent: this.sharedService.CalculateSummaryPercentageValue(
         shqCount,
         upPercent
       ),
       up_minutes: upMinutes,
       total_down_exclusive_of_sla_exclusion_percent: +(
         100 -
-        this.sharedService.CaloculateSummaryPercentageValue(shqCount, upPercent)
+        this.sharedService.CalculateSummaryPercentageValue(shqCount, upPercent)
       ),
       total_down_exclusive_of_sla_exclusion_minute:
         totalDownExclusiveOfSlaExclusionInMinute,
-      power_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      power_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         shqCount,
         powerDownPercent
       ),
       power_dowm_minute: powerDownMinutes,
-      fibre_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      fibre_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         shqCount,
         fiberDownPercent
       ),
       fiber_down_minute: fiberDownMinute,
       equipment_down_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           shqCount,
           equipmentDownPercent
         ),
       equipment_down_minute: equipmentDownMinute,
-      hrt_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      hrt_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         shqCount,
         hrtDownPercent
       ),
       hrt_down_minute: hrtDownMinute,
-      dcn_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      dcn_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         shqCount,
         dcnDownPercent
       ),
       dcn_down_minute: dcnDownMinutes,
       planned_maintenance_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           shqCount,
           plannedMaintenancePercent
         ),
       planned_maintenance_minute: plannedMaitenanceMinute,
       unknown_downtime_in_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           shqCount,
           unKnownDownPercent
         ),
       unknown_downtime_in_minutes: unKnownDownMinutes,
       total_sla_exclusion_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           shqCount,
           cumulativeRfoDownInPercent - pollingTimePercent
         ),
       total_sla_exclusion_minute:
         cumulativeRfoDownInMinutes - pollingTimeMinutes,
-      total_up_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      total_up_percent: this.sharedService.CalculateSummaryPercentageValue(
         shqCount,
         upPercent + cumulativeRfoDownInPercent
       ),
