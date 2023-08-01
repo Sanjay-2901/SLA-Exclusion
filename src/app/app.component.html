@@ -52,11 +52,20 @@
           <div class="card bg-danger text-white w-50">
             <div class="card-body">
               <h5 class="card-title">GP Devices</h5>
-              <p class="card-text">Select your input files for GP Devices.</p>
-              <app-gp
-                [shouldDisable]="shouldDisable"
-                (isGpLoading)="isGpLoading($event)"
-              ></app-gp>
+              <div class="mt-4">
+                <p class="card-text mb-2">
+                  Select your input files for GP Devices.
+                </p>
+                <app-gp
+                  [shouldDisable]="shouldDisable"
+                  (isGpLoading)="isGpLoading($event)"
+                ></app-gp>
+                <div class="mt-4">
+                  <a (click)="this.gpService.downloadGpInputTemplate()"
+                    >Click here to download template</a
+                  >
+                </div>
+              </div>
             </div>
           </div>
         </div>

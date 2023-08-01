@@ -5,12 +5,11 @@
     (change)="onFileChange($event)"
     multiple="false"
     accept=".xlsx"
-    class="p-4"
     [disabled]="isLoading || shouldDisable"
     *ngIf="!isLoading"
   />
 
-  <div *ngIf="isLoading" class="align-self-center mt-5">
+  <div *ngIf="isLoading" class="align-self-center">
     <div class="d-flex">
       <div class="loader"></div>
       <p class="ms-2">Loading...</p>

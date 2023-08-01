@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { BlockService } from './block-component/block.service';
 import { ShqService } from './shq-component/shq-service.service';
+import { GpService } from './gp/gp.service';
 
 @Component({
   selector: 'app-root',
@@ -11,7 +12,8 @@ export class AppComponent {
   shouldDisable: boolean = false;
   constructor(
     public blockService: BlockService,
-    public shqService: ShqService
+    public shqService: ShqService,
+    public gpService: GpService
   ) {}
 
   isBlockLoading(event: boolean): void {

@@ -148,7 +148,7 @@ export class SharedService {
     }
   }
 
-  CaloculateSummaryPercentageValue(
+  CalculateSummaryPercentageValue(
     deviceCount: number,
     percentValue: number
   ): number {
