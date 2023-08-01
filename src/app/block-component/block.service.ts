@@ -34,19 +34,6 @@ import { SharedService } from '../shared/shared.service';
 export class BlockService {
   constructor(private sharedService: SharedService) {}
 
-  blockSummaryPercentValueCalculation(
-    blockCount: number,
-    percentValue: number
-  ): string {
-    if (blockCount !== 0) {
-      return +(percentValue / blockCount).toFixed(2) > 100
-        ? '100.00'
-        : (percentValue / blockCount).toFixed(2);
-    } else {
-      return (0).toFixed(2);
-    }
-  }
-
   calculateBlockSlaSummary(
     manipulatedNMSData: ManipulatedNMSData[],
     timeSpan: string
@@ -120,67 +107,69 @@ export class BlockService {
       time_span: timeSpan.replace(/Time Span: /, ''),
       no_of_blocks: blockCount,
       no_of_gps: gpCount,
-      up_percent: this.blockSummaryPercentValueCalculation(
+      up_percent: this.sharedService.CaloculateSummaryPercentageValue(
         blockCount,
         upPercent
       ),
-      up_minutes: upMinutes.toFixed(2),
+      up_minutes: upMinutes,
       total_down_percent:
         blockCount !== 0
-          ? +(100 - +(upPercent / blockCount)).toFixed(2) > 100
-            ? '100.00'
-            : (100 - +(upPercent / blockCount)).toFixed(2)
-          : (0).toFixed(2),
-      total_down_minutes: totalDownMinutes.toFixed(2),
-      power_down_percent: this.blockSummaryPercentValueCalculation(
+          ? 100 - upPercent / blockCount > 100
+            ? 100
+            : 100 - +(upPercent / blockCount)
+          : 0,
+      total_down_minutes: totalDownMinutes,
+      power_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
         blockCount,
         powerDownPercent
       ),
-      power_down_minutes: powerDownMinutes.toFixed(2),
-      fibre_down_percent: this.blockSummaryPercentValueCalculation(
+      power_down_minutes: powerDownMinutes,
+      fibre_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
         blockCount,
         fiberDownPercent
       ),
-      fibre_down_minutes: fiberDownMinute.toFixed(2),
-      equipment_down_percent: this.blockSummaryPercentValueCalculation(
-        blockCount,
-        equipmentDownPercent
-      ),
-      equipment_down_minutes: equipmentDownMinute.toFixed(2),
-      hrt_down_percent: this.blockSummaryPercentValueCalculation(
+      fibre_down_minutes: fiberDownMinute,
+      equipment_down_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          blockCount,
+          equipmentDownPercent
+        ),
+      equipment_down_minutes: equipmentDownMinute,
+      hrt_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
         blockCount,
         hrtDownPercent
       ),
-      hrt_down_minutes: hrtDownMinute.toFixed(2),
-      dcn_down_percent: this.blockSummaryPercentValueCalculation(
+      hrt_down_minutes: hrtDownMinute,
+      dcn_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
         blockCount,
         dcnDownPercent
       ),
-      dcn_down_minutes: dcnDownMinutes.toFixed(2),
-      planned_maintenance_percent: this.blockSummaryPercentValueCalculation(
-        blockCount,
-        plannedMaintenancePercent
-      ),
-      planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
-      unknown_downtime_in_percent: this.blockSummaryPercentValueCalculation(
-        blockCount,
-        unKnownDownPercent
-      ),
-      unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
-      total_sla_exclusion_percent: this.blockSummaryPercentValueCalculation(
-        blockCount,
-        cumulativeRfoDownInPercent - pollingTimePercent
-      ),
-      total_sla_exclusion_minutes: (
-        cumulativeRfoDownInMinutes - pollingTimeMinutes
-      ).toFixed(2),
-      total_up_percent_exclusion: this.blockSummaryPercentValueCalculation(
-        blockCount,
-        upPercent + cumulativeRfoDownInPercent
-      ),
-      total_up_minutes_exclusion: (
-        upMinutes + cumulativeRfoDownInMinutes
-      ).toFixed(2),
+      dcn_down_minutes: dcnDownMinutes,
+      planned_maintenance_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          blockCount,
+          plannedMaintenancePercent
+        ),
+      planned_maintenance_minutes: plannedMaintenanceMinutes,
+      unknown_downtime_in_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          blockCount,
+          unKnownDownPercent
+        ),
+      unknown_downtime_in_minutes: unKnownDownMinutes,
+      total_sla_exclusion_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          blockCount,
+          cumulativeRfoDownInPercent - pollingTimePercent
+        ),
+      total_sla_exclusion_minutes:
+        cumulativeRfoDownInMinutes - pollingTimeMinutes,
+      total_up_percent_exclusion:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          blockCount,
+          upPercent + cumulativeRfoDownInPercent
+        ),
+      total_up_minutes_exclusion: upMinutes + cumulativeRfoDownInMinutes,
     };
   }
 
@@ -370,9 +359,12 @@ export class BlockService {
     });
 
     let row6 = workSheet.getRow(6);
-    row6.eachCell((cell) => {
+    row6.eachCell((cell, colNumber: number) => {
       cell.border = BORDER_STYLE;
       cell.alignment = { horizontal: 'center' };
+      if (colNumber > 10) {
+        cell.numFmt = '0.00';
+      }
     });
 
     // Block SLA Summary With Alerts section Framing
@@ -427,11 +419,14 @@ export class BlockService {
       blockSLASummaryWithAlerts.total_up_minutes_exclusion;
 
     let row7 = workSheet.getRow(7);
-    row7.eachCell((cell: ExcelJS.Cell) => {
+    row7.eachCell((cell: ExcelJS.Cell, colNumber: number) => {
       cell.style = {
         border: BORDER_STYLE,
         alignment: { horizontal: 'center' },
       };
+      if (colNumber > 10) {
+        cell.numFmt = '0.00';
+      }
     });
     F7.font = { bold: true };
 
@@ -491,11 +486,14 @@ export class BlockService {
       blockSLASummaryWithoutAlerts.total_up_minutes_exclusion;
 
     let row8 = workSheet.getRow(8);
-    row8.eachCell((cell: ExcelJS.Cell) => {
+    row8.eachCell((cell: ExcelJS.Cell, colNumber: number) => {
       cell.style = {
         border: BORDER_STYLE,
         alignment: { horizontal: 'center' },
       };
+      if (colNumber > 10) {
+        cell.numFmt = '0.00';
+      }
     });
     F8.font = { bold: true };
 
@@ -743,32 +741,30 @@ export class BlockService {
         blockName,
         blockLGDCode,
         noOfGPinBlock,
-        upPercent.toFixed(2),
-        upMinute.toFixed(2),
-        downPercent.toFixed(2),
-        downMinute.toFixed(2),
-        powerDownPercent.toFixed(2),
-        powerDownMinutes.toFixed(2),
-        fiberDownPercent.toFixed(2),
-        fiberDownMinutes.toFixed(2),
-        equipmentDownPercent.toFixed(2),
-        equipmentDownMinutes.toFixed(2),
-        hrtDownPercent.toFixed(2),
-        hrtDownMinutes.toFixed(2),
-        dcnDownPercent.toFixed(2),
-        dcnDownMinutes.toFixed(2),
-        plannedMaintanancePercent.toFixed(2),
-        plannedMaintananceMinutes.toFixed(2),
-        unKnownDownPercent.toFixed(2),
-        unKnownDownMinutes.toFixed(2),
-        totalExclusionPercent.toFixed(2),
-        totalExclusionMinutes.toFixed(2),
-        pollingTimePercent.toFixed(2),
-        pollingTimeMinutes.toFixed(2),
-        +totalUpPercentSLAExclusion.toFixed(2) > 100
-          ? '100.00'
-          : totalUpPercentSLAExclusion.toFixed(2),
-        totalUpMinutesSLAExclusion.toFixed(2),
+        upPercent,
+        upMinute,
+        downPercent,
+        downMinute,
+        powerDownPercent,
+        powerDownMinutes,
+        fiberDownPercent,
+        fiberDownMinutes,
+        equipmentDownPercent,
+        equipmentDownMinutes,
+        hrtDownPercent,
+        hrtDownMinutes,
+        dcnDownPercent,
+        dcnDownMinutes,
+        plannedMaintanancePercent,
+        plannedMaintananceMinutes,
+        unKnownDownPercent,
+        unKnownDownMinutes,
+        totalExclusionPercent,
+        totalExclusionMinutes,
+        pollingTimePercent,
+        pollingTimeMinutes,
+        +totalUpPercentSLAExclusion > 100 ? 100 : totalUpPercentSLAExclusion,
+        totalUpMinutesSLAExclusion,
       ]);
 
       const unknownPercentColumn = blockDeviceLevelRowValues.getCell(27);
@@ -777,9 +773,12 @@ export class BlockService {
       const unknownMinuteColumn = blockDeviceLevelRowValues.getCell(28);
       unknownMinuteColumn.style = UNKNOWN_COLUMN_COLOR;
 
-      blockDeviceLevelRowValues.eachCell((cell) => {
+      blockDeviceLevelRowValues.eachCell((cell, colNumber: number) => {
         cell.border = BORDER_STYLE;
         cell.alignment = { horizontal: 'left' };
+        if (colNumber > 10) {
+          cell.numFmt = '0.00';
+        }
       });
     });
 
