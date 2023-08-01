@@ -159,14 +159,23 @@ export class SharedService {
       : 0;
   }
 
-  downloadFinalReport(buffer: ArrayBuffer, fileName: string) {
+  downloadFinalReport(
+    buffer: ArrayBuffer,
+    fileName: string,
+    isInputTemplate?: boolean
+  ) {
     const data = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(data);
-    link.download =
-      fileName + ' ' + moment().format('DD/MM/YYYY, hh:mm') + '.xlsx';
+    if (!isInputTemplate) {
+      link.download =
+        fileName + ' ' + moment().format('DD/MM/YYYY, hh:mm') + '.xlsx';
+    } else {
+      link.download = fileName;
+    }
     link.click();
+    link.remove();
   }
 }

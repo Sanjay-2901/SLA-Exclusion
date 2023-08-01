@@ -6,8 +6,11 @@ import {
   TTCorelation,
 } from './block-component.model';
 import {
+  BLOCK_ALERT_REPORT_HEADERS,
   BLOCK_DEVICE_DETAILS,
+  BLOCK_INPUT_FILE_NAMES,
   BLOCK_SLA_FINAL_REPORT_COLUMN_WIDTHS,
+  BLOCK_SLA_REPORT_HEADERS,
   BLOCK_TT_CO_RELATION_COLUMNS_WIDTHS,
   BLOCK_TT_CO_RELATION_HEADERS,
   BORDER_STYLE,
@@ -19,6 +22,7 @@ import {
   SHEET_HEADING,
   TABLE_HEADERS,
   TABLE_HEADING,
+  TT_REPORT_HEADERS,
   UNKNOWN_COLUMN_COLOR,
   VALUES,
 } from '../constants/constants';
@@ -806,6 +810,40 @@ export class BlockService {
           cell.border = BORDER_STYLE;
           cell.alignment = { horizontal: 'left' };
         });
+    });
+  }
+
+  downloadBlockInputTemplate(): void {
+    const workbook = new ExcelJS.Workbook();
+    const slaWorksheet = workbook.addWorksheet(BLOCK_INPUT_FILE_NAMES[0]);
+    BLOCK_SLA_REPORT_HEADERS.forEach((_, index) => {
+      slaWorksheet.getColumn(index + 1).width = 40;
+    });
+    slaWorksheet.getColumn(1).width = 80;
+    slaWorksheet.getCell('A1').value =
+      'Time Span: From 01 May  2023 12:00:00 AM To 01 May  2023 11:59:59 PM (Example)';
+    slaWorksheet.addRow(BLOCK_SLA_REPORT_HEADERS);
+
+    const blockAlertWorksheet = workbook.addWorksheet(
+      BLOCK_INPUT_FILE_NAMES[2]
+    );
+    BLOCK_ALERT_REPORT_HEADERS.forEach((_, index) => {
+      blockAlertWorksheet.getColumn(index + 1).width = 40;
+    });
+    blockAlertWorksheet.addRow(BLOCK_ALERT_REPORT_HEADERS);
+
+    const blockTTWorksheet = workbook.addWorksheet(BLOCK_INPUT_FILE_NAMES[1]);
+    blockTTWorksheet.addRow(TT_REPORT_HEADERS);
+    TT_REPORT_HEADERS.forEach((_, index) => {
+      blockTTWorksheet.getColumn(index + 1).width = 30;
+    });
+
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      this.sharedService.downloadFinalReport(
+        buffer,
+        'Block_Input_Template',
+        true
+      );
     });
   }
 }
