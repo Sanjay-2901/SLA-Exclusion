@@ -107,7 +107,7 @@ export class BlockService {
       time_span: timeSpan.replace(/Time Span: /, ''),
       no_of_blocks: blockCount,
       no_of_gps: gpCount,
-      up_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      up_percent: this.sharedService.CalculateSummaryPercentageValue(
         blockCount,
         upPercent
       ),
@@ -119,53 +119,53 @@ export class BlockService {
             : 100 - +(upPercent / blockCount)
           : 0,
       total_down_minutes: totalDownMinutes,
-      power_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      power_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         blockCount,
         powerDownPercent
       ),
       power_down_minutes: powerDownMinutes,
-      fibre_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      fibre_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         blockCount,
         fiberDownPercent
       ),
       fibre_down_minutes: fiberDownMinute,
       equipment_down_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           blockCount,
           equipmentDownPercent
         ),
       equipment_down_minutes: equipmentDownMinute,
-      hrt_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      hrt_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         blockCount,
         hrtDownPercent
       ),
       hrt_down_minutes: hrtDownMinute,
-      dcn_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+      dcn_down_percent: this.sharedService.CalculateSummaryPercentageValue(
         blockCount,
         dcnDownPercent
       ),
       dcn_down_minutes: dcnDownMinutes,
       planned_maintenance_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           blockCount,
           plannedMaintenancePercent
         ),
       planned_maintenance_minutes: plannedMaintenanceMinutes,
       unknown_downtime_in_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           blockCount,
           unKnownDownPercent
         ),
       unknown_downtime_in_minutes: unKnownDownMinutes,
       total_sla_exclusion_percent:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           blockCount,
           cumulativeRfoDownInPercent - pollingTimePercent
         ),
       total_sla_exclusion_minutes:
         cumulativeRfoDownInMinutes - pollingTimeMinutes,
       total_up_percent_exclusion:
-        this.sharedService.CaloculateSummaryPercentageValue(
+        this.sharedService.CalculateSummaryPercentageValue(
           blockCount,
           upPercent + cumulativeRfoDownInPercent
         ),
