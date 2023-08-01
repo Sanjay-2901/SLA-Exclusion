@@ -15,13 +15,17 @@ import {
   SEVERITY_CRITICAL,
   SEVERITY_WARNING,
   SHEET_HEADING,
+  SHQ_ALERT_REPORT_HEADERS,
   SHQ_DEVICE_LEVEL_HEADERS,
+  SHQ_INPUT_FILE_NAMES,
+  SHQ_SLA_REPORT_HEADERS,
   SHQ_SLQ_FINAL_REPORT_COLUMN_WIDTHS,
   SHQ_SUMMARY_HEADERS,
   SHQ_TT_CO_RELATION_COLUMNS,
   SHQ_TT_CO_RELATION_HEADERS,
   TABLE_HEADERS,
   TABLE_HEADING,
+  TT_REPORT_HEADERS,
   VALUES,
   VMWAREDEVICE,
 } from '../constants/constants';
@@ -845,5 +849,37 @@ export class ShqService {
           });
       }
     );
+  }
+
+  downloadShqInputTemplate(): void {
+    const workbook = new ExcelJS.Workbook();
+    const slaWorksheet = workbook.addWorksheet(SHQ_INPUT_FILE_NAMES[0]);
+    SHQ_SLA_REPORT_HEADERS.forEach((_, index) => {
+      slaWorksheet.getColumn(index + 1).width = 40;
+    });
+    slaWorksheet.getColumn(1).width = 80;
+    slaWorksheet.getCell('A1').value =
+      'Time Span: From 01 May  2023 12:00:00 AM To 01 May  2023 11:59:59 PM (Example)';
+    slaWorksheet.addRow(SHQ_SLA_REPORT_HEADERS);
+
+    const blockAlertWorksheet = workbook.addWorksheet(SHQ_INPUT_FILE_NAMES[2]);
+    SHQ_ALERT_REPORT_HEADERS.forEach((_, index) => {
+      blockAlertWorksheet.getColumn(index + 1).width = 40;
+    });
+    blockAlertWorksheet.addRow(SHQ_ALERT_REPORT_HEADERS);
+
+    const blockTTWorksheet = workbook.addWorksheet(SHQ_INPUT_FILE_NAMES[1]);
+    blockTTWorksheet.addRow(TT_REPORT_HEADERS);
+    TT_REPORT_HEADERS.forEach((_, index) => {
+      blockTTWorksheet.getColumn(index + 1).width = 30;
+    });
+
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      this.sharedService.downloadFinalReport(
+        buffer,
+        'SHQ_Input_Template',
+        true
+      );
+    });
   }
 }

@@ -8,12 +8,21 @@
       <div class="col-sm-6">
         <div class="card bg-secondary text-white">
           <div class="card-body">
-            <h5 class="card-title">SHQ Devices</h5>
-            <p class="card-text">Select your input files for SHQ Devices.</p>
-            <app-shq-component
-              [shouldDisable]="shouldDisable"
-              (isShqLoading)="isShqLoading($event)"
-            ></app-shq-component>
+            <h5 class="card-title pb-2">SHQ Devices</h5>
+            <div class="mt-4">
+              <p class="card-text mb-2">
+                Select your input files for SHQ Devices.
+              </p>
+              <app-shq-component
+                [shouldDisable]="shouldDisable"
+                (isShqLoading)="isShqLoading($event)"
+              ></app-shq-component>
+              <div class="mt-4">
+                <a (click)="this.shqService.downloadShqInputTemplate()"
+                  >Click here to download template</a
+                >
+              </div>
+            </div>
           </div>
         </div>
       </div>
