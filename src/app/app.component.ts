@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { SharedService } from './shared/shared.service';
 import { BlockService } from './block-component/block.service';
+import { ShqService } from './shq-component/shq-service.service';
 import { GpService } from './gp/gp.service';
 
 @Component({
@@ -10,7 +10,11 @@ import { GpService } from './gp/gp.service';
 })
 export class AppComponent {
   shouldDisable: boolean = false;
-  constructor(public blockService: BlockService, public gpService: GpService) {}
+  constructor(
+    public blockService: BlockService,
+    public shqService: ShqService,
+    public gpService: GpService
+  ) {}
 
   isBlockLoading(event: boolean): void {
     this.shouldDisable = event;
