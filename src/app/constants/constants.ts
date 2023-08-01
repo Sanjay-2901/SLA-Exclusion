@@ -44,6 +44,8 @@ export const UNKNOWN_COLUMN_COLOR = {
     pattern: 'solid',
     fgColor: { argb: 'ffe6e6fa' },
   },
+  numFmt: '0.00',
+  
 } as ExcelJS.Style;
 
 export enum VALUES {
