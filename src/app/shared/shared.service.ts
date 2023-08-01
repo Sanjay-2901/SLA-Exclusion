@@ -148,6 +148,17 @@ export class SharedService {
     }
   }
 
+  CaloculateSummaryPercentageValue(
+    deviceCount: number,
+    percentValue: number
+  ): number {
+    return deviceCount !== 0
+      ? percentValue / deviceCount > 100
+        ? 100
+        : percentValue / deviceCount
+      : 0;
+  }
+
   downloadFinalReport(buffer: ArrayBuffer, fileName: string) {
     const data = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

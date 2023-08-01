@@ -37,6 +37,7 @@ import {
   RFOCategorizedTimeInMinutes,
   TTCorelation,
 } from '../block-component/block-component.model';
+import { SharedService } from '../shared/shared.service';
 
 @Injectable({
   providedIn: 'root',
@@ -44,7 +45,7 @@ import {
 export class GpService {
   ttCorelation: TTCorelation[] = [];
 
-  constructor() {}
+  constructor(private sharedService: SharedService) {}
 
   calculateAlertDownTimeInMinutes(
     ipAddress: string,
@@ -83,16 +84,16 @@ export class GpService {
     }
   }
 
-  GpSummaryPercentvalueCalculation(
-    gpCount: number,
-    percentValue: number
-  ): string {
-    return gpCount !== 0
-      ? +(percentValue / gpCount).toFixed(2) > 100
-        ? '100.00'
-        : (percentValue / gpCount).toFixed(2)
-      : (0).toFixed(2);
-  }
+  // GpSummaryPercentvalueCalculation(
+  //   gpCount: number,
+  //   percentValue: number
+  // ): string {
+  //   return gpCount !== 0
+  //     ? +(percentValue / gpCount).toFixed(2) > 100
+  //       ? '100.00'
+  //       : (percentValue / gpCount).toFixed(2)
+  //     : (0).toFixed(2);
+  // }
 
   categorizeRFO(
     nmsData: GpNMSData,
@@ -373,65 +374,70 @@ export class GpService {
       tag: 'Q&M GP',
       time_span: timeSpan.replace(/Time Span: /, ''),
       no_of_gp_devices: gpCount,
-      up_percent: this.GpSummaryPercentvalueCalculation(gpCount, upPercent),
-      up_minutes: upMinutes.toFixed(2),
+      up_percent: this.sharedService.CaloculateSummaryPercentageValue(
+        gpCount,
+        upPercent
+      ),
+      up_minutes: upMinutes,
       total_down_percent:
         gpCount !== 0
-          ? +(100 - +(upPercent / gpCount)).toFixed(2) > 100
-            ? '100.00'
-            : (100 - +(upPercent / gpCount)).toFixed(2)
-          : '0.00',
-      total_down_minutes: totalDownMinutes.toFixed(2),
-      power_down_percent: this.GpSummaryPercentvalueCalculation(
+          ? +(100 - upPercent / gpCount) > 100
+            ? 100
+            : 100 - upPercent / gpCount
+          : 0,
+      total_down_minutes: totalDownMinutes,
+      power_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
         gpCount,
         powerDownPercent
       ),
-      power_down_minutes: powerDownMinutes.toFixed(2),
-      fibre_down_percent: this.GpSummaryPercentvalueCalculation(
+      power_down_minutes: powerDownMinutes,
+      fibre_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
         gpCount,
         fiberDownPercent
       ),
-      fibre_down_minutes: fiberDownMinute.toFixed(2),
-      equipment_down_percent: this.GpSummaryPercentvalueCalculation(
-        gpCount,
-        equipmentDownPercent
-      ),
-      equipment_down_minutes: equipmentDownMinute.toFixed(2),
-      hrt_down_percent: this.GpSummaryPercentvalueCalculation(
+      fibre_down_minutes: fiberDownMinute,
+      equipment_down_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          gpCount,
+          equipmentDownPercent
+        ),
+      equipment_down_minutes: equipmentDownMinute,
+      hrt_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
         gpCount,
         hrtDownPercent
       ),
-      hrt_down_minutes: hrtDownMinute.toFixed(2),
-      dcn_down_percent: this.GpSummaryPercentvalueCalculation(
+      hrt_down_minutes: hrtDownMinute,
+      dcn_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
         gpCount,
         dcnDownPercent
       ),
-      dcn_down_minutes: dcnDownMinutes.toFixed(2),
-      planned_maintenance_percent: this.GpSummaryPercentvalueCalculation(
-        gpCount,
-        plannedMaintenancePercent
-      ),
-      planned_maintenance_minutes: plannedMaintenanceMinutes.toFixed(2),
-      unknown_downtime_in_percent: this.GpSummaryPercentvalueCalculation(
-        gpCount,
-        unKnownDownPercent
-      ),
-      unknown_downtime_in_minutes: unKnownDownMinutes.toFixed(2),
-      total_sla_exclusion_percent: this.GpSummaryPercentvalueCalculation(
-        gpCount,
-        cumulativeRfoDownInPercent - pollingTimePercent
-      ),
-      total_sla_exclusion_minutes: (
-        cumulativeRfoDownInMinutes - pollingTimeMinutes
-      ).toFixed(2),
+      dcn_down_minutes: dcnDownMinutes,
+      planned_maintenance_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          gpCount,
+          plannedMaintenancePercent
+        ),
+      planned_maintenance_minutes: plannedMaintenanceMinutes,
+      unknown_downtime_in_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          gpCount,
+          unKnownDownPercent
+        ),
+      unknown_downtime_in_minutes: unKnownDownMinutes,
+      total_sla_exclusion_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          gpCount,
+          cumulativeRfoDownInPercent - pollingTimePercent
+        ),
+      total_sla_exclusion_minutes:
+        cumulativeRfoDownInMinutes - pollingTimeMinutes,
 
-      total_up_percent_exclusion: this.GpSummaryPercentvalueCalculation(
-        gpCount,
-        upPercent + cumulativeRfoDownInPercent
-      ),
-      total_up_minutes_exclusion: (
-        upMinutes + cumulativeRfoDownInMinutes
-      ).toFixed(2),
+      total_up_percent_exclusion:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          gpCount,
+          upPercent + cumulativeRfoDownInPercent
+        ),
+      total_up_minutes_exclusion: upMinutes + cumulativeRfoDownInMinutes,
     };
   }
 
@@ -626,9 +632,12 @@ export class GpService {
     });
 
     let row6 = workSheet.getRow(6);
-    row6.eachCell((cell) => {
+    row6.eachCell((cell, colNumber: number) => {
       cell.border = BORDER_STYLE;
       cell.alignment = { horizontal: 'center' };
+      if (colNumber > 12) {
+        cell.numFmt = '0.00';
+      }
     });
 
     // GP's With Alerts Section in GP SLA Summary
@@ -675,11 +684,14 @@ export class GpService {
       gpSlaSummaryWithAlerts.total_up_minutes_exclusion;
 
     let row7 = workSheet.getRow(7);
-    row7.eachCell((cell: ExcelJS.Cell) => {
+    row7.eachCell((cell: ExcelJS.Cell, colNumber: number) => {
       cell.style = {
         border: BORDER_STYLE,
         alignment: { horizontal: 'center' },
       };
+      if (colNumber > 12) {
+        cell.numFmt = '0.00';
+      }
     });
     cellK7.font = { bold: true };
 
@@ -733,11 +745,14 @@ export class GpService {
       gpSlaSummaryWithoutAlerts.total_up_minutes_exclusion;
 
     let row8 = workSheet.getRow(8);
-    row8.eachCell((cell: ExcelJS.Cell) => {
+    row8.eachCell((cell: ExcelJS.Cell, colNumber: number) => {
       cell.style = {
         border: BORDER_STYLE,
         alignment: { horizontal: 'center' },
       };
+      if (colNumber > 12) {
+        cell.numFmt = '0.00';
+      }
     });
     cellK8.font = { bold: true };
     cellI7.style = TABLE_HEADERS;
@@ -999,32 +1014,30 @@ export class GpService {
         blockLgdCode,
         gpName,
         gpLgdCode,
-        upPercent.toFixed(2),
-        upMinute.toFixed(2),
-        downPercent.toFixed(2),
-        downMinute.toFixed(2),
-        powerDownPercent.toFixed(2),
-        powerDownMinutes.toFixed(2),
-        fiberDownPercent.toFixed(2),
-        fiberDownMinutes.toFixed(2),
-        equipmentDownPercent.toFixed(2),
-        equipmentDownMinutes.toFixed(2),
-        hrtDownPercent.toFixed(2),
-        hrtDownMinutes.toFixed(2),
-        dcnDownPercent.toFixed(2),
-        dcnDownMinutes.toFixed(2),
-        plannedMaintanancePercent.toFixed(2),
-        plannedMaintananceMinutes.toFixed(2),
-        unKnownDownPercent.toFixed(2),
-        unKnownDownMinutes.toFixed(2),
-        totalExclusionPercent.toFixed(2),
-        totalExclusionMinutes.toFixed(2),
-        pollingTimePercent.toFixed(2),
-        pollingTimeMinutes.toFixed(2),
-        +totalUpPercentSLAExclusion.toFixed(2) > 100
-          ? '100.00'
-          : totalUpPercentSLAExclusion.toFixed(2),
-        totalUpMinutesSLAExclusion.toFixed(2),
+        upPercent,
+        upMinute,
+        downPercent,
+        downMinute,
+        powerDownPercent,
+        powerDownMinutes,
+        fiberDownPercent,
+        fiberDownMinutes,
+        equipmentDownPercent,
+        equipmentDownMinutes,
+        hrtDownPercent,
+        hrtDownMinutes,
+        dcnDownPercent,
+        dcnDownMinutes,
+        plannedMaintanancePercent,
+        plannedMaintananceMinutes,
+        unKnownDownPercent,
+        unKnownDownMinutes,
+        totalExclusionPercent,
+        totalExclusionMinutes,
+        pollingTimePercent,
+        pollingTimeMinutes,
+        +totalUpPercentSLAExclusion > 100 ? 100 : totalUpPercentSLAExclusion,
+        totalUpMinutesSLAExclusion,
       ]);
 
       const unknownPercentColumn = gpDeviceLevelRowValues.getCell(29);
@@ -1033,9 +1046,12 @@ export class GpService {
       const unknownMinuteColumn = gpDeviceLevelRowValues.getCell(30);
       unknownMinuteColumn.style = UNKNOWN_COLUMN_COLOR;
 
-      gpDeviceLevelRowValues.eachCell((cell) => {
+      gpDeviceLevelRowValues.eachCell((cell, colNumber: number) => {
         cell.border = BORDER_STYLE;
         cell.alignment = { horizontal: 'left' };
+        if (colNumber > 12) {
+          cell.numFmt = '0.00';
+        }
       });
     });
 

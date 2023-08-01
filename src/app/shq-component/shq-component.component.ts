@@ -416,7 +416,8 @@ export class ShqComponentComponent {
 
     this.manipulatedNMSData = manipulatedShqNmsData;
     this.shqSlaSummary = this.ShqService.calculateShqSlaSummary(
-      this.manipulatedNMSData
+      this.manipulatedNMSData,
+      this.timeSpanValue
     );
     this.generateFinalBlockReport();
   }
@@ -427,7 +428,6 @@ export class ShqComponentComponent {
     this.ShqService.FrameShqFinalSlaReportWorkbook(
       workbook,
       worksheet,
-      this.timeSpanValue,
       this.shqSlaSummary,
       this.manipulatedNMSData
     );

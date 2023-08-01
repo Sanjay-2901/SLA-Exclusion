@@ -32,6 +32,7 @@ import {
   RFOCategorizedTimeInMinutes,
   TTCorelation,
 } from '../block-component/block-component.model';
+import { SharedService } from '../shared/shared.service';
 
 @Injectable({
   providedIn: 'root',
@@ -39,7 +40,7 @@ import {
 export class ShqService {
   ttCorelation: TTCorelation[] = [];
 
-  constructor() {}
+  constructor(private sharedService: SharedService) {}
 
   shqNMSDatawithoutVmwareDevices(
     AllShqDevicesArray: ShqNMSData[]
@@ -215,16 +216,9 @@ export class ShqService {
     }
   }
 
-  calculateCumulativePercentage(value: number): string {
-    return (value / 22).toFixed(2);
-  }
-
-  calculateCumulativeMinutes(value: number): string {
-    return value.toFixed(2);
-  }
-
   calculateShqSlaSummary(
-    manipulatedNMSData: ManipulatedShqNmsData[]
+    manipulatedNMSData: ManipulatedShqNmsData[],
+    timeSpan: string
   ): ShqSlaSummary {
     let upPercent = 0;
     let upMinutes = 0;
@@ -249,6 +243,7 @@ export class ShqService {
     let cumulativeRfoDownInMinutes = 0;
     let pollingTimePercent = 0;
     let pollingTimeMinutes = 0;
+    const shqCount = manipulatedNMSData.length;
 
     manipulatedNMSData.forEach((nmsData: ManipulatedShqNmsData) => {
       upPercent += nmsData.up_percent;
@@ -286,51 +281,69 @@ export class ShqService {
     return {
       report_type: 'SHQ-SLA',
       tag: 'SHQ Core Device',
-      time_span: '',
-      no_of_shq_devices: 22,
-      up_percent: this.calculateCumulativePercentage(upPercent),
-      up_minutes: this.calculateCumulativeMinutes(upMinutes),
-      total_down_exclusive_of_sla_exclusion_percent: (
-        100 - parseInt(this.calculateCumulativePercentage(upPercent))
-      ).toFixed(2),
+      time_span: timeSpan.replace(/Time Span: /, ''),
+      no_of_shq_devices: shqCount,
+      up_percent: this.sharedService.CaloculateSummaryPercentageValue(
+        shqCount,
+        upPercent
+      ),
+      up_minutes: upMinutes,
+      total_down_exclusive_of_sla_exclusion_percent: +(
+        100 -
+        this.sharedService.CaloculateSummaryPercentageValue(shqCount, upPercent)
+      ),
       total_down_exclusive_of_sla_exclusion_minute:
-        this.calculateCumulativeMinutes(
-          totalDownExclusiveOfSlaExclusionInMinute
-        ),
-      power_down_percent: this.calculateCumulativePercentage(powerDownPercent),
-      power_dowm_minute: this.calculateCumulativeMinutes(powerDownMinutes),
-      fibre_down_percent: this.calculateCumulativePercentage(fiberDownPercent),
-      fiber_down_minute: this.calculateCumulativeMinutes(fiberDownMinute),
+        totalDownExclusiveOfSlaExclusionInMinute,
+      power_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+        shqCount,
+        powerDownPercent
+      ),
+      power_dowm_minute: powerDownMinutes,
+      fibre_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+        shqCount,
+        fiberDownPercent
+      ),
+      fiber_down_minute: fiberDownMinute,
       equipment_down_percent:
-        this.calculateCumulativePercentage(equipmentDownPercent),
-      equipment_down_minute:
-        this.calculateCumulativeMinutes(equipmentDownMinute),
-      hrt_down_percent: this.calculateCumulativePercentage(hrtDownPercent),
-      hrt_down_minute: this.calculateCumulativeMinutes(hrtDownMinute),
-      dcn_down_percent: this.calculateCumulativePercentage(dcnDownPercent),
-      dcn_down_minute: this.calculateCumulativeMinutes(dcnDownMinutes),
-      planned_maintenance_percent: this.calculateCumulativePercentage(
-        plannedMaintenancePercent
+        this.sharedService.CaloculateSummaryPercentageValue(
+          shqCount,
+          equipmentDownPercent
+        ),
+      equipment_down_minute: equipmentDownMinute,
+      hrt_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+        shqCount,
+        hrtDownPercent
       ),
-      planned_maintenance_minute: this.calculateCumulativeMinutes(
-        plannedMaitenanceMinute
+      hrt_down_minute: hrtDownMinute,
+      dcn_down_percent: this.sharedService.CaloculateSummaryPercentageValue(
+        shqCount,
+        dcnDownPercent
       ),
+      dcn_down_minute: dcnDownMinutes,
+      planned_maintenance_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          shqCount,
+          plannedMaintenancePercent
+        ),
+      planned_maintenance_minute: plannedMaitenanceMinute,
       unknown_downtime_in_percent:
-        this.calculateCumulativePercentage(unKnownDownPercent),
-      unknown_downtime_in_minutes:
-        this.calculateCumulativeMinutes(unKnownDownMinutes),
-      total_sla_exclusion_percent: this.calculateCumulativePercentage(
-        cumulativeRfoDownInPercent - pollingTimePercent
-      ),
-      total_sla_exclusion_minute: this.calculateCumulativeMinutes(
-        cumulativeRfoDownInMinutes - pollingTimeMinutes
-      ),
-      total_up_percent: this.calculateCumulativePercentage(
+        this.sharedService.CaloculateSummaryPercentageValue(
+          shqCount,
+          unKnownDownPercent
+        ),
+      unknown_downtime_in_minutes: unKnownDownMinutes,
+      total_sla_exclusion_percent:
+        this.sharedService.CaloculateSummaryPercentageValue(
+          shqCount,
+          cumulativeRfoDownInPercent - pollingTimePercent
+        ),
+      total_sla_exclusion_minute:
+        cumulativeRfoDownInMinutes - pollingTimeMinutes,
+      total_up_percent: this.sharedService.CaloculateSummaryPercentageValue(
+        shqCount,
         upPercent + cumulativeRfoDownInPercent
       ),
-      total_up_minute: this.calculateCumulativeMinutes(
-        upMinutes + cumulativeRfoDownInMinutes
-      ),
+      total_up_minute: upMinutes + cumulativeRfoDownInMinutes,
     };
   }
 
@@ -341,7 +354,6 @@ export class ShqService {
   FrameShqFinalSlaReportWorkbook(
     workbook: ExcelJS.Workbook,
     workSheet: ExcelJS.Worksheet,
-    timeSpan: string,
     shqSlaSummary: ShqSlaSummary,
     manipulatedShqNmsData: ManipulatedShqNmsData[]
   ): void {
@@ -406,10 +418,10 @@ export class ShqService {
     workSheet.mergeCells('B5:B6');
     workSheet.mergeCells('E5:E6');
 
-    workSheet.getCell('A5').value = 'SHQ - SLA';
-    workSheet.getCell('B5').value = 'SHQ Core Device';
-    workSheet.getCell('C5').value = timeSpan.replace(/Time Span: /, '');
-    workSheet.getCell('E5').value = '22';
+    workSheet.getCell('A5').value = shqSlaSummary.report_type;
+    workSheet.getCell('B5').value = shqSlaSummary.tag;
+    workSheet.getCell('C5').value = shqSlaSummary.time_span;
+    workSheet.getCell('E5').value = shqSlaSummary.no_of_shq_devices;
 
     let F5 = workSheet.getCell('F5');
     F5.value = VALUES.PERCENT;
@@ -532,9 +544,12 @@ export class ShqService {
     });
 
     let row6 = workSheet.getRow(6);
-    row6.eachCell((cell) => {
+    row6.eachCell((cell, colValue: number) => {
       cell.border = BORDER_STYLE;
       cell.alignment = { horizontal: 'center' };
+      if (colValue > 5) {
+        cell.numFmt = '0.00';
+      }
     });
 
     workSheet.addRow('');
@@ -764,37 +779,38 @@ export class ShqService {
         hostName,
         ipAddress,
         deviceType,
-        upPercent.toFixed(2),
-        upMinute.toFixed(2),
-        totalDownExclusionOfSlaExclusionInPercent.toFixed(2),
-        totalDownExclusivceOfSlaExclusionInMinutes.toFixed(2),
-        powerDownInPercent.toFixed(2),
-        powerDownInMinute.toFixed(2),
-        fiberDownPercent.toFixed(2),
-        fiberDownMinutes.toFixed(2),
-        equipmentDownPercent.toFixed(2),
-        equipmentDownMinutes.toFixed(2),
-        hrtDownPercent.toFixed(2),
-        hrtDownMinutes.toFixed(2),
-        dcnDownPercent.toFixed(2),
-        dcnDownMinutes.toFixed(2),
-        plannedMaintanancePercent.toFixed(2),
-        plannedMaintananceMinutes.toFixed(2),
-        unKnownDownPercent.toFixed(2),
-        unKnownDownMinutes.toFixed(2),
-        totalSlaExclusionInPercent.toFixed(2),
-        totalSlaExclusionInMinute.toFixed(2),
-        pollingTimeInPercent.toFixed(2),
-        pollingTimeInMinute.toFixed(2),
-        +totalUpInPercent.toFixed(2) > 100
-          ? '100.00'
-          : totalUpInPercent.toFixed(2),
-        totalUpInMinutes.toFixed(2),
+        upPercent,
+        upMinute,
+        totalDownExclusionOfSlaExclusionInPercent,
+        totalDownExclusivceOfSlaExclusionInMinutes,
+        powerDownInPercent,
+        powerDownInMinute,
+        fiberDownPercent,
+        fiberDownMinutes,
+        equipmentDownPercent,
+        equipmentDownMinutes,
+        hrtDownPercent,
+        hrtDownMinutes,
+        dcnDownPercent,
+        dcnDownMinutes,
+        plannedMaintanancePercent,
+        plannedMaintananceMinutes,
+        unKnownDownPercent,
+        unKnownDownMinutes,
+        totalSlaExclusionInPercent,
+        totalSlaExclusionInMinute,
+        pollingTimeInPercent,
+        pollingTimeInMinute,
+        totalUpInPercent > 100 ? 100 : totalUpInPercent,
+        totalUpInMinutes,
       ]);
 
-      ShqDeviceLevelRowValues.eachCell((cell) => {
+      ShqDeviceLevelRowValues.eachCell((cell, colNumber: number) => {
         cell.border = BORDER_STYLE;
         cell.alignment = { horizontal: 'left' };
+        if (colNumber > 5) {
+          cell.numFmt = '0.00';
+        }
       });
     });
 
